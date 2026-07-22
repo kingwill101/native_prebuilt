@@ -1,6 +1,6 @@
 # native_prebuilt
 
-Reusable infrastructure for Dart packages that ship prebuilt native libraries from GitHub Releases.
+Reusable infrastructure for Dart packages that ship prebuilt native libraries from GitHub or GitLab releases.
 
 ## What it provides
 
@@ -51,6 +51,7 @@ package: my_package
 asset_name: my_bindings.dart
 library_stem: mylib
 release:
+  provider: github
   repository: myorg/myrepo
   tag: mylib-v1.0.0
 artifacts:
@@ -82,5 +83,6 @@ dart run native_prebuilt workflow init
 ## Notes
 
 - `hooks.user_defines` is preferred for local override paths.
+- Use `release.provider: gitlab` and `release.project` for GitLab release assets.
 - The package exports `OS`, `Architecture`, and `IOSSdk` from `code_assets`.
 - The cache and installer are designed for repeated hook runs and concurrent builds.

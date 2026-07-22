@@ -223,9 +223,7 @@ class DoctorCommand extends Command<void> {
     }
     final config = NativePrebuiltConfig.loadFile(configPath);
     io.info('package: ${config.package}');
-    io.info(
-      'release: ${config.release.owner}/${config.release.repository}@${config.release.tag}',
-    );
+    io.info('release: ${config.release}');
     io.info('artifacts: ${config.artifacts.length}');
   }
 }
@@ -303,11 +301,7 @@ Future<PrebuiltManifest> _generateManifest({
       );
       try {
         await downloader.downloadReleaseArtifact(
-          source: GitHubReleaseSource(
-            owner: config.release.owner,
-            repository: config.release.repository,
-            tag: tag,
-          ),
+          source: config.release.withTag(tag),
           archiveName: artifactConfig.archiveName,
           targetPath: archiveFile,
         );
@@ -344,11 +338,7 @@ Future<PrebuiltManifest> _generateManifest({
 
     return PrebuiltManifest(
       schemaVersion: config.schema,
-      release: GitHubReleaseSource(
-        owner: config.release.owner,
-        repository: config.release.repository,
-        tag: tag,
-      ),
+      release: config.release.withTag(tag),
       artifacts: artifacts,
     );
   } finally {
@@ -369,11 +359,7 @@ String _renderManifest(
     ..writeln()
     ..writeln('const ${config.package}Prebuilts = PrebuiltManifest(')
     ..writeln('  schemaVersion: ${manifest.schemaVersion},')
-    ..writeln('  release: GitHubReleaseSource(')
-    ..writeln("    owner: '${config.release.owner}',")
-    ..writeln("    repository: '${config.release.repository}',")
-    ..writeln("    tag: '$tag',")
-    ..writeln('  ),')
+    ..writeln('  release: ${_renderReleaseSource(config.release.withTag(tag))},')
     ..writeln('  artifacts: {');
 
   for (final entry in manifest.artifacts.entries) {
@@ -399,6 +385,13 @@ String _renderPayload(ArtifactPayload payload) => switch (payload) {
     'DynamicLibraryPayload(libraryStem: \'$libraryStem\', acceptVersionedNames: $acceptVersionedNames)',
   StaticLibraryPayload(:final libraryStem) =>
     'StaticLibraryPayload(libraryStem: \'$libraryStem\')',
+};
+
+String _renderReleaseSource(ReleaseSource source) => switch (source) {
+  GitHubReleaseSource(:final owner, :final repository, :final tag) =>
+    'GitHubReleaseSource(owner: \'$owner\', repository: \'$repository\', tag: \'$tag\')',
+  GitLabReleaseSource(:final projectPath, :final tag) =>
+    'GitLabReleaseSource(projectPath: \'$projectPath\', tag: \'$tag\')',
 };
 
 NativeTarget _targetFromPlatformLabel(String label) {

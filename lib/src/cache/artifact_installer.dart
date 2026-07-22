@@ -95,7 +95,6 @@ final class DefaultArtifactInstaller implements ArtifactInstaller {
       }
 
       final source = manifest.release;
-      if (source is! GitHubReleaseSource) return null;
 
       final archiveFile = File(
         p.join(cacheDirForArtifact.path, artifact.archiveName),

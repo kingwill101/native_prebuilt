@@ -1,6 +1,18 @@
 /// Describes where prebuilt artifacts are published.
 sealed class ReleaseSource {
   const ReleaseSource();
+
+  /// The release tag.
+  String get tag;
+
+  /// Constructs the full download URL for an artifact by name.
+  Uri artifactUrl(String archiveName);
+
+  /// Optional request headers needed to download artifacts from this source.
+  Map<String, String> get requestHeaders => const {};
+
+  /// Returns a copy of this release source with a different tag.
+  ReleaseSource withTag(String tag);
 }
 
 /// Artifacts are hosted as GitHub Release assets.
@@ -41,10 +53,59 @@ final class GitHubReleaseSource extends ReleaseSource {
         '/$owner/$repository/releases/download/$tag/',
       );
 
-  /// Constructs the full download URL for an artifact by name.
+  @override
   Uri artifactUrl(String archiveName) => baseUrl.resolve(archiveName);
 
   @override
-  String toString() =>
-      'GitHubReleaseSource($owner/$repository@$tag)';
+  ReleaseSource withTag(String tag) => GitHubReleaseSource(
+    owner: owner,
+    repository: repository,
+    tag: tag,
+    baseUri: baseUri,
+  );
+
+  @override
+  String toString() => 'GitHubReleaseSource($owner/$repository@$tag)';
+}
+
+/// Artifacts are hosted as GitLab release assets.
+final class GitLabReleaseSource extends ReleaseSource {
+  const GitLabReleaseSource({
+    required this.projectPath,
+    required this.tag,
+    this.baseUri,
+  });
+
+  /// The GitLab project path or numeric project id.
+  ///
+  /// Example: `group/subgroup/project`.
+  final String projectPath;
+
+  /// The release tag.
+  final String tag;
+
+  /// Optional base URI for downloads.
+  ///
+  /// Defaults to the GitLab Releases API download URL for [projectPath] and
+  /// [tag]. Useful for tests or self-managed mirrors.
+  final Uri? baseUri;
+
+  Uri get baseUrl =>
+      baseUri ??
+      Uri.parse(
+        'https://gitlab.com/api/v4/projects/${Uri.encodeComponent(projectPath)}/releases/${Uri.encodeComponent(tag)}/downloads/',
+      );
+
+  @override
+  Uri artifactUrl(String archiveName) => baseUrl.resolve(archiveName);
+
+  @override
+  ReleaseSource withTag(String tag) => GitLabReleaseSource(
+    projectPath: projectPath,
+    tag: tag,
+    baseUri: baseUri,
+  );
+
+  @override
+  String toString() => 'GitLabReleaseSource($projectPath@$tag)';
 }

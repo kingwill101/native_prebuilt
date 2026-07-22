@@ -122,4 +122,23 @@ void main() {
 
     expect(file.readAsBytesSync(), [1, 2, 3, 4]);
   });
+
+  test('downloads GitLab release artifacts using baseUri', () async {
+    final file = File('${Directory.systemTemp.path}/native_prebuilt_gitlab_release.bin');
+    if (file.existsSync()) file.deleteSync();
+
+    final source = GitLabReleaseSource(
+      projectPath: 'group/project',
+      tag: 'v1',
+      baseUri: baseUri,
+    );
+
+    await const HttpDownloader().downloadReleaseArtifact(
+      source: source,
+      archiveName: 'artifact.tar.gz',
+      targetPath: file,
+    );
+
+    expect(file.readAsBytesSync(), [1, 2, 3, 4]);
+  });
 }

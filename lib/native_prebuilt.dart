@@ -1,5 +1,5 @@
 /// Reusable infrastructure for Dart packages that ship prebuilt native
-/// libraries from GitHub Releases.
+/// libraries from GitHub or GitLab releases.
 ///
 /// This library provides the core models, download pipeline, cache management,
 /// and binary inspection utilities. For build-hook integration, see

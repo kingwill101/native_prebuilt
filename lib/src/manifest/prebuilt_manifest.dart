@@ -18,6 +18,7 @@ import 'release_source.dart';
 ///     repository: 'myrepo',
 ///     tag: 'mylib-v1.0.0',
 ///   ),
+///   // or GitLabReleaseSource(projectPath: 'mygroup/myrepo', tag: ...)
 ///   artifacts: {
 ///     'linux-x64': PrebuiltArtifact(
 ///       archiveName: 'mylib-linux-x64.tar.gz',

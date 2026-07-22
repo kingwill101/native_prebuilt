@@ -107,6 +107,22 @@ void main() {
     });
   });
 
+  group('GitLabReleaseSource', () {
+    test('artifact URL construction', () {
+      const source = GitLabReleaseSource(
+        projectPath: 'group/subgroup/project',
+        tag: 'v1.2.3',
+      );
+
+      final url = source.artifactUrl('pty-linux-x64.tar.gz');
+      expect(
+        url.toString(),
+        'https://gitlab.com/api/v4/projects/group%2Fsubgroup%2Fproject/releases/'
+        'v1.2.3/downloads/pty-linux-x64.tar.gz',
+      );
+    });
+  });
+
   group('ArtifactPayload', () {
     test('DynamicLibraryPayload', () {
       const payload = DynamicLibraryPayload(libraryStem: 'mylib');

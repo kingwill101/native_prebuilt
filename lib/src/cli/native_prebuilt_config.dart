@@ -21,7 +21,7 @@ final class NativePrebuiltConfig {
   final String package;
   final String assetName;
   final String libraryStem;
-  final GitHubReleaseSource release;
+  final ReleaseSource release;
   final Map<String, NativePrebuiltArtifactConfig> artifacts;
 
   static NativePrebuiltConfig loadFile(String path) {
@@ -39,24 +39,25 @@ final class NativePrebuiltConfig {
     final assetName = _asString(yaml['asset_name'], 'asset_name');
     final libraryStem = _asString(yaml['library_stem'], 'library_stem');
 
-    final releaseMap = _asMap(yaml['release'], 'release');
-    final repository = _asString(releaseMap['repository'], 'release.repository');
-    final tag = _asString(releaseMap['tag'], 'release.tag');
-    final parts = repository.split('/');
-    if (parts.length != 2) {
-      throw FormatException(
-        'release.repository must be "owner/repo" (got "$repository")',
-      );
-    }
+    final release = _parseReleaseSource(_asMap(yaml['release'], 'release'));
 
     final artifactsMap = _asMap(yaml['artifacts'], 'artifacts');
     final artifacts = <String, NativePrebuiltArtifactConfig>{};
     for (final entry in artifactsMap.entries) {
       final platform = entry.key.toString();
       final artifactMap = _asMap(entry.value, 'artifacts.$platform');
-      final archive = _asString(artifactMap['archive'], 'artifacts.$platform.archive');
-      final payloadMap = _asMap(artifactMap['payload'], 'artifacts.$platform.payload');
-      final type = _asString(payloadMap['type'], 'artifacts.$platform.payload.type');
+      final archive = _asString(
+        artifactMap['archive'],
+        'artifacts.$platform.archive',
+      );
+      final payloadMap = _asMap(
+        artifactMap['payload'],
+        'artifacts.$platform.payload',
+      );
+      final type = _asString(
+        payloadMap['type'],
+        'artifacts.$platform.payload.type',
+      );
       final acceptVersionedNames = payloadMap['accept_versioned_names'] != false;
       final payload = switch (type) {
         'dynamic_library' => DynamicLibraryPayload(
@@ -79,13 +80,33 @@ final class NativePrebuiltConfig {
       package: package,
       assetName: assetName,
       libraryStem: libraryStem,
-      release: GitHubReleaseSource(
-        owner: parts.first,
-        repository: parts.last,
-        tag: tag,
-      ),
+      release: release,
       artifacts: artifacts,
     );
+  }
+
+  static ReleaseSource _parseReleaseSource(Map<String, dynamic> releaseMap) {
+    final provider = _asStringOrNull(releaseMap['provider'])?.toLowerCase() ??
+        'github';
+    final tag = _asString(releaseMap['tag'], 'release.tag');
+
+    return switch (provider) {
+      'github' => GitHubReleaseSource(
+          owner: _asOwner(_asString(releaseMap['repository'], 'release.repository')),
+          repository: _asRepo(_asString(releaseMap['repository'], 'release.repository')),
+          tag: tag,
+        ),
+      'gitlab' => GitLabReleaseSource(
+          projectPath: _asString(
+            releaseMap['project'] ??
+                releaseMap['project_path'] ??
+                releaseMap['repository'],
+            'release.project',
+          ),
+          tag: tag,
+        ),
+      _ => throw FormatException('Unsupported release.provider "$provider"'),
+    };
   }
 
   static Map<String, dynamic> _asMap(Object? value, String name) {
@@ -98,6 +119,29 @@ final class NativePrebuiltConfig {
   static String _asString(Object? value, String name) {
     if (value is String && value.isNotEmpty) return value;
     throw FormatException('$name must be a non-empty string');
+  }
+
+  static String? _asStringOrNull(Object? value) =>
+      value is String && value.isNotEmpty ? value : null;
+
+  static String _asOwner(String repository) {
+    final parts = repository.split('/');
+    if (parts.length != 2) {
+      throw FormatException(
+        'release.repository must be "owner/repo" (got "$repository")',
+      );
+    }
+    return parts.first;
+  }
+
+  static String _asRepo(String repository) {
+    final parts = repository.split('/');
+    if (parts.length != 2) {
+      throw FormatException(
+        'release.repository must be "owner/repo" (got "$repository")',
+      );
+    }
+    return parts.last;
   }
 
   PrebuiltManifest toManifest({

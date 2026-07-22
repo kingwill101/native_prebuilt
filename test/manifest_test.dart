@@ -16,6 +16,19 @@ void main() {
     );
   });
 
+  test('GitLabReleaseSource artifact URL construction', () {
+    const source = GitLabReleaseSource(
+      projectPath: 'group/subgroup/project',
+      tag: 'v1.2.3',
+    );
+
+    expect(
+      source.artifactUrl('pty-linux-x64.tar.gz').toString(),
+      'https://gitlab.com/api/v4/projects/group%2Fsubgroup%2Fproject/releases/'
+      'v1.2.3/downloads/pty-linux-x64.tar.gz',
+    );
+  });
+
   test('manifest lookup', () {
     const manifest = PrebuiltManifest(
       schemaVersion: 1,
