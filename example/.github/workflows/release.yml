@@ -1,0 +1,17 @@
+name: Example Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        required: true
+        type: string
+
+jobs:
+  update-manifest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+      - run: dart pub get
+      - run: dart run native_prebuilt manifest update --config native_prebuilt.yaml --output lib/src/hook/demo_prebuilts.g.dart --tag ${{ inputs.tag }}

@@ -1,0 +1,486 @@
+import 'dart:io';
+
+import 'package:artisanal/args.dart';
+import 'package:code_assets/code_assets.dart';
+import 'package:path/path.dart' as p;
+
+import '../archive/archive_entry.dart';
+import '../archive/archive_reader.dart';
+import '../binary/library_name.dart';
+import '../download/http_downloader.dart';
+import '../manifest/prebuilt_artifact.dart';
+import '../manifest/prebuilt_manifest.dart';
+import '../manifest/release_source.dart';
+import '../platform/native_target.dart';
+import 'native_prebuilt_config.dart';
+
+/// Runs the `native_prebuilt` CLI.
+Future<void> runNativePrebuiltCli(List<String> args) async {
+  final runner =
+      CommandRunner<void>(
+          'native_prebuilt',
+          'Utilities for prebuilt native artifacts in Dart packages.',
+        )
+        ..addCommand(ManifestCommand())
+        ..addCommand(FetchCommand())
+        ..addCommand(DoctorCommand())
+        ..addCommand(WorkflowCommand());
+
+  await runner.run(args);
+}
+
+class ManifestCommand extends Command<void> {
+  ManifestCommand() {
+    argParser.addOption('config', abbr: 'c', help: 'Path to YAML config file.');
+    argParser.addOption('output', abbr: 'o', help: 'Output Dart file.');
+    argParser.addOption('tag', help: 'Override the release tag.');
+    argParser.addFlag('allow-missing', help: 'Allow missing artifacts.');
+    addSubcommand(_ManifestUpdateCommand());
+    addSubcommand(_ManifestVerifyCommand());
+  }
+
+  @override
+  String get name => 'manifest';
+
+  @override
+  String get description => 'Generate or verify the Dart manifest.';
+
+  @override
+  Future<void> run() async {
+    io.info(usage);
+  }
+}
+
+class _ManifestUpdateCommand extends Command<void> {
+  @override
+  String get name => 'update';
+
+  @override
+  String get description => 'Generate the Dart manifest from the release.';
+
+  _ManifestUpdateCommand() {
+    argParser.addOption('config', abbr: 'c', help: 'Path to YAML config file.');
+    argParser.addOption('output', abbr: 'o', help: 'Output Dart file.');
+    argParser.addOption('tag', help: 'Override the release tag.');
+    argParser.addFlag('allow-missing', help: 'Allow missing artifacts.');
+  }
+
+  @override
+  Future<void> run() async {
+    final configPath = option('config') as String?;
+    final outputPath = option('output') as String?;
+    if (configPath == null || outputPath == null) {
+      throw UsageException('update requires --config and --output', usage);
+    }
+
+    final config = NativePrebuiltConfig.loadFile(configPath);
+    final tag = (option('tag') as String?) ?? config.release.tag;
+    final allowMissing = (option('allow-missing') as bool?) ?? false;
+
+    final manifest = await _generateManifest(
+      config: config,
+      tag: tag,
+      allowMissing: allowMissing,
+    );
+
+    final content = _renderManifest(config, manifest, tag);
+    File(outputPath).writeAsStringSync(content);
+    io.info('Wrote $outputPath');
+  }
+}
+
+class _ManifestVerifyCommand extends Command<void> {
+  @override
+  String get name => 'verify';
+
+  @override
+  String get description => 'Verify the generated Dart manifest.';
+
+  _ManifestVerifyCommand() {
+    argParser.addOption('config', abbr: 'c', help: 'Path to YAML config file.');
+    argParser.addOption('output', abbr: 'o', help: 'Output Dart file.');
+    argParser.addOption('tag', help: 'Override the release tag.');
+    argParser.addFlag('allow-missing', help: 'Allow missing artifacts.');
+  }
+
+  @override
+  Future<void> run() async {
+    final configPath = option('config') as String?;
+    final outputPath = option('output') as String?;
+    if (configPath == null || outputPath == null) {
+      throw UsageException('verify requires --config and --output', usage);
+    }
+
+    final config = NativePrebuiltConfig.loadFile(configPath);
+    final tag = (option('tag') as String?) ?? config.release.tag;
+    final allowMissing = (option('allow-missing') as bool?) ?? false;
+
+    final manifest = await _generateManifest(
+      config: config,
+      tag: tag,
+      allowMissing: allowMissing,
+    );
+
+    final expected = _renderManifest(config, manifest, tag);
+    final actual = File(outputPath).readAsStringSync();
+    if (actual != expected) {
+      stderr.writeln('Manifest mismatch: $outputPath');
+      exitCode = 1;
+      return;
+    }
+    io.info('OK: $outputPath');
+  }
+}
+
+class FetchCommand extends Command<void> {
+  FetchCommand() {
+    argParser.addOption('config', abbr: 'c', help: 'Path to YAML config file.');
+    argParser.addOption(
+      'platform',
+      abbr: 'p',
+      help: 'Platform label to fetch.',
+    );
+    argParser.addOption('out', abbr: 'o', help: 'Output directory.');
+  }
+
+  @override
+  String get name => 'fetch';
+
+  @override
+  String get description => 'Fetch one prebuilt artifact to a local cache.';
+
+  @override
+  Future<void> run() async {
+    final configPath = option('config') as String?;
+    final platform = option('platform') as String?;
+    final outPath = option('out') as String? ?? '.prebuilt';
+    if (configPath == null || platform == null) {
+      throw UsageException('fetch requires --config and --platform', usage);
+    }
+
+    final config = NativePrebuiltConfig.loadFile(configPath);
+    final artifact = config.artifacts[platform];
+    if (artifact == null) {
+      throw UsageException('Unknown platform: $platform', usage);
+    }
+
+    final target = _targetFromPlatformLabel(platform);
+    final canonicalName = canonicalLibraryName(
+      target: target,
+      libraryStem: config.libraryStem,
+      payload: artifact.payload,
+    );
+
+    final downloader = HttpDownloader();
+    final release = config.release;
+    final tmpDir = await Directory.systemTemp.createTemp(
+      'native_prebuilt_fetch_',
+    );
+    try {
+      final archivePath = File(p.join(tmpDir.path, artifact.archiveName));
+      await downloader.downloadReleaseArtifact(
+        source: release,
+        archiveName: artifact.archiveName,
+        targetPath: archivePath,
+      );
+
+      final extracted = ArchiveReader().extractMatchingEntry(
+        archiveFile: archivePath,
+        outputDir: Directory(p.join(outPath, platform)),
+        selection: ArchiveSelectionContext(
+          canonicalName: canonicalName,
+          acceptVersionedNames: artifact.payload is DynamicLibraryPayload,
+        ),
+      );
+      if (extracted == null) {
+        throw StateError(
+          'No matching payload found in ${artifact.archiveName}',
+        );
+      }
+      io.info(extracted.path);
+    } finally {
+      tmpDir.deleteSync(recursive: true);
+    }
+  }
+}
+
+class DoctorCommand extends Command<void> {
+  DoctorCommand() {
+    argParser.addOption('config', abbr: 'c', help: 'Path to YAML config file.');
+  }
+
+  @override
+  String get name => 'doctor';
+
+  @override
+  String get description => 'Validate configuration and io.info a summary.';
+
+  @override
+  Future<void> run() async {
+    final configPath = option('config') as String?;
+    if (configPath == null) {
+      throw UsageException('doctor requires --config', usage);
+    }
+    final config = NativePrebuiltConfig.loadFile(configPath);
+    io.info('package: ${config.package}');
+    io.info(
+      'release: ${config.release.owner}/${config.release.repository}@${config.release.tag}',
+    );
+    io.info('artifacts: ${config.artifacts.length}');
+  }
+}
+
+class WorkflowCommand extends Command<void> {
+  WorkflowCommand() {
+    addSubcommand(WorkflowInitCommand());
+  }
+
+  @override
+  String get name => 'workflow';
+
+  @override
+  String get description => 'Manage reusable workflow templates.';
+
+  @override
+  Future<void> run() async {
+    io.info(usage);
+  }
+}
+
+class WorkflowInitCommand extends Command<void> {
+  WorkflowInitCommand() {
+    argParser.addOption('output', abbr: 'o', help: 'Output directory.');
+    argParser.addFlag('force', help: 'Overwrite existing files.');
+  }
+
+  @override
+  String get name => 'init';
+
+  @override
+  String get description => 'Write reusable workflow templates.';
+
+  @override
+  Future<void> run() async {
+    final output = option('output') as String? ?? '.github/workflows';
+    final force = (option('force') as bool?) ?? false;
+    final dir = Directory(output)..createSync(recursive: true);
+    final templates = workflowTemplates();
+    for (final entry in templates.entries) {
+      final file = File(p.join(dir.path, entry.key));
+      if (file.existsSync() && !force) continue;
+      file.writeAsStringSync(entry.value);
+      io.info('Wrote ${file.path}');
+    }
+  }
+}
+
+Future<PrebuiltManifest> _generateManifest({
+  required NativePrebuiltConfig config,
+  required String tag,
+  required bool allowMissing,
+}) async {
+  final downloader = HttpDownloader();
+  final archiveReader = ArchiveReader();
+  final tempDir = await Directory.systemTemp.createTemp(
+    'native_prebuilt_manifest_',
+  );
+  try {
+    final payloadHashes = <String, String>{};
+    final artifacts = <String, PrebuiltArtifact>{};
+
+    for (final entry in config.artifacts.entries) {
+      final platform = entry.key;
+      final artifactConfig = entry.value;
+      final target = _targetFromPlatformLabel(platform);
+      final canonicalName = canonicalLibraryName(
+        target: target,
+        libraryStem: config.libraryStem,
+        payload: artifactConfig.payload,
+      );
+
+      final archiveFile = File(
+        p.join(tempDir.path, artifactConfig.archiveName),
+      );
+      try {
+        await downloader.downloadReleaseArtifact(
+          source: GitHubReleaseSource(
+            owner: config.release.owner,
+            repository: config.release.repository,
+            tag: tag,
+          ),
+          archiveName: artifactConfig.archiveName,
+          targetPath: archiveFile,
+        );
+      } catch (e) {
+        if (allowMissing) continue;
+        rethrow;
+      }
+
+      final archiveHash = await ArchiveReader.sha256Hash(archiveFile);
+
+      final extractedDir = Directory(p.join(tempDir.path, 'extract_$platform'))
+        ..createSync(recursive: true);
+      final extracted = archiveReader.extractMatchingEntry(
+        archiveFile: archiveFile,
+        outputDir: extractedDir,
+        selection: ArchiveSelectionContext(
+          canonicalName: canonicalName,
+          acceptVersionedNames: artifactConfig.payload is DynamicLibraryPayload,
+        ),
+      );
+      if (extracted == null) {
+        if (allowMissing) continue;
+        throw StateError('No payload found for $platform');
+      }
+      payloadHashes[platform] = await ArchiveReader.sha256Hash(extracted);
+
+      artifacts[platform] = PrebuiltArtifact(
+        archiveName: artifactConfig.archiveName,
+        archiveSha256: archiveHash,
+        payloadSha256: payloadHashes[platform]!,
+        payload: artifactConfig.payload,
+      );
+    }
+
+    return PrebuiltManifest(
+      schemaVersion: config.schema,
+      release: GitHubReleaseSource(
+        owner: config.release.owner,
+        repository: config.release.repository,
+        tag: tag,
+      ),
+      artifacts: artifacts,
+    );
+  } finally {
+    tempDir.deleteSync(recursive: true);
+  }
+}
+
+String _renderManifest(
+  NativePrebuiltConfig config,
+  PrebuiltManifest manifest,
+  String tag,
+) {
+  final b = StringBuffer()
+    ..writeln('// GENERATED CODE - DO NOT MODIFY BY HAND.')
+    ..writeln('// ignore_for_file: constant_identifier_names')
+    ..writeln()
+    ..writeln("import 'package:native_prebuilt/native_prebuilt.dart';")
+    ..writeln()
+    ..writeln('const ${config.package}Prebuilts = PrebuiltManifest(')
+    ..writeln('  schemaVersion: ${manifest.schemaVersion},')
+    ..writeln('  release: GitHubReleaseSource(')
+    ..writeln("    owner: '${config.release.owner}',")
+    ..writeln("    repository: '${config.release.repository}',")
+    ..writeln("    tag: '$tag',")
+    ..writeln('  ),')
+    ..writeln('  artifacts: {');
+
+  for (final entry in manifest.artifacts.entries) {
+    final platform = entry.key;
+    final artifact = entry.value;
+    b.writeln("    '$platform': PrebuiltArtifact(");
+    b.writeln("      archiveName: '${artifact.archiveName}',");
+    b.writeln("      archiveSha256: '${artifact.archiveSha256}',");
+    b.writeln("      payloadSha256: '${artifact.payloadSha256}',");
+    b.writeln('      payload: ${_renderPayload(artifact.payload)},');
+    b.writeln('    ),');
+  }
+
+  b
+    ..writeln('  },')
+    ..writeln(');')
+    ..writeln();
+  return b.toString();
+}
+
+String _renderPayload(ArtifactPayload payload) => switch (payload) {
+  DynamicLibraryPayload(:final libraryStem, :final acceptVersionedNames) =>
+    'DynamicLibraryPayload(libraryStem: \'$libraryStem\', acceptVersionedNames: $acceptVersionedNames)',
+  StaticLibraryPayload(:final libraryStem) =>
+    'StaticLibraryPayload(libraryStem: \'$libraryStem\')',
+};
+
+NativeTarget _targetFromPlatformLabel(String label) {
+  final parts = label.split('-');
+  if (label.startsWith('ios-sim-') && parts.length == 3) {
+    return NativeTarget(
+      os: OS.iOS,
+      architecture: Architecture.fromString(parts[2]),
+      iOSSdk: IOSSdk.iPhoneSimulator,
+    );
+  }
+  if (parts.length != 2) {
+    throw FormatException('Unsupported platform label: $label');
+  }
+  return NativeTarget(
+    os: OS.fromString(parts[0]),
+    architecture: Architecture.fromString(parts[1]),
+  );
+}
+
+Map<String, String> workflowTemplates() => {
+  'native-prebuilt-build.yml': nativePrebuiltBuildWorkflow,
+  'native-prebuilt-release.yml': nativePrebuiltReleaseWorkflow,
+  'native-prebuilt-update-manifest.yml': nativePrebuiltUpdateManifestWorkflow,
+};
+
+const nativePrebuiltBuildWorkflow = r'''
+name: Native Prebuilt Build
+on:
+  workflow_call:
+    inputs:
+      runner:
+        required: true
+        type: string
+      build-script:
+        required: true
+        type: string
+      artifact-name:
+        required: true
+        type: string
+jobs:
+  build:
+    runs-on: ${{ inputs.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+      - run: dart pub get
+      - run: ${{ inputs.build-script }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: build/
+''';
+
+const nativePrebuiltReleaseWorkflow = r'''
+name: Native Prebuilt Release
+on:
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Release ${{ inputs.tag }}"
+''';
+
+const nativePrebuiltUpdateManifestWorkflow = r'''
+name: Native Prebuilt Update Manifest
+on:
+  workflow_call:
+    inputs:
+      config:
+        required: true
+        type: string
+jobs:
+  update-manifest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: dart run native_prebuilt manifest update --config ${{ inputs.config }} --output lib/src/hook/asset_hashes.dart
+''';

@@ -1,0 +1,10 @@
+/// Build-hook integration for packages that ship prebuilt native libraries.
+///
+/// Import this library in your `hook/build.dart` to use
+/// [PrebuiltCodeAssetBuilder] and [CallbackBuilder].
+library native_prebuilt.hooks;
+
+export 'package:native_prebuilt/native_prebuilt.dart';
+
+export 'src/builder/prebuilt_code_asset_builder.dart';
+export 'src/builder/callback_builder.dart';

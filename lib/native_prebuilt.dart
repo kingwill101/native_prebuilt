@@ -1,0 +1,27 @@
+/// Reusable infrastructure for Dart packages that ship prebuilt native
+/// libraries from GitHub Releases.
+///
+/// This library provides the core models, download pipeline, cache management,
+/// and binary inspection utilities. For build-hook integration, see
+/// [package:native_prebuilt/hooks.dart].
+library native_prebuilt;
+
+export 'package:code_assets/code_assets.dart' show Architecture, IOSSdk, OS;
+
+export 'src/manifest/prebuilt_manifest.dart';
+export 'src/manifest/prebuilt_artifact.dart';
+export 'src/manifest/release_source.dart';
+export 'src/platform/native_target.dart';
+export 'src/platform/target_resolver.dart';
+export 'src/binary/binary_inspector.dart';
+export 'src/binary/library_name.dart';
+export 'src/download/http_downloader.dart';
+export 'src/download/retry_policy.dart';
+export 'src/archive/archive_reader.dart';
+export 'src/archive/archive_entry.dart';
+export 'src/cache/artifact_cache.dart';
+export 'src/cache/artifact_installer.dart';
+export 'src/cache/cache_lock.dart';
+export 'src/cache/atomic_file.dart';
+export 'src/resolution/prebuilt_resolver.dart';
+export 'src/resolution/resolution_result.dart';

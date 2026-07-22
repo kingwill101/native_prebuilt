@@ -1,0 +1,19 @@
+name: native_prebuilt_example
+description: Full example showing native_prebuilt + hooks + release metadata + native source fallback.
+version: 0.1.0
+
+publish_to: none
+
+environment:
+  sdk: ^3.10.4
+
+dependencies:
+  code_assets: ^1.2.1
+  ffi: ^2.2.0
+  hooks: ^2.1.0
+  native_prebuilt:
+    path: ..
+  native_toolchain_c: ^0.19.3
+
+dev_dependencies:
+  test: ^1.25.8
