@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.5
+
+- Generate GitLab manifest updates from built libraries before the release job runs.
+- Package built native libraries locally during manifest generation.
+- Keep GitLab release/update jobs tag-scoped so branch pipelines stay green.
+
 ## 0.0.4
 
 - Fix GitLab CI templates to upload the native asset output directory instead of a missing `build/` folder.

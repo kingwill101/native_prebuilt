@@ -62,6 +62,10 @@ class _ManifestUpdateCommand extends Command<void> {
     argParser.addOption('config', abbr: 'c', help: 'Path to YAML config file.');
     argParser.addOption('output', abbr: 'o', help: 'Output Dart file.');
     argParser.addOption('tag', help: 'Override the release tag.');
+    argParser.addOption(
+      'built-library-dir',
+      help: 'Path to built native libraries to package before release.',
+    );
     argParser.addFlag('allow-missing', help: 'Allow missing artifacts.');
   }
 
@@ -76,11 +80,16 @@ class _ManifestUpdateCommand extends Command<void> {
     final config = NativePrebuiltConfig.loadFile(configPath);
     final tag = (option('tag') as String?) ?? config.release.tag;
     final allowMissing = (option('allow-missing') as bool?) ?? false;
+    final builtLibraryDirPath = option('built-library-dir') as String?;
+    final builtLibraryDir = builtLibraryDirPath == null
+        ? null
+        : Directory(builtLibraryDirPath);
 
     final manifest = await _generateManifest(
       config: config,
       tag: tag,
       allowMissing: allowMissing,
+      builtLibraryDir: builtLibraryDir,
     );
 
     final content = _renderManifest(config, manifest, tag);
@@ -100,6 +109,10 @@ class _ManifestVerifyCommand extends Command<void> {
     argParser.addOption('config', abbr: 'c', help: 'Path to YAML config file.');
     argParser.addOption('output', abbr: 'o', help: 'Output Dart file.');
     argParser.addOption('tag', help: 'Override the release tag.');
+    argParser.addOption(
+      'built-library-dir',
+      help: 'Path to built native libraries to package before release.',
+    );
     argParser.addFlag('allow-missing', help: 'Allow missing artifacts.');
   }
 
@@ -114,11 +127,16 @@ class _ManifestVerifyCommand extends Command<void> {
     final config = NativePrebuiltConfig.loadFile(configPath);
     final tag = (option('tag') as String?) ?? config.release.tag;
     final allowMissing = (option('allow-missing') as bool?) ?? false;
+    final builtLibraryDirPath = option('built-library-dir') as String?;
+    final builtLibraryDir = builtLibraryDirPath == null
+        ? null
+        : Directory(builtLibraryDirPath);
 
     final manifest = await _generateManifest(
       config: config,
       tag: tag,
       allowMissing: allowMissing,
+      builtLibraryDir: builtLibraryDir,
     );
 
     final expected = _renderManifest(config, manifest, tag);
@@ -280,6 +298,7 @@ Future<PrebuiltManifest> _generateManifest({
   required NativePrebuiltConfig config,
   required String tag,
   required bool allowMissing,
+  Directory? builtLibraryDir,
 }) async {
   final downloader = HttpDownloader();
   final archiveReader = ArchiveReader();
@@ -303,15 +322,32 @@ Future<PrebuiltManifest> _generateManifest({
       final archiveFile = File(
         p.join(tempDir.path, artifactConfig.archiveName),
       );
-      try {
-        await downloader.downloadReleaseArtifact(
-          source: config.release.withTag(tag),
-          archiveName: artifactConfig.archiveName,
-          targetPath: archiveFile,
+      if (builtLibraryDir != null) {
+        final builtFile = File(
+          p.join(builtLibraryDir.path, canonicalName),
         );
-      } catch (e) {
-        if (allowMissing) continue;
-        rethrow;
+        if (!builtFile.existsSync()) {
+          if (allowMissing) continue;
+          throw StateError(
+            'Missing built library for $platform: ${builtFile.path}',
+          );
+        }
+        await _packageBuiltLibrary(
+          builtLibraryDir: builtLibraryDir,
+          canonicalName: canonicalName,
+          archiveFile: archiveFile,
+        );
+      } else {
+        try {
+          await downloader.downloadReleaseArtifact(
+            source: config.release.withTag(tag),
+            archiveName: artifactConfig.archiveName,
+            targetPath: archiveFile,
+          );
+        } catch (e) {
+          if (allowMissing) continue;
+          rethrow;
+        }
       }
 
       final archiveHash = await ArchiveReader.sha256Hash(archiveFile);
@@ -347,6 +383,23 @@ Future<PrebuiltManifest> _generateManifest({
     );
   } finally {
     tempDir.deleteSync(recursive: true);
+  }
+}
+
+Future<void> _packageBuiltLibrary({
+  required Directory builtLibraryDir,
+  required String canonicalName,
+  required File archiveFile,
+}) async {
+  final result = await Process.run('tar', [
+    'czf',
+    archiveFile.path,
+    '-C',
+    builtLibraryDir.path,
+    canonicalName,
+  ]);
+  if (result.exitCode != 0) {
+    throw StateError('tar create failed: ${result.stderr}');
   }
 }
 
@@ -496,8 +549,8 @@ default:
 
 stages:
   - build
-  - release
   - update
+  - release
 
 variables:
   PUB_CACHE: "$CI_PROJECT_DIR/.pub-cache"
@@ -534,6 +587,9 @@ const gitlabNativePrebuiltRelease = r'''
 native_prebuilt:release:
   stage: release
   image: alpine:3.20
+  needs:
+    - job: native_prebuilt:update_manifest
+      artifacts: true
   rules:
     - if: '$CI_COMMIT_TAG'
   script:
@@ -543,9 +599,16 @@ native_prebuilt:release:
 const gitlabNativePrebuiltUpdateManifest = r'''
 native_prebuilt:update_manifest:
   stage: update
+  needs:
+    - job: native_prebuilt:build
+      artifacts: true
   rules:
     - if: '$CI_COMMIT_TAG'
   script:
     - dart pub get
-    - dart run native_prebuilt manifest update --config "$CONFIG" --output "$MANIFEST_OUTPUT" --tag "$TAG"
+    - dart run native_prebuilt manifest update --config "$CONFIG" --output "$MANIFEST_OUTPUT" --built-library-dir .dart_tool/lib --tag "$TAG"
+  artifacts:
+    when: always
+    paths:
+      - "$MANIFEST_OUTPUT"
 ''';

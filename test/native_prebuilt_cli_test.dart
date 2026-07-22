@@ -99,7 +99,11 @@ artifacts:
     );
     expect(
       templates['.gitlab/ci/native-prebuilt-update-manifest.yml'],
-      contains('dart run native_prebuilt manifest update'),
+      contains('--built-library-dir .dart_tool/lib'),
+    );
+    expect(
+      templates['.gitlab/ci/native-prebuilt-release.yml'],
+      contains('needs:'),
     );
   });
 }
