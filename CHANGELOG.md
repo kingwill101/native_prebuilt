@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.4
+
+- Fix GitLab CI templates to upload the native asset output directory instead of a missing `build/` folder.
+- Keep GitLab release/update jobs tag-scoped so branch pipelines stay green.
+
 ## 0.0.3
 
 - Fix GitLab CI templates to use a valid Dart Docker-based workflow.

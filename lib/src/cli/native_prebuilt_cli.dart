@@ -527,13 +527,15 @@ native_prebuilt:build:
   artifacts:
     when: always
     paths:
-      - build/
+      - .dart_tool/lib/
 ''';
 
 const gitlabNativePrebuiltRelease = r'''
 native_prebuilt:release:
   stage: release
   image: alpine:3.20
+  rules:
+    - if: '$CI_COMMIT_TAG'
   script:
     - echo "Release $TAG"
 ''';
@@ -541,6 +543,8 @@ native_prebuilt:release:
 const gitlabNativePrebuiltUpdateManifest = r'''
 native_prebuilt:update_manifest:
   stage: update
+  rules:
+    - if: '$CI_COMMIT_TAG'
   script:
     - dart pub get
     - dart run native_prebuilt manifest update --config "$CONFIG" --output "$MANIFEST_OUTPUT" --tag "$TAG"
