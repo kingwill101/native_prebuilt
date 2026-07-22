@@ -76,8 +76,16 @@ dart run native_prebuilt fetch --config native_prebuilt.yaml --platform linux-x6
 
 ## Workflow templates
 
+GitHub Actions:
+
 ```bash
 dart run native_prebuilt workflow init
+```
+
+GitLab CI:
+
+```bash
+dart run native_prebuilt workflow init --gitlab
 ```
 
 ## Notes

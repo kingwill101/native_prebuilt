@@ -249,6 +249,7 @@ class WorkflowInitCommand extends Command<void> {
   WorkflowInitCommand() {
     argParser.addOption('output', abbr: 'o', help: 'Output directory.');
     argParser.addFlag('force', help: 'Overwrite existing files.');
+    argParser.addFlag('gitlab', help: 'Write GitLab CI YAML templates.');
   }
 
   @override
@@ -259,12 +260,15 @@ class WorkflowInitCommand extends Command<void> {
 
   @override
   Future<void> run() async {
-    final output = option('output') as String? ?? '.github/workflows';
+    final gitlab = (option('gitlab') as bool?) ?? false;
+    final output = option('output') as String? ??
+        (gitlab ? '.' : '.github/workflows');
     final force = (option('force') as bool?) ?? false;
     final dir = Directory(output)..createSync(recursive: true);
-    final templates = workflowTemplates();
+    final templates = gitlab ? gitlabWorkflowTemplates() : workflowTemplates();
     for (final entry in templates.entries) {
       final file = File(p.join(dir.path, entry.key));
+      file.parent.createSync(recursive: true);
       if (file.existsSync() && !force) continue;
       file.writeAsStringSync(entry.value);
       io.info('Wrote ${file.path}');
@@ -418,6 +422,14 @@ Map<String, String> workflowTemplates() => {
   'native-prebuilt-update-manifest.yml': nativePrebuiltUpdateManifestWorkflow,
 };
 
+Map<String, String> gitlabWorkflowTemplates() => {
+  '.gitlab-ci.yml': gitlabRootPipeline,
+  '.gitlab/ci/native-prebuilt-build.yml': gitlabNativePrebuiltBuild,
+  '.gitlab/ci/native-prebuilt-release.yml': gitlabNativePrebuiltRelease,
+  '.gitlab/ci/native-prebuilt-update-manifest.yml':
+      gitlabNativePrebuiltUpdateManifest,
+};
+
 const nativePrebuiltBuildWorkflow = r'''
 name: Native Prebuilt Build
 on:
@@ -476,4 +488,46 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: dart run native_prebuilt manifest update --config ${{ inputs.config }} --output lib/src/hook/asset_hashes.dart
+''';
+
+const gitlabRootPipeline = r'''
+stages:
+  - build
+  - release
+  - update
+
+include:
+  - local: '.gitlab/ci/native-prebuilt-build.yml'
+  - local: '.gitlab/ci/native-prebuilt-release.yml'
+  - local: '.gitlab/ci/native-prebuilt-update-manifest.yml'
+''';
+
+const gitlabNativePrebuiltBuild = r'''
+.native_prebuilt_build:
+  stage: build
+  image: dart:stable
+  script:
+    - dart pub get
+    - "$BUILD_SCRIPT"
+  artifacts:
+    when: always
+    paths:
+      - build/
+''';
+
+const gitlabNativePrebuiltRelease = r'''
+native_prebuilt:release:
+  stage: release
+  image: alpine:3.20
+  script:
+    - echo "Release $TAG"
+''';
+
+const gitlabNativePrebuiltUpdateManifest = r'''
+native_prebuilt:update_manifest:
+  stage: update
+  image: dart:stable
+  script:
+    - dart pub get
+    - dart run native_prebuilt manifest update --config "$CONFIG" --output lib/src/hook/asset_hashes.dart
 ''';

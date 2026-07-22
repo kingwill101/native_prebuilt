@@ -78,4 +78,15 @@ artifacts:
     expect(templates.keys, contains('native-prebuilt-release.yml'));
     expect(templates.keys, contains('native-prebuilt-update-manifest.yml'));
   });
+
+  test('gitlab workflow templates include expected files', () {
+    final templates = gitlabWorkflowTemplates();
+    expect(templates.keys, contains('.gitlab-ci.yml'));
+    expect(templates.keys, contains('.gitlab/ci/native-prebuilt-build.yml'));
+    expect(templates.keys, contains('.gitlab/ci/native-prebuilt-release.yml'));
+    expect(
+      templates.keys,
+      contains('.gitlab/ci/native-prebuilt-update-manifest.yml'),
+    );
+  });
 }
