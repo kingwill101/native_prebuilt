@@ -16,7 +16,7 @@ Reusable infrastructure for Dart packages that ship prebuilt native libraries fr
 
 ```yaml
 dependencies:
-  native_prebuilt: ^0.0.1
+  native_prebuilt: ^0.0.3
 ```
 
 ## Hook usage
@@ -82,7 +82,7 @@ GitHub Actions:
 dart run native_prebuilt workflow init
 ```
 
-GitLab CI:
+GitLab CI (Dart Docker image + `dart test` / native toolchain bootstrap):
 
 ```bash
 dart run native_prebuilt workflow init --gitlab

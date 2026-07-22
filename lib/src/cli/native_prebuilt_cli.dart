@@ -491,10 +491,24 @@ jobs:
 ''';
 
 const gitlabRootPipeline = r'''
+default:
+  image: dart:stable
+
 stages:
   - build
   - release
   - update
+
+variables:
+  PUB_CACHE: "$CI_PROJECT_DIR/.pub-cache"
+  BUILD_COMMAND: "dart test"
+  CONFIG: "native_prebuilt.yaml"
+  MANIFEST_OUTPUT: "lib/src/hook/asset_hashes.dart"
+  TAG: "$CI_COMMIT_TAG"
+
+cache:
+  paths:
+    - .pub-cache/
 
 include:
   - local: '.gitlab/ci/native-prebuilt-build.yml'
@@ -503,12 +517,13 @@ include:
 ''';
 
 const gitlabNativePrebuiltBuild = r'''
-.native_prebuilt_build:
+native_prebuilt:build:
   stage: build
-  image: dart:stable
   script:
+    - apt-get update
+    - apt-get install -y --no-install-recommends build-essential clang pkg-config cmake ninja-build libclang-dev
     - dart pub get
-    - "$BUILD_SCRIPT"
+    - "$BUILD_COMMAND"
   artifacts:
     when: always
     paths:
@@ -526,8 +541,7 @@ native_prebuilt:release:
 const gitlabNativePrebuiltUpdateManifest = r'''
 native_prebuilt:update_manifest:
   stage: update
-  image: dart:stable
   script:
     - dart pub get
-    - dart run native_prebuilt manifest update --config "$CONFIG" --output lib/src/hook/asset_hashes.dart
+    - dart run native_prebuilt manifest update --config "$CONFIG" --output "$MANIFEST_OUTPUT" --tag "$TAG"
 ''';

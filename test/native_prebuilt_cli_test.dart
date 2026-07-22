@@ -88,5 +88,18 @@ artifacts:
       templates.keys,
       contains('.gitlab/ci/native-prebuilt-update-manifest.yml'),
     );
+    expect(templates['.gitlab-ci.yml'], contains('image: dart:stable'));
+    expect(
+      templates['.gitlab/ci/native-prebuilt-build.yml'],
+      contains('apt-get install -y --no-install-recommends build-essential'),
+    );
+    expect(
+      templates['.gitlab/ci/native-prebuilt-build.yml'],
+      contains(r'"$BUILD_COMMAND"'),
+    );
+    expect(
+      templates['.gitlab/ci/native-prebuilt-update-manifest.yml'],
+      contains('dart run native_prebuilt manifest update'),
+    );
   });
 }
