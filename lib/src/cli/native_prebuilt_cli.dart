@@ -477,7 +477,15 @@ Map<String, String> workflowTemplates() => {
 
 Map<String, String> gitlabWorkflowTemplates() => {
   '.gitlab-ci.yml': gitlabRootPipeline,
-  '.gitlab/ci/native-prebuilt-build.yml': gitlabNativePrebuiltBuild,
+  '.gitlab/ci/native-prebuilt-build-linux.yml':
+      gitlabNativePrebuiltBuildLinux,
+  '.gitlab/ci/native-prebuilt-build-macos.yml':
+      gitlabNativePrebuiltBuildMacos,
+  '.gitlab/ci/native-prebuilt-build-windows.yml':
+      gitlabNativePrebuiltBuildWindows,
+  '.gitlab/ci/native-prebuilt-build-android.yml':
+      gitlabNativePrebuiltBuildAndroid,
+  '.gitlab/ci/native-prebuilt-build-ios.yml': gitlabNativePrebuiltBuildIos,
   '.gitlab/ci/native-prebuilt-release.yml': gitlabNativePrebuiltRelease,
   '.gitlab/ci/native-prebuilt-update-manifest.yml':
       gitlabNativePrebuiltUpdateManifest,
@@ -558,23 +566,94 @@ variables:
   CONFIG: "native_prebuilt.yaml"
   MANIFEST_OUTPUT: "lib/src/hook/asset_hashes.dart"
   TAG: "$CI_COMMIT_TAG"
+  ENABLE_ALL_PLATFORMS: "false"
 
 cache:
   paths:
     - .pub-cache/
 
 include:
-  - local: '.gitlab/ci/native-prebuilt-build.yml'
+  - local: '.gitlab/ci/native-prebuilt-build-linux.yml'
+  - local: '.gitlab/ci/native-prebuilt-build-macos.yml'
+  - local: '.gitlab/ci/native-prebuilt-build-windows.yml'
+  - local: '.gitlab/ci/native-prebuilt-build-android.yml'
+  - local: '.gitlab/ci/native-prebuilt-build-ios.yml'
   - local: '.gitlab/ci/native-prebuilt-release.yml'
   - local: '.gitlab/ci/native-prebuilt-update-manifest.yml'
 ''';
 
-const gitlabNativePrebuiltBuild = r'''
-native_prebuilt:build:
+const gitlabNativePrebuiltBuildLinux = r'''
+native_prebuilt:build:linux:
   stage: build
+  image: dart:stable
+  rules:
+    - if: '$CI_COMMIT_TAG'
   script:
     - apt-get update
     - apt-get install -y --no-install-recommends build-essential clang pkg-config cmake ninja-build libclang-dev
+    - dart pub get
+    - "$BUILD_COMMAND"
+  artifacts:
+    when: always
+    paths:
+      - .dart_tool/lib/
+''';
+
+const gitlabNativePrebuiltBuildMacos = r'''
+native_prebuilt:build:macos:
+  stage: build
+  tags:
+    - macos
+  rules:
+    - if: '$CI_COMMIT_TAG && $ENABLE_ALL_PLATFORMS == "true"'
+  script:
+    - dart pub get
+    - "$BUILD_COMMAND"
+  artifacts:
+    when: always
+    paths:
+      - .dart_tool/lib/
+''';
+
+const gitlabNativePrebuiltBuildWindows = r'''
+native_prebuilt:build:windows:
+  stage: build
+  tags:
+    - windows
+  rules:
+    - if: '$CI_COMMIT_TAG && $ENABLE_ALL_PLATFORMS == "true"'
+  script:
+    - dart pub get
+    - "$BUILD_COMMAND"
+  artifacts:
+    when: always
+    paths:
+      - .dart_tool/lib/
+''';
+
+const gitlabNativePrebuiltBuildAndroid = r'''
+native_prebuilt:build:android:
+  stage: build
+  image: ghcr.io/cirruslabs/flutter:stable
+  rules:
+    - if: '$CI_COMMIT_TAG && $ENABLE_ALL_PLATFORMS == "true"'
+  script:
+    - dart pub get
+    - "$BUILD_COMMAND"
+  artifacts:
+    when: always
+    paths:
+      - .dart_tool/lib/
+''';
+
+const gitlabNativePrebuiltBuildIos = r'''
+native_prebuilt:build:ios:
+  stage: build
+  tags:
+    - macos
+  rules:
+    - if: '$CI_COMMIT_TAG && $ENABLE_ALL_PLATFORMS == "true"'
+  script:
     - dart pub get
     - "$BUILD_COMMAND"
   artifacts:
@@ -600,8 +679,20 @@ const gitlabNativePrebuiltUpdateManifest = r'''
 native_prebuilt:update_manifest:
   stage: update
   needs:
-    - job: native_prebuilt:build
+    - job: native_prebuilt:build:linux
       artifacts: true
+    - job: native_prebuilt:build:macos
+      artifacts: true
+      optional: true
+    - job: native_prebuilt:build:windows
+      artifacts: true
+      optional: true
+    - job: native_prebuilt:build:android
+      artifacts: true
+      optional: true
+    - job: native_prebuilt:build:ios
+      artifacts: true
+      optional: true
   rules:
     - if: '$CI_COMMIT_TAG'
   script:

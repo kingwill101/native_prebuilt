@@ -82,20 +82,40 @@ artifacts:
   test('gitlab workflow templates include expected files', () {
     final templates = gitlabWorkflowTemplates();
     expect(templates.keys, contains('.gitlab-ci.yml'));
-    expect(templates.keys, contains('.gitlab/ci/native-prebuilt-build.yml'));
+    expect(
+      templates.keys,
+      contains('.gitlab/ci/native-prebuilt-build-linux.yml'),
+    );
+    expect(
+      templates.keys,
+      contains('.gitlab/ci/native-prebuilt-build-macos.yml'),
+    );
+    expect(
+      templates.keys,
+      contains('.gitlab/ci/native-prebuilt-build-windows.yml'),
+    );
+    expect(
+      templates.keys,
+      contains('.gitlab/ci/native-prebuilt-build-android.yml'),
+    );
+    expect(
+      templates.keys,
+      contains('.gitlab/ci/native-prebuilt-build-ios.yml'),
+    );
     expect(templates.keys, contains('.gitlab/ci/native-prebuilt-release.yml'));
     expect(
       templates.keys,
       contains('.gitlab/ci/native-prebuilt-update-manifest.yml'),
     );
-    expect(templates['.gitlab-ci.yml'], contains('image: dart:stable'));
+    expect(templates['.gitlab-ci.yml'], contains('ENABLE_ALL_PLATFORMS'));
+    expect(templates['.gitlab-ci.yml'], contains('native-prebuilt-build-ios.yml'));
     expect(
-      templates['.gitlab/ci/native-prebuilt-build.yml'],
+      templates['.gitlab/ci/native-prebuilt-build-linux.yml'],
       contains('apt-get install -y --no-install-recommends build-essential'),
     );
     expect(
-      templates['.gitlab/ci/native-prebuilt-build.yml'],
-      contains(r'"$BUILD_COMMAND"'),
+      templates['.gitlab/ci/native-prebuilt-build-android.yml'],
+      contains('ghcr.io/cirruslabs/flutter:stable'),
     );
     expect(
       templates['.gitlab/ci/native-prebuilt-update-manifest.yml'],

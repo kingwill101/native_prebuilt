@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.6
+
+- Add scaffolded GitLab build templates for macOS, Windows, Android, and iOS.
+- Keep GitLab multi-platform jobs opt-in while Linux remains the default validation path.
+- Preserve manifest-before-release generation from built libraries.
+
 ## 0.0.5
 
 - Generate GitLab manifest updates from built libraries before the release job runs.
