@@ -136,6 +136,9 @@ artifacts:
     expect(templates['prebuilt.yml'], contains('actions/download-artifact@v4'));
     expect(templates['prebuilt.yml'], contains('Merge built libraries'));
     expect(templates['prebuilt.yml'], contains('downloaded/windows/'));
+    expect(templates['prebuilt.yml'], contains('release-assets'));
+    expect(templates['prebuilt.yml'], contains('softprops/action-gh-release@v2'));
+    expect(templates['prebuilt.yml'], contains('Publish GitHub release assets'));
   });
 
   test('gitlab workflow templates include expected files', () {

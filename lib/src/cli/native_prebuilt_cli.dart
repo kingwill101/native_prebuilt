@@ -66,6 +66,10 @@ class _ManifestUpdateCommand extends Command<void> {
       'built-library-dir',
       help: 'Path to built native libraries to package before release.',
     );
+    argParser.addOption(
+      'release-assets-dir',
+      help: 'Optional output directory for release asset archives.',
+    );
     argParser.addFlag('allow-missing', help: 'Allow missing artifacts.');
   }
 
@@ -84,12 +88,17 @@ class _ManifestUpdateCommand extends Command<void> {
     final builtLibraryDir = builtLibraryDirPath == null
         ? null
         : Directory(builtLibraryDirPath);
+    final releaseAssetsDirPath = option('release-assets-dir') as String?;
+    final releaseAssetsDir = releaseAssetsDirPath == null
+        ? null
+        : Directory(releaseAssetsDirPath);
 
     final manifest = await _generateManifest(
       config: config,
       tag: tag,
       allowMissing: allowMissing,
       builtLibraryDir: builtLibraryDir,
+      releaseAssetsDir: releaseAssetsDir,
     );
 
     final content = _renderManifest(config, manifest, tag);
@@ -113,6 +122,10 @@ class _ManifestVerifyCommand extends Command<void> {
       'built-library-dir',
       help: 'Path to built native libraries to package before release.',
     );
+    argParser.addOption(
+      'release-assets-dir',
+      help: 'Optional output directory for release asset archives.',
+    );
     argParser.addFlag('allow-missing', help: 'Allow missing artifacts.');
   }
 
@@ -131,12 +144,17 @@ class _ManifestVerifyCommand extends Command<void> {
     final builtLibraryDir = builtLibraryDirPath == null
         ? null
         : Directory(builtLibraryDirPath);
+    final releaseAssetsDirPath = option('release-assets-dir') as String?;
+    final releaseAssetsDir = releaseAssetsDirPath == null
+        ? null
+        : Directory(releaseAssetsDirPath);
 
     final manifest = await _generateManifest(
       config: config,
       tag: tag,
       allowMissing: allowMissing,
       builtLibraryDir: builtLibraryDir,
+      releaseAssetsDir: releaseAssetsDir,
     );
 
     final expected = _renderManifest(config, manifest, tag);
@@ -317,12 +335,16 @@ Future<PrebuiltManifest> _generateManifest({
   required String tag,
   required bool allowMissing,
   Directory? builtLibraryDir,
+  Directory? releaseAssetsDir,
 }) async {
   final downloader = HttpDownloader();
   final archiveReader = ArchiveReader();
   final tempDir = await Directory.systemTemp.createTemp(
     'native_prebuilt_manifest_',
   );
+  if (releaseAssetsDir != null) {
+    releaseAssetsDir.createSync(recursive: true);
+  }
   try {
     final payloadHashes = <String, String>{};
     final artifacts = <String, PrebuiltArtifact>{};
@@ -338,7 +360,10 @@ Future<PrebuiltManifest> _generateManifest({
       );
 
       final archiveFile = File(
-        p.join(tempDir.path, artifactConfig.archiveName),
+        p.join(
+          (releaseAssetsDir ?? tempDir).path,
+          artifactConfig.archiveName,
+        ),
       );
       if (builtLibraryDir != null) {
         final builtFile = File(
@@ -752,24 +777,56 @@ jobs:
           path: downloaded/macos/
       - name: Merge built libraries
         run: |
-          rm -rf built-library
-          mkdir -p built-library
+          rm -rf built-library release-assets
+          mkdir -p built-library release-assets
           cp -R downloaded/linux/. built-library/
           cp -R downloaded/windows/. built-library/
           cp -R downloaded/macos/. built-library/
       - run: dart pub get
-      - name: Generate manifest
+      - name: Generate manifest and release assets
         run: |
           TAG="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}"
           dart run native_prebuilt manifest update \
             --config "$CONFIG" \
             --output "$MANIFEST_OUTPUT" \
             --built-library-dir built-library \
+            --release-assets-dir release-assets \
             --tag "$TAG"
       - uses: actions/upload-artifact@v4
         with:
           name: generated-manifest
           path: ${{ env.MANIFEST_OUTPUT }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: release-assets/
+          if-no-files-found: error
+
+  release:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+    needs:
+      - update-manifest
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-assets
+          path: release-assets/
+      - uses: actions/download-artifact@v4
+        with:
+          name: generated-manifest
+          path: generated-manifest/
+      - name: Publish GitHub release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
+          fail_on_unmatched_files: true
+          files: |
+            release-assets/*
+            generated-manifest/*
 ''';
 
 const nativePrebuiltBuildWorkflow = r'''
@@ -828,12 +885,16 @@ on:
         required: false
         type: string
         default: built-library
+      release-assets-dir:
+        required: false
+        type: string
+        default: release-assets
 jobs:
   update-manifest:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: dart run native_prebuilt manifest update --config ${{ inputs.config }} --output lib/src/hook/asset_hashes.dart --built-library-dir ${{ inputs.built-library-dir }}
+      - run: dart run native_prebuilt manifest update --config ${{ inputs.config }} --output lib/src/hook/asset_hashes.dart --built-library-dir ${{ inputs.built-library-dir }} --release-assets-dir ${{ inputs.release-assets-dir }}
 ''';
 
 const gitlabRootPipeline = r'''

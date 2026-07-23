@@ -16,7 +16,7 @@ Reusable infrastructure for Dart packages that ship prebuilt native libraries fr
 
 ```yaml
 dependencies:
-  native_prebuilt: ^0.0.8
+  native_prebuilt: ^0.0.9
 ```
 
 ## Hook usage
@@ -88,7 +88,7 @@ GitHub Actions:
 dart run native_prebuilt workflow init
 ```
 
-This now also writes a repo-level `prebuilt.yml` workflow alongside the reusable workflow templates.
+This now also writes a repo-level `prebuilt.yml` workflow alongside the reusable workflow templates, and tag runs publish GitHub release assets.
 
 GitLab CI (defaults to the platforms declared in `native_prebuilt.yaml`):
 

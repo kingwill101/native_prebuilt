@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.9
+
+- Generate and upload release asset archives alongside the manifest.
+- Publish the repo-level GitHub release assets from the generated workflow.
+- Allow `manifest update` to write release archives into a dedicated directory.
+
 ## 0.0.8
 
 - Make the generated `prebuilt.yml` download and merge all desktop built libraries before manifest generation.
