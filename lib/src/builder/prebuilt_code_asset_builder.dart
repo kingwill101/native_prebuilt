@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:code_assets/code_assets.dart';
 import 'package:hooks/hooks.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 
 import '../binary/library_name.dart';
 import '../manifest/prebuilt_artifact.dart';
@@ -10,6 +11,7 @@ import '../manifest/prebuilt_manifest.dart';
 import '../platform/target_resolver.dart';
 import '../resolution/prebuilt_resolver.dart';
 import '../resolution/resolution_result.dart';
+import '../source/source_fallback.dart';
 
 /// A declarative [Builder] that resolves prebuilt native libraries from
 /// GitHub Releases.
@@ -20,7 +22,8 @@ import '../resolution/resolution_result.dart';
 /// 1. User-defined override via `hooks.user_defines`
 /// 2. Local `.prebuilt/` directory
 /// 3. Shared cache (download from release)
-/// 4. Fallback to source [Builder] (e.g. `RustBuilder`, `CallbackBuilder`)
+/// 4. Source fallback (local/git/archive → prepare → build)
+/// 5. Fallback to source [Builder] (e.g. `RustBuilder`, `CallbackBuilder`)
 ///
 /// Example usage in `hook/build.dart`:
 ///
@@ -50,6 +53,7 @@ final class PrebuiltCodeAssetBuilder implements Builder {
     required this.manifest,
     required this.linkModeResolver,
     this.fallback,
+    this.sourceFallback,
     this.localDirectoryName = '.prebuilt',
     this.resolvers,
   });
@@ -70,11 +74,19 @@ final class PrebuiltCodeAssetBuilder implements Builder {
   /// Returns the [LinkMode] to use for the current build configuration.
   final LinkMode Function(CodeConfig code) linkModeResolver;
 
-  /// Optional fallback [Builder] invoked if no prebuilt is found.
+  /// Optional fallback [Builder] invoked if no prebuilt is found
+  /// and no [sourceFallback] is configured.
   ///
   /// This could be `RustBuilder`, `CallbackBuilder`, or any other
   /// [Builder] implementation.
   final Builder? fallback;
+
+  /// Optional source-based fallback when no prebuilt is available.
+  ///
+  /// When configured, this runs before [fallback]. It resolves source
+  /// from local, archive, or git sources, applies preparation steps,
+  /// and builds using the configured [SourceBuilder].
+  final SourceFallback? sourceFallback;
 
   /// Directory name for local prebuilt overrides.
   ///
@@ -146,15 +158,45 @@ final class PrebuiltCodeAssetBuilder implements Builder {
       return;
     }
 
-    // Fall through to fallback builder.
-    _info(
-      'No prebuilt available for ${target.label}, '
-      'falling back to source build.',
-    );
+    // Fall through to source fallback.
+    if (sourceFallback != null) {
+      _info(
+        'No prebuilt available for ${target.label}, '
+        'attempting source fallback.',
+      );
 
+      try {
+        final sourceResult = await SourceFallbackResolver().resolve(
+          fallback: sourceFallback!,
+          packageRoot: Directory.fromUri(input.packageRoot),
+          sourceCacheRoot: Directory(
+            p.join(input.outputDirectoryShared.toFilePath(), 'native_prebuilt', 'sources'),
+          ),
+          input: input,
+          output: output,
+          logger: logger,
+        );
+
+        if (sourceResult != null) {
+          _info(
+            'Source build completed for ${target.label} '
+            '(from ${sourceResult.source.origin.label})',
+          );
+          return;
+        }
+      } catch (e) {
+        _warn('Source fallback failed: $e');
+      }
+    }
+
+    // Fall through to legacy fallback builder.
     if (fallback != null) {
+      _info(
+        'No prebuilt available for ${target.label}, '
+        'falling back to source build.',
+      );
       await fallback!.run(input: input, output: output, logger: logger);
-    } else {
+    } else if (sourceFallback == null) {
       _warn(
         'No fallback builder configured. '
         'Unable to provide $libraryStem for ${target.label}.',

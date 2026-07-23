@@ -8,3 +8,4 @@ export 'package:native_prebuilt/native_prebuilt.dart';
 
 export 'src/builder/prebuilt_code_asset_builder.dart';
 export 'src/builder/callback_builder.dart';
+export 'src/source/source.dart';
