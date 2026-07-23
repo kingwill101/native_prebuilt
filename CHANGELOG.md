@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.13
+
+- Generate platform-filtered GitHub `prebuilt.yml` from manifest artifact labels.
+- Stop publishing the generated manifest file as a GitHub release asset.
+
 ## 0.0.12
 
 - Stop publishing the generated manifest file as a GitHub release asset.
