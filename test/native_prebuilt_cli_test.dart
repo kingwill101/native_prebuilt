@@ -187,12 +187,36 @@ artifacts:
       contains('ghcr.io/cirruslabs/flutter:stable'),
     );
     expect(
+      templates['.gitlab-ci.yml'],
+      contains('RELEASE_ASSETS_DIR'),
+    );
+    expect(
       templates['.gitlab/ci/native-prebuilt-update-manifest.yml'],
       contains('--built-library-dir "\$BUILT_LIBRARY_DIR"'),
     );
     expect(
+      templates['.gitlab/ci/native-prebuilt-update-manifest.yml'],
+      contains('--release-assets-dir "\$RELEASE_ASSETS_DIR"'),
+    );
+    expect(
+      templates['.gitlab/ci/native-prebuilt-update-manifest.yml'],
+      contains('\$RELEASE_ASSETS_DIR/'),
+    );
+    expect(
       templates['.gitlab/ci/native-prebuilt-release.yml'],
-      contains('needs:'),
+      contains('apk add --no-cache curl'),
+    );
+    expect(
+      templates['.gitlab/ci/native-prebuilt-release.yml'],
+      contains('packages/generic'),
+    );
+    expect(
+      templates['.gitlab/ci/native-prebuilt-release.yml'],
+      contains('direct_asset_path=/release-assets/'),
+    );
+    expect(
+      templates['.gitlab/ci/native-prebuilt-release.yml'],
+      contains('for asset in "\${RELEASE_ASSETS_DIR}"/*'),
     );
   });
 

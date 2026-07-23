@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.10
+
+- Publish GitLab release assets from the generated GitLab pipeline.
+- Upload release archives to the GitLab generic package registry and link them from the release.
+- Generate manifest updates with a dedicated release-assets directory for both GitHub and GitLab workflows.
+
 ## 0.0.9
 
 - Generate and upload release asset archives alongside the manifest.

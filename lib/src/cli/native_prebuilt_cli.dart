@@ -628,6 +628,8 @@ variables:
   CONFIG: "native_prebuilt.yaml"
   MANIFEST_OUTPUT: "lib/src/hook/demo_prebuilts.g.dart"
   BUILT_LIBRARY_DIR: "built-library"
+  RELEASE_ASSETS_DIR: "release-assets"
+  RELEASE_PACKAGE_NAME: "release-assets"
   TAG: "\$CI_COMMIT_TAG"
 
 cache:
@@ -658,11 +660,12 @@ $needs
     - if: '\$CI_COMMIT_TAG'
   script:
     - dart pub get
-    - dart run native_prebuilt manifest update --config "\$CONFIG" --output "\$MANIFEST_OUTPUT" --built-library-dir "\$BUILT_LIBRARY_DIR" --tag "\$TAG"
+    - dart run native_prebuilt manifest update --config "\$CONFIG" --output "\$MANIFEST_OUTPUT" --built-library-dir "\$BUILT_LIBRARY_DIR" --release-assets-dir "\$RELEASE_ASSETS_DIR" --tag "\$TAG"
   artifacts:
     when: always
     paths:
       - "\$MANIFEST_OUTPUT"
+      - "\$RELEASE_ASSETS_DIR/"
 ''';
 }
 
@@ -911,6 +914,9 @@ variables:
   BUILD_COMMAND: "dart test"
   CONFIG: "native_prebuilt.yaml"
   MANIFEST_OUTPUT: "lib/src/hook/asset_hashes.dart"
+  BUILT_LIBRARY_DIR: "built-library"
+  RELEASE_ASSETS_DIR: "release-assets"
+  RELEASE_PACKAGE_NAME: "release-assets"
   TAG: "$CI_COMMIT_TAG"
   ENABLE_ALL_PLATFORMS: "true"
 
@@ -1027,8 +1033,31 @@ native_prebuilt:release:
       artifacts: true
   rules:
     - if: '$CI_COMMIT_TAG'
+  before_script:
+    - apk add --no-cache curl
   script:
-    - echo "Release $TAG"
+    - |
+      RELEASE_API="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/releases"
+      PACKAGE_BASE="${CI_PROJECT_URL}/-/packages/generic/${RELEASE_PACKAGE_NAME}/${TAG}"
+      curl --fail --request POST \
+        --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+        --data-urlencode "name=Release ${TAG}" \
+        --data-urlencode "tag_name=${TAG}" \
+        "${RELEASE_API}" || true
+      for asset in "${RELEASE_ASSETS_DIR}"/*; do
+        filename="$(basename "$asset")"
+        curl --fail --request PUT \
+          --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+          --upload-file "$asset" \
+          "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${RELEASE_PACKAGE_NAME}/${TAG}/${filename}"
+        curl --fail --request POST \
+          --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+          --data-urlencode "name=${filename}" \
+          --data-urlencode "url=${PACKAGE_BASE}/${filename}" \
+          --data-urlencode "direct_asset_path=/release-assets/${filename}" \
+          --data-urlencode "link_type=package" \
+          "${RELEASE_API}/${TAG}/assets/links"
+      done
 ''';
 
 const gitlabNativePrebuiltUpdateManifest = r'''
@@ -1053,9 +1082,10 @@ native_prebuilt:update_manifest:
     - if: '$CI_COMMIT_TAG'
   script:
     - dart pub get
-    - dart run native_prebuilt manifest update --config "$CONFIG" --output "$MANIFEST_OUTPUT" --built-library-dir "$BUILT_LIBRARY_DIR" --tag "$TAG"
+    - dart run native_prebuilt manifest update --config "$CONFIG" --output "$MANIFEST_OUTPUT" --built-library-dir "$BUILT_LIBRARY_DIR" --release-assets-dir "$RELEASE_ASSETS_DIR" --tag "$TAG"
   artifacts:
     when: always
     paths:
       - "$MANIFEST_OUTPUT"
+      - "$RELEASE_ASSETS_DIR/"
 ''';
