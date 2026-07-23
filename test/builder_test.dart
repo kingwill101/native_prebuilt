@@ -61,7 +61,7 @@ void main() {
     }
   });
 
-  test('delegates to fallback builder when no prebuilt is found', () async {
+  test('invokes source fallback when no prebuilt is found', () async {
     final root = await tempPackageRoot('native_prebuilt_builder_fallback');
     try {
       final inputBuilder = BuildInputBuilder()
@@ -97,9 +97,19 @@ void main() {
           artifacts: {},
         ),
         linkModeResolver: (_) => DynamicLoadingBundled(),
-        fallback: CallbackBuilder((input, output) async {
-          called = true;
-        }),
+        sourceFallback: SourceFallback(
+          sources: [LocalSource(paths: ['.'])],
+          builder: CallbackSourceBuilder(
+            callback: ({
+              required source,
+              required input,
+              required output,
+              required logger,
+            }) async {
+              called = true;
+            },
+          ),
+        ),
       ).run(input: input, output: output, logger: Logger('test'));
 
       expect(called, isTrue);

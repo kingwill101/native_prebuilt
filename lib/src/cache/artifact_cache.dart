@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:logging/logging.dart';
+
 import '../manifest/prebuilt_artifact.dart';
 import '../manifest/prebuilt_manifest.dart';
 import '../platform/native_target.dart';
@@ -26,13 +28,16 @@ final class ArtifactCache {
     required NativeTarget target,
     required String libraryStem,
     required ArtifactPayload payload,
+    Logger? logger,
   }) {
+    logger?.info('Checking shared prebuilt cache for ${target.label}.');
     return (installer ?? DefaultArtifactInstaller()).install(
       manifest: manifest,
       target: target,
       libraryStem: libraryStem,
       payload: payload,
       cacheDirectory: cacheDir,
+      logger: logger,
     );
   }
 }

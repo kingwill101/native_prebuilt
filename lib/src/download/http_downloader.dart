@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:logging/logging.dart';
+
 import '../manifest/release_source.dart';
 import 'retry_policy.dart';
 
@@ -44,8 +46,10 @@ final class HttpDownloader {
     required ReleaseSource source,
     required String archiveName,
     required File targetPath,
+    Logger? logger,
   }) {
     final url = source.artifactUrl(archiveName);
+    logger?.info('Downloading release artifact from $url');
     return download(url, targetPath, headers: source.requestHeaders);
   }
 

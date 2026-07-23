@@ -23,7 +23,6 @@ import '../source/source_fallback.dart';
 /// 2. Local `.prebuilt/` directory
 /// 3. Shared cache (download from release)
 /// 4. Source fallback (local/git/archive → prepare → build)
-/// 5. Fallback to source [Builder] (e.g. `RustBuilder`, `CallbackBuilder`)
 ///
 /// Example usage in `hook/build.dart`:
 ///
@@ -39,8 +38,18 @@ import '../source/source_fallback.dart';
 ///       libraryStem: 'my_native_lib',
 ///       manifest: myPrebuilts,
 ///       linkModeResolver: (code) => DynamicLoadingBundled(),
-///       fallback: const RustBuilder(
-///         assetName: 'my_bindings_generated.dart',
+///       sourceFallback: SourceFallback(
+///         sources: [LocalSource(paths: ['.'])],
+///         builder: CallbackSourceBuilder(
+///           callback: ({
+///             required source,
+///             required input,
+///             required output,
+///             required logger,
+///           }) async {
+///             // build from source.directory
+///           },
+///         ),
 ///       ),
 ///     ).run(input: input, output: output, logger: null);
 ///   });
@@ -52,7 +61,6 @@ final class PrebuiltCodeAssetBuilder implements Builder {
     required this.libraryStem,
     required this.manifest,
     required this.linkModeResolver,
-    this.fallback,
     this.sourceFallback,
     this.localDirectoryName = '.prebuilt',
     this.resolvers,
@@ -74,18 +82,11 @@ final class PrebuiltCodeAssetBuilder implements Builder {
   /// Returns the [LinkMode] to use for the current build configuration.
   final LinkMode Function(CodeConfig code) linkModeResolver;
 
-  /// Optional fallback [Builder] invoked if no prebuilt is found
-  /// and no [sourceFallback] is configured.
-  ///
-  /// This could be `RustBuilder`, `CallbackBuilder`, or any other
-  /// [Builder] implementation.
-  final Builder? fallback;
-
   /// Optional source-based fallback when no prebuilt is available.
   ///
-  /// When configured, this runs before [fallback]. It resolves source
-  /// from local, archive, or git sources, applies preparation steps,
-  /// and builds using the configured [SourceBuilder].
+  /// When configured, this resolves source from local, archive, or git
+  /// sources, applies preparation steps, and builds using the configured
+  /// [SourceBuilder].
   final SourceFallback? sourceFallback;
 
   /// Directory name for local prebuilt overrides.
@@ -105,11 +106,20 @@ final class PrebuiltCodeAssetBuilder implements Builder {
     required Logger? logger,
   }) async {
     final code = input.config.code;
-    if (!input.config.buildCodeAssets) return;
+    if (!input.config.buildCodeAssets) {
+      _logInfo(logger, 'Skipping native_prebuilt: buildCodeAssets is disabled.');
+      return;
+    }
 
     final target = targetFromCodeConfig(code);
     final linkMode = linkModeResolver(code);
     final payload = _payloadForLinkMode(linkMode);
+
+    _logInfo(
+      logger,
+      'Resolving prebuilt ${libraryStem} for ${target.label} '
+      '(${payload is DynamicLibraryPayload ? 'dynamic' : 'static'}).',
+    );
 
     final context = PrebuiltResolutionContext(
       input: input,
@@ -118,6 +128,7 @@ final class PrebuiltCodeAssetBuilder implements Builder {
       libraryStem: libraryStem,
       payload: payload,
       localSearchRoot: Directory.fromUri(input.outputDirectory),
+      logger: logger,
     );
 
     final chain = resolvers ?? [
@@ -128,6 +139,7 @@ final class PrebuiltCodeAssetBuilder implements Builder {
 
     ResolvedPrebuilt? result;
     for (final resolver in chain) {
+      _logInfo(logger, 'Trying ${resolver.runtimeType}...');
       result = await resolver.resolve(context);
       if (result != null) break;
     }
@@ -151,18 +163,18 @@ final class PrebuiltCodeAssetBuilder implements Builder {
         file: bundledLibUri,
       ));
 
-      _info(
+      _logInfo(
+        logger,
         'Using prebuilt $libraryStem for ${target.label} '
         '(from ${result.source.label})',
       );
       return;
     }
 
-    // Fall through to source fallback.
     if (sourceFallback != null) {
-      _info(
-        'No prebuilt available for ${target.label}, '
-        'attempting source fallback.',
+      _logInfo(
+        logger,
+        'No prebuilt available for ${target.label}; attempting source fallback.',
       );
 
       try {
@@ -178,30 +190,22 @@ final class PrebuiltCodeAssetBuilder implements Builder {
         );
 
         if (sourceResult != null) {
-          _info(
+          _logInfo(
+            logger,
             'Source build completed for ${target.label} '
-            '(from ${sourceResult.source.origin.label})',
+            '(from ${sourceResult.source.origin.label}).',
           );
           return;
         }
       } catch (e) {
-        _warn('Source fallback failed: $e');
+        _logWarning(logger, 'Source fallback failed: $e');
       }
     }
 
-    // Fall through to legacy fallback builder.
-    if (fallback != null) {
-      _info(
-        'No prebuilt available for ${target.label}, '
-        'falling back to source build.',
-      );
-      await fallback!.run(input: input, output: output, logger: logger);
-    } else if (sourceFallback == null) {
-      _warn(
-        'No fallback builder configured. '
-        'Unable to provide $libraryStem for ${target.label}.',
-      );
-    }
+    final message =
+        'No source fallback configured for $libraryStem on ${target.label}.';
+    _logWarning(logger, message);
+    throw StateError(message);
   }
 
   ArtifactPayload _payloadForLinkMode(LinkMode linkMode) {
@@ -211,6 +215,19 @@ final class PrebuiltCodeAssetBuilder implements Builder {
     return DynamicLibraryPayload(libraryStem: libraryStem);
   }
 
-  void _info(String message) => stdout.writeln(message);
-  void _warn(String message) => stdout.writeln('Warning: $message');
+  void _logInfo(Logger? logger, String message) {
+    if (logger != null) {
+      logger.info(message);
+    } else {
+      stdout.writeln(message);
+    }
+  }
+
+  void _logWarning(Logger? logger, String message) {
+    if (logger != null) {
+      logger.warning(message);
+    } else {
+      stdout.writeln('Warning: $message');
+    }
+  }
 }

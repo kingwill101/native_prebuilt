@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
 import '../archive/archive_entry.dart';
@@ -24,6 +25,7 @@ abstract interface class ArtifactInstaller {
     required String libraryStem,
     required ArtifactPayload payload,
     required Directory cacheDirectory,
+    Logger? logger,
   });
 }
 
@@ -47,9 +49,17 @@ final class DefaultArtifactInstaller implements ArtifactInstaller {
     required String libraryStem,
     required ArtifactPayload payload,
     required Directory cacheDirectory,
+    Logger? logger,
   }) async {
     final artifact = manifest.artifacts[target.label];
-    if (artifact == null) return null;
+    if (artifact == null) {
+      logger?.info('No manifest entry for ${target.label}.');
+      return null;
+    }
+
+    logger?.info(
+      'Found manifest entry for ${target.label}: ${artifact.archiveName}.',
+    );
 
     final canonicalName = canonicalLibraryName(
       target: target,
@@ -77,6 +87,7 @@ final class DefaultArtifactInstaller implements ArtifactInstaller {
 
     return lock.withLock(() async {
       if (cachedFile.existsSync()) {
+        logger?.info('Using cached prebuilt candidate: ${cachedFile.path}.');
         final actualHash = await ArchiveReader.sha256Hash(cachedFile);
         if (actualHash == artifact.payloadSha256) {
           try {
@@ -85,11 +96,14 @@ final class DefaultArtifactInstaller implements ArtifactInstaller {
               target: target,
               canonicalName: canonicalName,
             );
+            logger?.info('Verified cached prebuilt ${target.label}.');
             return cachedFile;
           } on BinaryFormatException {
+            logger?.warning('Cached file failed binary inspection; deleting ${cachedFile.path}.');
             cachedFile.deleteSync();
           }
         } else {
+          logger?.warning('Cached payload hash mismatch for ${target.label}; deleting ${cachedFile.path}.');
           cachedFile.deleteSync();
         }
       }
@@ -101,12 +115,15 @@ final class DefaultArtifactInstaller implements ArtifactInstaller {
       );
 
       try {
+        logger?.info('Downloading ${artifact.archiveName} from $source.');
         await downloader.downloadReleaseArtifact(
           source: source,
           archiveName: artifact.archiveName,
           targetPath: archiveFile,
+          logger: logger,
         );
       } on HttpDownloadException {
+        logger?.warning('Download failed for ${artifact.archiveName}; will fall back.');
         return null;
       }
 
@@ -119,6 +136,7 @@ final class DefaultArtifactInstaller implements ArtifactInstaller {
           '  actual:   $archiveHash',
         );
       }
+      logger?.info('Verified archive hash for ${artifact.archiveName}.');
 
       final acceptVersioned = switch (artifact.payload) {
         DynamicLibraryPayload(:final acceptVersionedNames) =>
@@ -134,6 +152,7 @@ final class DefaultArtifactInstaller implements ArtifactInstaller {
           acceptVersionedNames: acceptVersioned,
         ),
       );
+      logger?.info('Extracted archive entry for ${target.label}.');
       archiveFile.deleteSync();
 
       if (extracted == null) return null;
@@ -153,6 +172,7 @@ final class DefaultArtifactInstaller implements ArtifactInstaller {
         target: target,
         canonicalName: canonicalName,
       );
+      logger?.info('Installed prebuilt ${target.label} to ${extracted.path}.');
       return extracted;
     });
   }

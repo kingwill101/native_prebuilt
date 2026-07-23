@@ -8,6 +8,7 @@ Reusable infrastructure for Dart packages that ship prebuilt native libraries fr
 - `PrebuiltManifest` / `PrebuiltArtifact` immutable release metadata
 - `ArtifactInstaller` for download → verify → extract → validate → cache
 - `PrebuiltResolver` chain for override / local / cached / downloaded prebuilts
+- `SourceFallback`, `SourceProvider`, and `SourceBuilder` for local / archive / git source builds
 - `NativeBinaryInspector` and library-name helpers
 - CLI tooling for manifest generation, fetch, verification, and workflow templates
 - Reusable GitHub Actions and pub.dev workflow templates
@@ -16,13 +17,14 @@ Reusable infrastructure for Dart packages that ship prebuilt native libraries fr
 
 ```yaml
 dependencies:
-  native_prebuilt: ^0.0.11
+  native_prebuilt: ^0.0.14
 ```
 
 ## Hook usage
 
 ```dart
 import 'package:hooks/hooks.dart';
+import 'package:logging/logging.dart';
 import 'package:native_prebuilt/hooks.dart';
 import 'package:my_package/src/hook/my_package_prebuilts.g.dart';
 
@@ -33,13 +35,82 @@ void main(List<String> args) async {
       libraryStem: 'mylib',
       manifest: myPrebuilts,
       linkModeResolver: (_) => DynamicLoadingBundled(),
-      fallback: CallbackBuilder((input, output) async {
-        // build from source
-      }),
-    ).run(input: input, output: output, logger: null);
+      sourceFallback: SourceFallback(
+        sources: [
+          LocalSource(paths: ['.']),
+        ],
+        builder: CallbackSourceBuilder(
+          callback: ({
+            required source,
+            required input,
+            required output,
+            required logger,
+          }) async {
+            // build from source.directory
+          },
+        ),
+      ),
+    ).run(input: input, output: output, logger: Logger.root);
   });
 }
 ```
+
+## Source fallback pipeline
+
+When no prebuilt is available, you can let `native_prebuilt` resolve source and build from it instead of failing immediately.
+
+```dart
+import 'package:logging/logging.dart';
+import 'package:native_prebuilt/hooks.dart';
+
+await PrebuiltCodeAssetBuilder(
+  assetName: 'src/my_package.dart',
+  libraryStem: 'my_package',
+  manifest: myPackagePrebuilts,
+  linkModeResolver: (_) => DynamicLoadingBundled(),
+  sourceFallback: SourceFallback(
+    sources: [
+      LocalSource(paths: ['.']),
+      ArchiveSource(
+        uri: Uri.parse('https://example.com/my_package.tar.gz'),
+        sha256: '...',
+      ),
+      GitSource(
+        repository: Uri.parse('https://github.com/myorg/my_package.git'),
+        revision: 'FULL_COMMIT_SHA',
+      ),
+    ],
+    preparation: [
+      ApplyPatches(paths: ['patches/fix.patch']),
+    ],
+    builder: CallbackSourceBuilder(
+      callback: ({
+        required source,
+        required input,
+        required output,
+        required logger,
+      }) async {
+        // compile source.directory here
+      },
+    ),
+  ),
+).run(
+  input: input,
+  output: output,
+  logger: Logger.root
+    ..level = Level.INFO
+    ..onRecord.listen((record) => print(record.message)),
+);
+```
+
+The resolution order is:
+
+1. `hooks.user_defines`
+2. local `.prebuilt/`
+3. shared cache / release download
+4. `sourceFallback` (local / archive / git → prepare → build)
+
+Pass a `Logger` to see progress messages for cache hits, downloads, source acquisition, patching, and builds.
 
 ## Manifest format
 
@@ -68,13 +139,18 @@ dart run native_prebuilt manifest update \
   --config native_prebuilt.yaml \
   --output lib/src/hook/my_package_prebuilts.g.dart \
   --built-library-dir built-library \
-  --release-assets-dir release-assets \
+  --release-assets-dir release-assets
+
 dart run native_prebuilt manifest verify \
   --config native_prebuilt.yaml \
   --output lib/src/hook/my_package_prebuilts.g.dart \
   --built-library-dir built-library \
   --release-assets-dir release-assets
 ```
+
+The generated manifest file is the only supported place for `archiveSha256`
+and `payloadSha256`. Do not edit those hashes by hand; rerun `manifest update`
+when the release assets change.
 
 ## Fetch locally
 
@@ -277,10 +353,10 @@ This is useful when you only want to generate CI for the platforms you can
 test locally. The manifest still contains all platforms — `--platform` only
 affects which CI jobs are generated.
 
-## Using with different hook builders
+## Source build helpers
 
-`PrebuiltCodeAssetBuilder` accepts any `Builder` as `fallback`. When no prebuilt
-is found for the current platform, the fallback runs automatically.
+`sourceFallback.builder` can invoke any build system. Common patterns are C and
+Rust builds, but you can also call a custom script.
 
 ### CBuilder (C/C++)
 
@@ -294,18 +370,32 @@ import 'package:my_package/src/hook/my_package_prebuilts.g.dart';
 
 void main(List<String> args) async {
   await build(args, (input, output) async {
+    final cBuilder = CBuilder.library(
+      name: 'my_package',
+      packageName: input.packageName,
+      assetName: 'src/my_package.dart',
+      sources: const ['src/native/my_package.c'],
+    );
+
     await PrebuiltCodeAssetBuilder(
       assetName: 'src/my_package.dart',
       libraryStem: 'my_package',
       manifest: myPackagePrebuilts,
       linkModeResolver: (code) => DynamicLoadingBundled(),
-      fallback: CBuilder.library(
-        name: 'my_package',
-        packageName: input.packageName,
-        assetName: 'src/my_package.dart',
-        sources: const ['src/native/my_package.c'],
+      sourceFallback: SourceFallback(
+        sources: [LocalSource(paths: ['.'])],
+        builder: CallbackSourceBuilder(
+          callback: ({
+            required source,
+            required input,
+            required output,
+            required logger,
+          }) async {
+            await cBuilder.run(input: input, output: output, logger: logger);
+          },
+        ),
       ),
-    ).run(input: input, output: output, logger: null);
+    ).run(input: input, output: output, logger: Logger.root);
   });
 }
 ```
@@ -324,31 +414,31 @@ import 'package:my_package/src/hook/my_package_prebuilts.g.dart';
 
 void main(List<String> args) async {
   await build(args, (input, output) async {
+    final rustBuilder = RustBuilder(
+      assetName: 'src/my_package.dart',
+    );
+
     await PrebuiltCodeAssetBuilder(
       assetName: 'src/my_package.dart',
       libraryStem: 'my_package',
       manifest: myPackagePrebuilts,
       linkModeResolver: (code) => DynamicLoadingBundled(),
-      fallback: RustBuilder(
-        assetName: 'src/my_package.dart',
+      sourceFallback: SourceFallback(
+        sources: [LocalSource(paths: ['.'])],
+        builder: CallbackSourceBuilder(
+          callback: ({
+            required source,
+            required input,
+            required output,
+            required logger,
+          }) async {
+            await rustBuilder.run(input: input, output: output, logger: logger);
+          },
+        ),
       ),
-    ).run(input: input, output: output, logger: null);
+    ).run(input: input, output: output, logger: Logger.root);
   });
 }
-```
-
-### CallbackBuilder (inline source build)
-
-```dart
-await PrebuiltCodeAssetBuilder(
-  assetName: 'src/my_package.dart',
-  libraryStem: 'my_package',
-  manifest: myPackagePrebuilts,
-  linkModeResolver: (code) => DynamicLoadingBundled(),
-  fallback: CallbackBuilder((input, output) async {
-    // Your custom build logic here.
-  }),
-).run(input: input, output: output, logger: null);
 ```
 
 ## Notes

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:hooks/hooks.dart';
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
 import '../archive/archive_reader.dart';
@@ -23,6 +24,7 @@ final class PrebuiltResolutionContext {
     required this.libraryStem,
     required this.payload,
     required this.localSearchRoot,
+    this.logger,
   });
 
   final BuildInput input;
@@ -31,6 +33,9 @@ final class PrebuiltResolutionContext {
   final String libraryStem;
   final ArtifactPayload payload;
   final Directory localSearchRoot;
+
+  /// Logger used to emit resolution progress messages.
+  final Logger? logger;
 }
 
 /// Abstract interface for resolving prebuilt artifacts.
@@ -186,6 +191,7 @@ final class SharedCacheResolver implements PrebuiltResolver {
       target: context.target,
       libraryStem: context.libraryStem,
       payload: context.payload,
+      logger: context.logger,
     );
 
     if (file == null) return null;

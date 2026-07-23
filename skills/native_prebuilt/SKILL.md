@@ -7,6 +7,7 @@ Use this skill when you need to generate manifests, workflow scaffolds, or relea
 - `dart run native_prebuilt manifest update`
   - Generates the checked-in manifest file from `native_prebuilt.yaml`.
   - Supports `--built-library-dir` and `--release-assets-dir`.
+  - This is the only supported way to refresh `archiveSha256` and `payloadSha256`.
 - `dart run native_prebuilt manifest verify`
   - Recomputes the manifest and checks it against the checked-in file.
 - `dart run native_prebuilt fetch`
