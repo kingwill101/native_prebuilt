@@ -82,29 +82,75 @@ dart run native_prebuilt manifest verify \
 dart run native_prebuilt fetch --config native_prebuilt.yaml --platform linux-x64
 ```
 
-## Workflow templates
-
-GitHub Actions:
+## GitHub Actions
 
 ```bash
 dart run native_prebuilt workflow init
 ```
 
-This writes a repo-level `prebuilt.yml` workflow, a `publish.yml` pub.dev workflow,
-and the reusable workflow templates. The generated tag trigger is package-specific
-(e.g. `my_package-v*`) and tag runs publish GitHub release assets.
+Generates into `.github/workflows/`:
 
-GitLab CI generated from the same command uploads GitLab release assets too:
+| File | Purpose |
+|------|---------|
+| `prebuilt.yml` | Builds native libraries on every platform, generates manifest + release assets on tag pushes |
+| `publish.yml` | Publishes to pub.dev on `v*` tags |
+| `native-prebuilt-build.yml` | Reusable build workflow (called by `prebuilt.yml`) |
+| `native-prebuilt-release.yml` | Reusable release workflow |
+| `native-prebuilt-update-manifest.yml` | Reusable manifest generation workflow |
+
+Tag triggers are package-specific (e.g. `my_package-v*`). On tag push:
+
+1. `build-linux`, `build-windows`, `build-macos` jobs compile native code and upload artifacts
+2. `update-manifest` downloads all artifacts, generates the manifest, and creates release archives
+3. `release` publishes archives to GitHub Releases via `softprops/action-gh-release`
+
+The set of build jobs is automatically filtered to match the platforms declared in `native_prebuilt.yaml`.
+
+### Releasing
 
 ```bash
-dart run native_prebuilt workflow init --gitlab --config native_prebuilt.yaml
+git tag my_package-v1.0.0
+git push origin my_package-v1.0.0
 ```
 
-GitLab CI (defaults to the platforms declared in `native_prebuilt.yaml`):
+This triggers `prebuilt.yml` which builds, generates the manifest, and publishes release assets.
+
+## GitLab CI
 
 ```bash
-dart run native_prebuilt workflow init --gitlab --config native_prebuilt.yaml
+dart run native_prebuilt workflow init --gitlab
 ```
+
+Generates into `.gitlab-ci.yml` and `.gitlab/ci/`:
+
+| File | Purpose |
+|------|---------|
+| `.gitlab-ci.yml` | Root pipeline — stages platform build jobs, manifest generation, and release |
+| `.gitlab/ci/native-prebuilt-build-<platform>.yml` | Per-platform build job |
+| `.gitlab/ci/native-prebuilt-release.yml` | Uploads release assets to GitLab Generic Package Registry |
+| `.gitlab/ci/native-prebuilt-update-manifest.yml` | Generates manifest and release archives |
+
+Platforms are determined by the `artifacts:` section in `native_prebuilt.yaml`. Only declared platforms get build jobs.
+
+### GitLab release source
+
+For packages hosted on GitLab, set the release source in `native_prebuilt.yaml`:
+
+```yaml
+release:
+  provider: gitlab
+  project: mygroup/myproject
+  tag: my_package-v1.0.0
+```
+
+### Releasing on GitLab
+
+```bash
+git tag my_package-v1.0.0
+git push origin my_package-v1.0.0
+```
+
+This triggers the GitLab pipeline which builds, generates the manifest, and uploads release assets to the GitLab Generic Package Registry.
 
 ## Local overrides
 
