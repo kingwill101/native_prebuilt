@@ -191,36 +191,55 @@ The subdirectory must match the platform label from your manifest (e.g.
 `linux-x64`, `macos-arm64`). `LocalPrebuiltResolver` picks up any matching
 library without extra config.
 
-## Adding / removing platforms
+## Platforms
 
-Platforms are declared in `native_prebuilt.yaml` under `artifacts:`. Add a
-new entry to support a platform, remove one to stop shipping it:
+Platforms are declared in `native_prebuilt.yaml` under `artifacts:`. Each key is
+a platform label in the form `<os>-<arch>` (e.g. `linux-x64`, `macos-arm64`,
+`windows-x64`). Every entry **requires** `archive` and `payload.type`:
 
 ```yaml
-schema: 1
-package: my_package
-asset_name: src/my_package.dart
-library_stem: my_package
-release:
-  provider: github
-  repository: owner/repo
-  tag: my_package-v1.0.0
 artifacts:
   linux-x64:
     archive: my_package-linux-x64.tar.gz
     payload:
       type: dynamic_library
-  linux-arm64:                              # ← add
+  linux-arm64:
     archive: my_package-linux-arm64.tar.gz
     payload:
       type: dynamic_library
-  # macos-x64:                              # ← remove by deleting
-  #   archive: my_package-macos-x64.tar.gz
-  #   payload:
-  #     type: dynamic_library
 ```
 
-After editing, regenerate workflows and the manifest:
+You cannot omit `archive` or `payload` — both are required. The `archive` name
+is the filename uploaded to the release. The `payload.type` is either
+`dynamic_library` (`.so`/`.dylib`/`.dll`) or `static_library` (`.a`).
+
+### Supported platform labels
+
+| OS | Architectures |
+|----|---------------|
+| `linux` | `x64`, `arm64` |
+| `macos` | `x64`, `arm64` |
+| `windows` | `x64`, `arm64` |
+| `android` | `x64`, `arm64`, `armv7` |
+| `ios` | `arm64` |
+
+### Adding a platform
+
+Add an entry to `artifacts:` and regenerate:
+
+```yaml
+artifacts:
+  linux-x64:
+    archive: my_package-linux-x64.tar.gz
+    payload:
+      type: dynamic_library
+  linux-arm64:                          # ← new
+    archive: my_package-linux-arm64.tar.gz
+    payload:
+      type: dynamic_library
+```
+
+Then regenerate workflows and the manifest:
 
 ```bash
 dart run native_prebuilt workflow init --config native_prebuilt.yaml
@@ -229,6 +248,26 @@ dart run native_prebuilt manifest update \
   --output lib/src/hook/my_package_prebuilts.g.dart \
   --built-library-dir .dart_tool/lib
 ```
+
+The regenerated `prebuilt.yml` will automatically include a `build-linux-arm64`
+job. GitLab CI will include a `native-prebuilt-build-linux.yml` job.
+
+### Removing a platform
+
+Delete the entry from `artifacts:` and regenerate. The build job for that
+platform will be removed from the CI configs.
+
+### Filtering platforms at generation time
+
+Use `--platform` to scaffold only a subset of the declared platforms:
+
+```bash
+dart run native_prebuilt workflow init --platform linux --platform macos
+```
+
+This is useful when you only want to generate CI for the platforms you can
+test locally. The manifest still contains all platforms — `--platform` only
+affects which CI jobs are generated.
 
 ## Using with different hook builders
 
