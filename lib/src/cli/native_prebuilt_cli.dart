@@ -804,10 +804,6 @@ jobs:
             --tag "$TAG"
       - uses: actions/upload-artifact@v4
         with:
-          name: generated-manifest
-          path: ${{ env.MANIFEST_OUTPUT }}
-      - uses: actions/upload-artifact@v4
-        with:
           name: release-assets
           path: release-assets/
           if-no-files-found: error
@@ -825,18 +821,12 @@ jobs:
         with:
           name: release-assets
           path: release-assets/
-      - uses: actions/download-artifact@v4
-        with:
-          name: generated-manifest
-          path: generated-manifest/
       - name: Publish GitHub release assets
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
           fail_on_unmatched_files: true
-          files: |
-            release-assets/*
-            generated-manifest/*
+          files: release-assets/*
 ''';
 
 const nativePrebuiltBuildWorkflow = r'''

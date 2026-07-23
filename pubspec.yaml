@@ -3,7 +3,7 @@ description: >-
   Reusable infrastructure for Dart packages that ship prebuilt native libraries
   from GitHub or GitLab releases. Provides build-hook integration, manifest
   generation, download/verify/cache pipelines, and binary validation.
-version: 0.0.11
+version: 0.0.12
 
 repository: https://github.com/kingwill101/native_prebuilt
 homepage: https://github.com/kingwill101/native_prebuilt

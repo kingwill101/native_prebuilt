@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.12
+
+- Stop publishing the generated manifest file as a GitHub release asset.
+
 ## 0.0.11
 
 - Generate package-specific workflow filenames, manifest outputs, and tag prefixes.
