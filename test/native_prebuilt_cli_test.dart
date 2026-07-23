@@ -72,6 +72,56 @@ artifacts:
     }
   });
 
+  test('workflow init uses manifest artifact labels', () async {
+    final dir = await Directory.systemTemp.createTemp('native_prebuilt_cli_');
+    try {
+      final configFile = File('${dir.path}/native_prebuilt.yaml');
+      configFile.writeAsStringSync('''
+schema: 1
+package: native_prebuilt_demo
+asset_name: demo_bindings.dart
+library_stem: demo_lib
+release:
+  provider: gitlab
+  project: group/subgroup/demo
+  tag: demo-v1.0.0
+artifacts:
+  linux-x64:
+    archive: demo-linux-x64.tar.gz
+    payload:
+      type: dynamic_library
+
+''');
+
+      final outputDir = Directory('${dir.path}/out');
+      await runNativePrebuiltCli([
+        'workflow',
+        'init',
+        '--gitlab',
+        '--config',
+        configFile.path,
+        '--output',
+        outputDir.path,
+      ]);
+
+      expect(File('${outputDir.path}/.gitlab-ci.yml').existsSync(), isTrue);
+      expect(
+        File(
+          '${outputDir.path}/.gitlab/ci/native-prebuilt-build-linux.yml',
+        ).existsSync(),
+        isTrue,
+      );
+      expect(
+        File(
+          '${outputDir.path}/.gitlab/ci/native-prebuilt-build-macos.yml',
+        ).existsSync(),
+        isFalse,
+      );
+    } finally {
+      dir.deleteSync(recursive: true);
+    }
+  });
+
   test('workflow templates include expected files', () {
     final templates = workflowTemplates();
     expect(templates.keys, contains('native-prebuilt-build.yml'));
@@ -107,11 +157,18 @@ artifacts:
       templates.keys,
       contains('.gitlab/ci/native-prebuilt-update-manifest.yml'),
     );
-    expect(templates['.gitlab-ci.yml'], contains('ENABLE_ALL_PLATFORMS'));
     expect(templates['.gitlab-ci.yml'], contains('native-prebuilt-build-ios.yml'));
     expect(
       templates['.gitlab/ci/native-prebuilt-build-linux.yml'],
       contains('apt-get install -y --no-install-recommends build-essential'),
+    );
+    expect(
+      templates['.gitlab/ci/native-prebuilt-build-linux.yml'],
+      contains('mkdir -p "\$BUILT_LIBRARY_DIR"'),
+    );
+    expect(
+      templates['.gitlab/ci/native-prebuilt-build-linux.yml'],
+      contains('cp -R .dart_tool/lib/. "\$BUILT_LIBRARY_DIR"/'),
     );
     expect(
       templates['.gitlab/ci/native-prebuilt-build-android.yml'],
@@ -119,11 +176,93 @@ artifacts:
     );
     expect(
       templates['.gitlab/ci/native-prebuilt-update-manifest.yml'],
-      contains('--built-library-dir .dart_tool/lib'),
+      contains('--built-library-dir "\$BUILT_LIBRARY_DIR"'),
     );
     expect(
       templates['.gitlab/ci/native-prebuilt-release.yml'],
       contains('needs:'),
+    );
+  });
+
+  test('gitlab workflow templates default to the manifest platforms', () {
+    final templates = gitlabWorkflowTemplates(artifactLabels: ['linux-x64']);
+
+    expect(
+      templates.keys,
+      contains('.gitlab/ci/native-prebuilt-build-linux.yml'),
+    );
+    expect(
+      templates.keys,
+      isNot(contains('.gitlab/ci/native-prebuilt-build-macos.yml')),
+    );
+    expect(
+      templates.keys,
+      isNot(contains('.gitlab/ci/native-prebuilt-build-windows.yml')),
+    );
+    expect(
+      templates.keys,
+      isNot(contains('.gitlab/ci/native-prebuilt-build-android.yml')),
+    );
+    expect(
+      templates.keys,
+      isNot(contains('.gitlab/ci/native-prebuilt-build-ios.yml')),
+    );
+    expect(
+      templates['.gitlab-ci.yml'],
+      contains('native-prebuilt-build-linux.yml'),
+    );
+    expect(
+      templates['.gitlab/ci/native-prebuilt-update-manifest.yml'],
+      contains('job: native_prebuilt:build:linux'),
+    );
+    expect(
+      templates['.gitlab/ci/native-prebuilt-update-manifest.yml'],
+      isNot(contains('job: native_prebuilt:build:windows')),
+    );
+  });
+
+  test('gitlab workflow templates can be filtered to selected platforms', () {
+    final templates = gitlabWorkflowTemplates(platforms: ['linux', 'windows']);
+
+    expect(
+      templates.keys,
+      contains('.gitlab/ci/native-prebuilt-build-linux.yml'),
+    );
+    expect(
+      templates.keys,
+      contains('.gitlab/ci/native-prebuilt-build-windows.yml'),
+    );
+    expect(
+      templates.keys,
+      isNot(contains('.gitlab/ci/native-prebuilt-build-macos.yml')),
+    );
+    expect(
+      templates.keys,
+      isNot(contains('.gitlab/ci/native-prebuilt-build-android.yml')),
+    );
+    expect(
+      templates.keys,
+      isNot(contains('.gitlab/ci/native-prebuilt-build-ios.yml')),
+    );
+    expect(
+      templates['.gitlab-ci.yml'],
+      contains('native-prebuilt-build-linux.yml'),
+    );
+    expect(
+      templates['.gitlab-ci.yml'],
+      contains('native-prebuilt-build-windows.yml'),
+    );
+    expect(
+      templates['.gitlab/ci/native-prebuilt-update-manifest.yml'],
+      contains('job: native_prebuilt:build:linux'),
+    );
+    expect(
+      templates['.gitlab/ci/native-prebuilt-update-manifest.yml'],
+      contains('job: native_prebuilt:build:windows'),
+    );
+    expect(
+      templates['.gitlab/ci/native-prebuilt-update-manifest.yml'],
+      isNot(contains('job: native_prebuilt:build:macos')),
     );
   });
 }

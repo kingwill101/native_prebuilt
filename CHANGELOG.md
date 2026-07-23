@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.7
+
+- Make workflow scaffolds manifest-driven for GitLab.
+- Stage built libraries into `built-library/` before manifest generation.
+- Allow `workflow init` to filter selected platforms while defaulting to the manifest artifact set.
+- Update reusable update-manifest workflow inputs to accept a built-library directory.
+
 ## 0.0.6
 
 - Add scaffolded GitLab build templates for macOS, Windows, Android, and iOS.

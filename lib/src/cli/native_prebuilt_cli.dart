@@ -265,9 +265,18 @@ class WorkflowCommand extends Command<void> {
 
 class WorkflowInitCommand extends Command<void> {
   WorkflowInitCommand() {
+    argParser.addOption('config', abbr: 'c', help: 'Path to native_prebuilt.yaml.');
     argParser.addOption('output', abbr: 'o', help: 'Output directory.');
     argParser.addFlag('force', help: 'Overwrite existing files.');
     argParser.addFlag('gitlab', help: 'Write GitLab CI YAML templates.');
+    argParser.addMultiOption(
+      'platform',
+      abbr: 'p',
+      help:
+          'Optional platform filter. Repeat this flag or pass a comma-separated list. '
+          'Supported values: linux, macos, windows, android, ios. '
+          'Defaults to the platforms declared in the manifest.',
+    );
   }
 
   @override
@@ -278,12 +287,21 @@ class WorkflowInitCommand extends Command<void> {
 
   @override
   Future<void> run() async {
+    final configPath = option('config') as String? ?? 'native_prebuilt.yaml';
     final gitlab = (option('gitlab') as bool?) ?? false;
+    final config = gitlab ? NativePrebuiltConfig.loadFile(configPath) : null;
     final output = option('output') as String? ??
         (gitlab ? '.' : '.github/workflows');
     final force = (option('force') as bool?) ?? false;
+    final requestedPlatforms = (option('platform') as List<String>?) ??
+        const <String>[];
     final dir = Directory(output)..createSync(recursive: true);
-    final templates = gitlab ? gitlabWorkflowTemplates() : workflowTemplates();
+    final templates = gitlab
+        ? gitlabWorkflowTemplates(
+            artifactLabels: config!.artifacts.keys,
+            platforms: requestedPlatforms,
+          )
+        : workflowTemplates();
     for (final entry in templates.entries) {
       final file = File(p.join(dir.path, entry.key));
       file.parent.createSync(recursive: true);
@@ -475,21 +493,152 @@ Map<String, String> workflowTemplates() => {
   'native-prebuilt-update-manifest.yml': nativePrebuiltUpdateManifestWorkflow,
 };
 
-Map<String, String> gitlabWorkflowTemplates() => {
-  '.gitlab-ci.yml': gitlabRootPipeline,
-  '.gitlab/ci/native-prebuilt-build-linux.yml':
-      gitlabNativePrebuiltBuildLinux,
-  '.gitlab/ci/native-prebuilt-build-macos.yml':
-      gitlabNativePrebuiltBuildMacos,
-  '.gitlab/ci/native-prebuilt-build-windows.yml':
-      gitlabNativePrebuiltBuildWindows,
-  '.gitlab/ci/native-prebuilt-build-android.yml':
-      gitlabNativePrebuiltBuildAndroid,
-  '.gitlab/ci/native-prebuilt-build-ios.yml': gitlabNativePrebuiltBuildIos,
-  '.gitlab/ci/native-prebuilt-release.yml': gitlabNativePrebuiltRelease,
-  '.gitlab/ci/native-prebuilt-update-manifest.yml':
-      gitlabNativePrebuiltUpdateManifest,
-};
+const _workflowPlatformOrder = <String>[
+  'linux',
+  'macos',
+  'windows',
+  'android',
+  'ios',
+];
+
+List<String> _workflowPlatforms(List<String> rawPlatforms) {
+  final selected = <String>{};
+  for (final raw in rawPlatforms) {
+    for (final part in raw.split(',')) {
+      final platform = part.trim().toLowerCase();
+      if (platform.isEmpty) continue;
+      if (!_workflowPlatformOrder.contains(platform)) {
+        throw FormatException(
+          'Unsupported platform "$platform". Supported values: '
+          '${_workflowPlatformOrder.join(', ')}',
+        );
+      }
+      selected.add(platform);
+    }
+  }
+  if (selected.isEmpty) return List<String>.unmodifiable(_workflowPlatformOrder);
+  return _workflowPlatformOrder.where(selected.contains).toList(growable: false);
+}
+
+List<String> _workflowPlatformsFromArtifacts(
+  Iterable<String> artifactLabels,
+  List<String> rawPlatforms,
+) {
+  final configured = <String>{};
+  for (final label in artifactLabels) {
+    final platform = _workflowPlatformFromArtifactLabel(label);
+    configured.add(platform);
+  }
+  final filtered = rawPlatforms.isEmpty
+      ? configured
+      : configured.intersection(_workflowPlatforms(rawPlatforms).toSet());
+  return _workflowPlatformOrder.where(filtered.contains).toList(growable: false);
+}
+
+String _workflowPlatformFromArtifactLabel(String label) {
+  final platform = label.split('-').first.toLowerCase();
+  if (!_workflowPlatformOrder.contains(platform)) {
+    throw FormatException(
+      'Unsupported artifact platform "$label". Supported values: '
+      '${_workflowPlatformOrder.join(', ')}',
+    );
+  }
+  return platform;
+}
+
+Map<String, String> gitlabWorkflowTemplates({
+  Iterable<String>? platforms,
+  Iterable<String>? artifactLabels,
+}) {
+  final selectedPlatforms = artifactLabels == null
+      ? _workflowPlatforms(platforms?.toList() ?? const [])
+      : _workflowPlatformsFromArtifacts(
+          artifactLabels,
+          platforms?.toList() ?? const [],
+        );
+  final templates = <String, String>{
+    '.gitlab-ci.yml': _gitlabRootPipeline(selectedPlatforms),
+    '.gitlab/ci/native-prebuilt-release.yml': gitlabNativePrebuiltRelease,
+    '.gitlab/ci/native-prebuilt-update-manifest.yml':
+        _gitlabUpdateManifest(selectedPlatforms),
+  };
+
+  for (final platform in selectedPlatforms) {
+    templates['.gitlab/ci/native-prebuilt-build-$platform.yml'] =
+        _gitlabBuildTemplate(platform);
+  }
+
+  return templates;
+}
+
+String _gitlabBuildTemplate(String platform) {
+  final template = switch (platform) {
+    'linux' => gitlabNativePrebuiltBuildLinux,
+    'macos' => gitlabNativePrebuiltBuildMacos,
+    'windows' => gitlabNativePrebuiltBuildWindows,
+    'android' => gitlabNativePrebuiltBuildAndroid,
+    'ios' => gitlabNativePrebuiltBuildIos,
+    _ => throw FormatException('Unsupported platform "$platform".'),
+  };
+  return template.replaceFirst(RegExp(r'\n  rules:\n    - if: .*\n'), '\n');
+}
+
+String _gitlabRootPipeline(Iterable<String> platforms) {
+  final includes = platforms
+      .map((platform) => "  - local: '.gitlab/ci/native-prebuilt-build-$platform.yml'")
+      .join('\n');
+  return '''
+default:
+  image: dart:stable
+
+stages:
+  - build
+  - update
+  - release
+
+variables:
+  PUB_CACHE: "\$CI_PROJECT_DIR/.pub-cache"
+  BUILD_COMMAND: "dart test"
+  CONFIG: "native_prebuilt.yaml"
+  MANIFEST_OUTPUT: "lib/src/hook/demo_prebuilts.g.dart"
+  BUILT_LIBRARY_DIR: "built-library"
+  TAG: "\$CI_COMMIT_TAG"
+
+cache:
+  paths:
+    - .pub-cache/
+
+include:
+$includes
+  - local: '.gitlab/ci/native-prebuilt-release.yml'
+  - local: '.gitlab/ci/native-prebuilt-update-manifest.yml'
+''';
+}
+
+String _gitlabUpdateManifest(Iterable<String> platforms) {
+  final needs = platforms
+      .map(
+        (platform) => '''
+    - job: native_prebuilt:build:$platform
+      artifacts: true''',
+      )
+      .join('\n');
+  return '''
+native_prebuilt:update_manifest:
+  stage: update
+  needs:
+$needs
+  rules:
+    - if: '\$CI_COMMIT_TAG'
+  script:
+    - dart pub get
+    - dart run native_prebuilt manifest update --config "\$CONFIG" --output "\$MANIFEST_OUTPUT" --built-library-dir "\$BUILT_LIBRARY_DIR" --tag "\$TAG"
+  artifacts:
+    when: always
+    paths:
+      - "\$MANIFEST_OUTPUT"
+''';
+}
 
 const nativePrebuiltBuildWorkflow = r'''
 name: Native Prebuilt Build
@@ -543,12 +692,16 @@ on:
       config:
         required: true
         type: string
+      built-library-dir:
+        required: false
+        type: string
+        default: built-library
 jobs:
   update-manifest:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: dart run native_prebuilt manifest update --config ${{ inputs.config }} --output lib/src/hook/asset_hashes.dart
+      - run: dart run native_prebuilt manifest update --config ${{ inputs.config }} --output lib/src/hook/asset_hashes.dart --built-library-dir ${{ inputs.built-library-dir }}
 ''';
 
 const gitlabRootPipeline = r'''
@@ -566,7 +719,7 @@ variables:
   CONFIG: "native_prebuilt.yaml"
   MANIFEST_OUTPUT: "lib/src/hook/asset_hashes.dart"
   TAG: "$CI_COMMIT_TAG"
-  ENABLE_ALL_PLATFORMS: "false"
+  ENABLE_ALL_PLATFORMS: "true"
 
 cache:
   paths:
@@ -593,10 +746,12 @@ native_prebuilt:build:linux:
     - apt-get install -y --no-install-recommends build-essential clang pkg-config cmake ninja-build libclang-dev
     - dart pub get
     - "$BUILD_COMMAND"
+    - mkdir -p "$BUILT_LIBRARY_DIR"
+    - cp -R .dart_tool/lib/. "$BUILT_LIBRARY_DIR"/
   artifacts:
     when: always
     paths:
-      - .dart_tool/lib/
+      - "$BUILT_LIBRARY_DIR/"
 ''';
 
 const gitlabNativePrebuiltBuildMacos = r'''
@@ -609,10 +764,12 @@ native_prebuilt:build:macos:
   script:
     - dart pub get
     - "$BUILD_COMMAND"
+    - mkdir -p "$BUILT_LIBRARY_DIR"
+    - cp -R .dart_tool/lib/. "$BUILT_LIBRARY_DIR"/
   artifacts:
     when: always
     paths:
-      - .dart_tool/lib/
+      - "$BUILT_LIBRARY_DIR/"
 ''';
 
 const gitlabNativePrebuiltBuildWindows = r'''
@@ -625,10 +782,12 @@ native_prebuilt:build:windows:
   script:
     - dart pub get
     - "$BUILD_COMMAND"
+    - New-Item -ItemType Directory -Force -Path "$env:BUILT_LIBRARY_DIR" | Out-Null
+    - Copy-Item -Recurse -Force ".dart_tool/lib/*" "$env:BUILT_LIBRARY_DIR"
   artifacts:
     when: always
     paths:
-      - .dart_tool/lib/
+      - "$BUILT_LIBRARY_DIR/"
 ''';
 
 const gitlabNativePrebuiltBuildAndroid = r'''
@@ -640,10 +799,12 @@ native_prebuilt:build:android:
   script:
     - dart pub get
     - "$BUILD_COMMAND"
+    - mkdir -p "$BUILT_LIBRARY_DIR"
+    - cp -R .dart_tool/lib/. "$BUILT_LIBRARY_DIR"/
   artifacts:
     when: always
     paths:
-      - .dart_tool/lib/
+      - "$BUILT_LIBRARY_DIR/"
 ''';
 
 const gitlabNativePrebuiltBuildIos = r'''
@@ -656,10 +817,12 @@ native_prebuilt:build:ios:
   script:
     - dart pub get
     - "$BUILD_COMMAND"
+    - mkdir -p "$BUILT_LIBRARY_DIR"
+    - cp -R .dart_tool/lib/. "$BUILT_LIBRARY_DIR"/
   artifacts:
     when: always
     paths:
-      - .dart_tool/lib/
+      - "$BUILT_LIBRARY_DIR/"
 ''';
 
 const gitlabNativePrebuiltRelease = r'''
@@ -697,7 +860,7 @@ native_prebuilt:update_manifest:
     - if: '$CI_COMMIT_TAG'
   script:
     - dart pub get
-    - dart run native_prebuilt manifest update --config "$CONFIG" --output "$MANIFEST_OUTPUT" --built-library-dir .dart_tool/lib --tag "$TAG"
+    - dart run native_prebuilt manifest update --config "$CONFIG" --output "$MANIFEST_OUTPUT" --built-library-dir "$BUILT_LIBRARY_DIR" --tag "$TAG"
   artifacts:
     when: always
     paths:

@@ -6,10 +6,14 @@ on:
       config:
         required: true
         type: string
+      built-library-dir:
+        required: false
+        type: string
+        default: built-library
 
 jobs:
   update-manifest:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: dart run native_prebuilt manifest update --config ${{ inputs.config }} --output lib/src/hook/asset_hashes.dart
+      - run: dart run native_prebuilt manifest update --config ${{ inputs.config }} --output lib/src/hook/asset_hashes.dart --built-library-dir ${{ inputs.built-library-dir }}

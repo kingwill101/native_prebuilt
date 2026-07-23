@@ -16,7 +16,7 @@ Reusable infrastructure for Dart packages that ship prebuilt native libraries fr
 
 ```yaml
 dependencies:
-  native_prebuilt: ^0.0.6
+  native_prebuilt: ^0.0.7
 ```
 
 ## Hook usage
@@ -64,8 +64,14 @@ artifacts:
 Use:
 
 ```bash
-dart run native_prebuilt manifest update --config native_prebuilt.yaml --output lib/src/hook/prebuilts.g.dart
-dart run native_prebuilt manifest verify --config native_prebuilt.yaml --output lib/src/hook/prebuilts.g.dart
+dart run native_prebuilt manifest update \
+  --config native_prebuilt.yaml \
+  --output lib/src/hook/prebuilts.g.dart \
+  --built-library-dir built-library
+dart run native_prebuilt manifest verify \
+  --config native_prebuilt.yaml \
+  --output lib/src/hook/prebuilts.g.dart \
+  --built-library-dir built-library
 ```
 
 ## Fetch locally
@@ -82,15 +88,17 @@ GitHub Actions:
 dart run native_prebuilt workflow init
 ```
 
-GitLab CI (Linux by default, with opt-in macOS/Windows/Android/iOS scaffolds):
+GitLab CI (defaults to the platforms declared in `native_prebuilt.yaml`):
 
 ```bash
-dart run native_prebuilt workflow init --gitlab
+dart run native_prebuilt workflow init --gitlab --config native_prebuilt.yaml
 ```
 
 ## Notes
 
 - `hooks.user_defines` is preferred for local override paths.
 - Use `release.provider: gitlab` and `release.project` for GitLab release assets.
+- `workflow init --platform ...` is repeatable; omit it to scaffold the platforms declared in the manifest.
+- Generated GitLab scaffolds stage built libraries in `built-library/` and use the manifest to decide which platform jobs to emit.
 - The package exports `OS`, `Architecture`, and `IOSSdk` from `code_assets`.
 - The cache and installer are designed for repeated hook runs and concurrent builds.

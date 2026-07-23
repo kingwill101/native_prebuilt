@@ -8,13 +8,14 @@ import 'test_utils.dart';
 void main() {
   late HttpServer server;
   late Uri baseUri;
+  late List<int> archiveBytes;
   var hitCount = 0;
 
   setUp(() async {
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     baseUri = Uri.parse('http://127.0.0.1:${server.port}/');
 
-    final archiveBytes = makeTarGz({
+    archiveBytes = makeTarGz({
       'libdemo.so': makeElfBytes('demo-binary'),
     });
 
@@ -39,9 +40,6 @@ void main() {
   test('installs and caches a downloaded artifact', () async {
     final temp = await Directory.systemTemp.createTemp('native_prebuilt_installer_');
     try {
-      final archiveBytes = makeTarGz({
-        'libdemo.so': makeElfBytes('demo-binary'),
-      });
       final archiveHash = sha256Hash(archiveBytes);
       final payloadHash = sha256Hash(makeElfBytes('demo-binary'));
 
