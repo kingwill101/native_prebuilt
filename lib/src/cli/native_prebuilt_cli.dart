@@ -488,6 +488,7 @@ NativeTarget _targetFromPlatformLabel(String label) {
 }
 
 Map<String, String> workflowTemplates() => {
+  'prebuilt.yml': nativePrebuiltPrebuiltWorkflow,
   'native-prebuilt-build.yml': nativePrebuiltBuildWorkflow,
   'native-prebuilt-release.yml': nativePrebuiltReleaseWorkflow,
   'native-prebuilt-update-manifest.yml': nativePrebuiltUpdateManifestWorkflow,
@@ -639,6 +640,114 @@ $needs
       - "\$MANIFEST_OUTPUT"
 ''';
 }
+
+const nativePrebuiltPrebuiltWorkflow = r'''
+name: Prebuilt
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'native_prebuilt_e2e-v*'
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to stamp into the generated manifest
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  PUB_CACHE: ${{ github.workspace }}/.pub-cache
+  CONFIG: native_prebuilt.yaml
+  MANIFEST_OUTPUT: lib/src/hook/demo_prebuilts.g.dart
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+      - name: Install native toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            clang \
+            cmake \
+            libclang-dev \
+            ninja-build \
+            pkg-config
+      - run: dart pub get
+      - run: dart test
+      - name: Stage built library
+        run: |
+          mkdir -p built-library
+          cp -R .dart_tool/lib/. built-library/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-built-library
+          path: built-library/
+          if-no-files-found: error
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+      - run: dart pub get
+      - run: dart test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-built-library
+          path: .dart_tool/lib/
+          include-hidden-files: true
+          if-no-files-found: error
+
+  build-macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+      - run: dart pub get
+      - run: dart test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-built-library
+          path: .dart_tool/lib/
+          include-hidden-files: true
+          if-no-files-found: error
+
+  update-manifest:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+    needs:
+      - build-linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-built-library
+          path: built-library/
+      - run: dart pub get
+      - name: Generate manifest
+        run: |
+          TAG="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}"
+          dart run native_prebuilt manifest update \
+            --config "$CONFIG" \
+            --output "$MANIFEST_OUTPUT" \
+            --built-library-dir built-library \
+            --tag "$TAG"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: generated-manifest
+          path: ${{ env.MANIFEST_OUTPUT }}
+''';
 
 const nativePrebuiltBuildWorkflow = r'''
 name: Native Prebuilt Build

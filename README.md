@@ -88,6 +88,8 @@ GitHub Actions:
 dart run native_prebuilt workflow init
 ```
 
+This now also writes a repo-level `prebuilt.yml` workflow alongside the reusable workflow templates.
+
 GitLab CI (defaults to the platforms declared in `native_prebuilt.yaml`):
 
 ```bash

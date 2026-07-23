@@ -124,9 +124,11 @@ artifacts:
 
   test('workflow templates include expected files', () {
     final templates = workflowTemplates();
+    expect(templates.keys, contains('prebuilt.yml'));
     expect(templates.keys, contains('native-prebuilt-build.yml'));
     expect(templates.keys, contains('native-prebuilt-release.yml'));
     expect(templates.keys, contains('native-prebuilt-update-manifest.yml'));
+    expect(templates['prebuilt.yml'], contains('name: Prebuilt'));
   });
 
   test('gitlab workflow templates include expected files', () {
