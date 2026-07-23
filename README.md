@@ -224,15 +224,12 @@ artifacts:
       type: static_library
 ```
 
-### Supported platform labels
-
-| OS | Architectures |
-|----|---------------|
-| `linux` | `x64`, `arm64` |
-| `macos` | `x64`, `arm64` |
-| `windows` | `x64`, `arm64` |
-| `android` | `x64`, `arm64`, `armv7` |
-| `ios` | `arm64` |
+Platform labels use the format `<os>-<arch>` and follow the values defined in
+`package:code_assets` ([`OS`](https://pub.dev/documentation/code_assets/latest/code_assets/OS-class.html)
+and [`Architecture`](https://pub.dev/documentation/code_assets/latest/code_assets/Architecture-class.html)).
+Any combination supported by `code_assets` is valid (e.g. `linux-x64`,
+`linux-arm64`, `linux-riscv64`, `macos-arm64`, `android-arm64`, `ios-arm64`,
+`windows-x64`, etc.).
 
 ### Adding a platform
 
