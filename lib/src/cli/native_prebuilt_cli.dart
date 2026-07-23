@@ -320,7 +320,10 @@ class WorkflowInitCommand extends Command<void> {
             artifactLabels: config.artifacts.keys,
             platforms: requestedPlatforms,
           )
-        : workflowTemplates(packageName: config.package);
+        : workflowTemplates(
+            packageName: config.package,
+            artifactLabels: config.artifacts.keys,
+          );
     for (final entry in templates.entries) {
       final file = File(p.join(dir.path, entry.key));
       file.parent.createSync(recursive: true);
@@ -513,17 +516,171 @@ NativeTarget _targetFromPlatformLabel(String label) {
   );
 }
 
-Map<String, String> workflowTemplates({required String packageName}) => {
-  'prebuilt.yml': _githubPrebuiltWorkflow(packageName),
+Map<String, String> workflowTemplates({
+  required String packageName,
+  Iterable<String>? artifactLabels,
+}) => {
+  'prebuilt.yml': _githubPrebuiltWorkflow(packageName, artifactLabels),
   'publish.yml': nativePrebuiltPublishWorkflow,
   'native-prebuilt-build.yml': nativePrebuiltBuildWorkflow,
   'native-prebuilt-release.yml': nativePrebuiltReleaseWorkflow,
   'native-prebuilt-update-manifest.yml': nativePrebuiltUpdateManifestWorkflow,
 };
 
-String _githubPrebuiltWorkflow(String packageName) => nativePrebuiltPrebuiltWorkflow
-    .replaceAll('native_prebuilt_e2e', packageName)
-    .replaceAll('demo_prebuilts.g.dart', '${packageName}_prebuilts.g.dart');
+String _githubPrebuiltWorkflow(
+  String packageName,
+  Iterable<String>? artifactLabels,
+) {
+  final platforms = <String>{};
+  if (artifactLabels != null) {
+    for (final label in artifactLabels) {
+      platforms.add(_workflowPlatformFromArtifactLabel(label));
+    }
+  } else {
+    platforms.addAll(['linux', 'macos', 'windows']);
+  }
+  final orderedPlatforms = _workflowPlatformOrder
+      .where(platforms.contains)
+      .toList(growable: false);
+
+  final b = StringBuffer()
+    ..writeln('name: Prebuilt')
+    ..writeln()
+    ..writeln('on:')
+    ..writeln('  push:')
+    ..writeln('    branches:')
+    ..writeln('      - main')
+    ..writeln('    tags:')
+    ..writeln("      - '${packageName}-v*'")
+    ..writeln('  pull_request:')
+    ..writeln('  workflow_dispatch:')
+    ..writeln('    inputs:')
+    ..writeln('      tag:')
+    ..writeln('        description: Tag to stamp into the generated manifest')
+    ..writeln('        required: false')
+    ..writeln('        type: string')
+    ..writeln()
+    ..writeln('permissions:')
+    ..writeln('  contents: read')
+    ..writeln()
+    ..writeln('env:')
+    ..writeln('  PUB_CACHE: \${{ github.workspace }}/.pub-cache')
+    ..writeln('  CONFIG: native_prebuilt.yaml')
+    ..writeln('  MANIFEST_OUTPUT: lib/src/hook/${packageName}_prebuilts.g.dart')
+    ..writeln()
+    ..writeln('jobs:');
+
+  for (final platform in orderedPlatforms) {
+    b.writeln(_githubBuildJob(platform));
+  }
+
+  final needs = orderedPlatforms.map((p) => 'build-$p').join('\n      - ');
+  final downloads = orderedPlatforms.map((p) =>
+    """      - uses: actions/download-artifact@v4
+        with:
+          name: ${p}-built-library
+          path: downloaded/$p/""").join('\n');
+  final copyLines = orderedPlatforms.map((p) =>
+    '          cp -R downloaded/$p/. built-library/').join('\n');
+
+  b
+    ..writeln('  update-manifest:')
+    ..writeln('    if: github.event_name == \'workflow_dispatch\' || startsWith(github.ref, \'refs/tags/\')')
+    ..writeln('    needs:')
+    ..writeln('      - $needs')
+    ..writeln('    runs-on: ubuntu-latest')
+    ..writeln('    steps:')
+    ..writeln('      - uses: actions/checkout@v4')
+    ..writeln('      - uses: dart-lang/setup-dart@v1')
+    ..writeln(downloads)
+    ..writeln('      - name: Merge built libraries')
+    ..writeln('        run: |')
+    ..writeln('          rm -rf built-library release-assets')
+    ..writeln('          mkdir -p built-library release-assets')
+    ..writeln(copyLines)
+    ..writeln('      - run: dart pub get')
+    ..writeln('      - name: Generate manifest and release assets')
+    ..writeln('        run: |')
+    ..writeln('          TAG=\"\${{ github.event_name == \'workflow_dispatch\' && github.event.inputs.tag || github.ref_name }}\"')
+    ..writeln('          dart run native_prebuilt manifest update \\')
+    ..writeln('            --config \"\$CONFIG\" \\')
+    ..writeln('            --output \"\$MANIFEST_OUTPUT\" \\')
+    ..writeln('            --built-library-dir built-library \\')
+    ..writeln('            --release-assets-dir release-assets \\')
+    ..writeln('            --tag \"\$TAG\"')
+    ..writeln('      - uses: actions/upload-artifact@v4')
+    ..writeln('        with:')
+    ..writeln('          name: release-assets')
+    ..writeln('          path: release-assets/')
+    ..writeln('          if-no-files-found: error')
+    ..writeln()
+    ..writeln('  release:')
+    ..writeln('    if: github.event_name == \'workflow_dispatch\' || startsWith(github.ref, \'refs/tags/\')')
+    ..writeln('    needs:')
+    ..writeln('      - update-manifest')
+    ..writeln('    runs-on: ubuntu-latest')
+    ..writeln('    permissions:')
+    ..writeln('      contents: write')
+    ..writeln('    steps:')
+    ..writeln('      - uses: actions/checkout@v4')
+    ..writeln('      - uses: actions/download-artifact@v4')
+    ..writeln('        with:')
+    ..writeln('          name: release-assets')
+    ..writeln('          path: release-assets/')
+    ..writeln('      - name: Publish GitHub release assets')
+    ..writeln('        uses: softprops/action-gh-release@v2')
+    ..writeln('        with:')
+    ..writeln('          tag_name: \${{ github.event_name == \'workflow_dispatch\' && github.event.inputs.tag || github.ref_name }}')
+    ..writeln('          fail_on_unmatched_files: true')
+    ..writeln('          files: release-assets/*');
+
+  return b.toString();
+}
+
+String _githubBuildJob(String platform) {
+  final runner = switch (platform) {
+    'linux' => 'ubuntu-latest',
+    'macos' => 'macos-15',
+    'windows' => 'windows-latest',
+    _ => 'ubuntu-latest',
+  };
+  final steps = StringBuffer();
+  steps.writeln('    steps:');
+  steps.writeln('      - uses: actions/checkout@v4');
+  steps.writeln('      - uses: dart-lang/setup-dart@v1');
+  if (platform == 'linux') {
+    steps.writeln('      - name: Install native toolchain');
+    steps.writeln('        run: |');
+    steps.writeln('          sudo apt-get update');
+    steps.writeln('          sudo apt-get install -y --no-install-recommends \\');
+    steps.writeln('            build-essential \\');
+    steps.writeln('            clang \\');
+    steps.writeln('            cmake \\');
+    steps.writeln('            libclang-dev \\');
+    steps.writeln('            ninja-build \\');
+    steps.writeln('            pkg-config');
+  }
+  steps.writeln('      - run: dart pub get');
+  steps.writeln('      - run: dart test');
+  steps.writeln('      - name: Stage built library');
+  steps.writeln('        run: |');
+  if (platform == 'windows') {
+    steps.writeln('          New-Item -ItemType Directory -Force -Path built-library | Out-Null');
+    steps.writeln('          Copy-Item -Recurse -Force ".dart_tool/lib/*" built-library');
+  } else {
+    steps.writeln('          mkdir -p built-library');
+    steps.writeln('          cp -R .dart_tool/lib/. built-library/');
+  }
+  steps.writeln('      - uses: actions/upload-artifact@v4');
+  steps.writeln('        with:');
+  steps.writeln('          name: ${platform}-built-library');
+  steps.writeln('          path: built-library/');
+  steps.writeln('          if-no-files-found: error');
+
+  return '''  build-$platform:
+    runs-on: $runner
+${steps.toString()}''';
+}
 
 const _workflowPlatformOrder = <String>[
   'linux',
@@ -675,159 +832,6 @@ $needs
       - "\$RELEASE_ASSETS_DIR/"
 ''';
 }
-
-const nativePrebuiltPrebuiltWorkflow = r'''
-name: Prebuilt
-
-on:
-  push:
-    branches:
-      - main
-    tags:
-      - 'native_prebuilt_e2e-v*'
-  pull_request:
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: Tag to stamp into the generated manifest
-        required: false
-        type: string
-
-permissions:
-  contents: read
-
-env:
-  PUB_CACHE: ${{ github.workspace }}/.pub-cache
-  CONFIG: native_prebuilt.yaml
-  MANIFEST_OUTPUT: lib/src/hook/demo_prebuilts.g.dart
-
-jobs:
-  build-linux:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dart-lang/setup-dart@v1
-      - name: Install native toolchain
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            build-essential \
-            clang \
-            cmake \
-            libclang-dev \
-            ninja-build \
-            pkg-config
-      - run: dart pub get
-      - run: dart test
-      - name: Stage built library
-        run: |
-          mkdir -p built-library
-          cp -R .dart_tool/lib/. built-library/
-      - uses: actions/upload-artifact@v4
-        with:
-          name: linux-built-library
-          path: built-library/
-          if-no-files-found: error
-
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dart-lang/setup-dart@v1
-      - run: dart pub get
-      - run: dart test
-      - name: Stage built library
-        run: |
-          New-Item -ItemType Directory -Force -Path built-library | Out-Null
-          Copy-Item -Recurse -Force ".dart_tool/lib/*" built-library
-      - uses: actions/upload-artifact@v4
-        with:
-          name: windows-built-library
-          path: built-library/
-          if-no-files-found: error
-
-  build-macos:
-    runs-on: macos-15
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dart-lang/setup-dart@v1
-      - run: dart pub get
-      - run: dart test
-      - name: Stage built library
-        run: |
-          mkdir -p built-library
-          cp -R .dart_tool/lib/. built-library/
-      - uses: actions/upload-artifact@v4
-        with:
-          name: macos-built-library
-          path: built-library/
-          if-no-files-found: error
-
-  update-manifest:
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
-    needs:
-      - build-linux
-      - build-windows
-      - build-macos
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dart-lang/setup-dart@v1
-      - uses: actions/download-artifact@v4
-        with:
-          name: linux-built-library
-          path: downloaded/linux/
-      - uses: actions/download-artifact@v4
-        with:
-          name: windows-built-library
-          path: downloaded/windows/
-      - uses: actions/download-artifact@v4
-        with:
-          name: macos-built-library
-          path: downloaded/macos/
-      - name: Merge built libraries
-        run: |
-          rm -rf built-library release-assets
-          mkdir -p built-library release-assets
-          cp -R downloaded/linux/. built-library/
-          cp -R downloaded/windows/. built-library/
-          cp -R downloaded/macos/. built-library/
-      - run: dart pub get
-      - name: Generate manifest and release assets
-        run: |
-          TAG="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}"
-          dart run native_prebuilt manifest update \
-            --config "$CONFIG" \
-            --output "$MANIFEST_OUTPUT" \
-            --built-library-dir built-library \
-            --release-assets-dir release-assets \
-            --tag "$TAG"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: release-assets
-          path: release-assets/
-          if-no-files-found: error
-
-  release:
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
-    needs:
-      - update-manifest
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: release-assets
-          path: release-assets/
-      - name: Publish GitHub release assets
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
-          fail_on_unmatched_files: true
-          files: release-assets/*
-''';
 
 const nativePrebuiltBuildWorkflow = r'''
 name: Native Prebuilt Build
