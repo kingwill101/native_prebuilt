@@ -45,19 +45,11 @@ final class NativePrebuiltConfig {
     final artifacts = <String, NativePrebuiltArtifactConfig>{};
     for (final entry in artifactsMap.entries) {
       final platform = entry.key.toString();
-      final artifactMap = _asMap(entry.value, 'artifacts.$platform');
-      final archive = _asString(
-        artifactMap['archive'],
-        'artifacts.$platform.archive',
-      );
-      final payloadMap = _asMap(
-        artifactMap['payload'],
-        'artifacts.$platform.payload',
-      );
-      final type = _asString(
-        payloadMap['type'],
-        'artifacts.$platform.payload.type',
-      );
+      final artifactMap = _asMapOrNull(entry.value) ?? {};
+      final archive = _asStringOrNull(artifactMap['archive']) ??
+          '$package-$platform.tar.gz';
+      final payloadMap = _asMapOrNull(artifactMap['payload']) ?? {};
+      final type = _asStringOrNull(payloadMap['type']) ?? 'dynamic_library';
       final acceptVersionedNames = payloadMap['accept_versioned_names'] != false;
       final payload = switch (type) {
         'dynamic_library' => DynamicLibraryPayload(
@@ -115,6 +107,9 @@ final class NativePrebuiltConfig {
     }
     throw FormatException('$name must be a YAML mapping');
   }
+
+  static Map<String, dynamic>? _asMapOrNull(Object? value) =>
+      value is YamlMap ? Map<String, dynamic>.from(value) : null;
 
   static String _asString(Object? value, String name) {
     if (value is String && value.isNotEmpty) return value;

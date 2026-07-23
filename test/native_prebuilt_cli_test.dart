@@ -39,6 +39,33 @@ artifacts:
     }
   });
 
+  test('loads minimal artifact config with defaults', () async {
+    final dir = await Directory.systemTemp.createTemp('native_prebuilt_cli_');
+    try {
+      final configFile = File('${dir.path}/native_prebuilt.yaml');
+      configFile.writeAsStringSync('''
+schema: 1
+package: my_package
+asset_name: src/my_package.dart
+library_stem: my_package
+release:
+  repository: owner/repo
+  tag: my_package-v1.0.0
+artifacts:
+  linux-x64:
+  linux-arm64:
+''');
+
+      final config = NativePrebuiltConfig.loadFile(configFile.path);
+      expect(config.artifacts.length, 2);
+      expect(config.artifacts['linux-x64']!.archiveName, 'my_package-linux-x64.tar.gz');
+      expect(config.artifacts['linux-arm64']!.archiveName, 'my_package-linux-arm64.tar.gz');
+      expect(config.artifacts['linux-x64']!.payload, isA<DynamicLibraryPayload>());
+    } finally {
+      dir.deleteSync(recursive: true);
+    }
+  });
+
   test('loads GitLab CLI config', () async {
     final dir = await Directory.systemTemp.createTemp('native_prebuilt_cli_');
     try {

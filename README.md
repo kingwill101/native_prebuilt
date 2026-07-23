@@ -195,23 +195,34 @@ library without extra config.
 
 Platforms are declared in `native_prebuilt.yaml` under `artifacts:`. Each key is
 a platform label in the form `<os>-<arch>` (e.g. `linux-x64`, `macos-arm64`,
-`windows-x64`). Every entry **requires** `archive` and `payload.type`:
+`windows-x64`).
+
+Minimal form — `archive` and `payload.type` default automatically:
 
 ```yaml
 artifacts:
   linux-x64:
-    archive: my_package-linux-x64.tar.gz
+  linux-arm64:
+  macos-arm64:
+```
+
+Defaults:
+- `archive` → `<package>-<platform>.tar.gz` (e.g. `my_package-linux-x64.tar.gz`)
+- `payload.type` → `dynamic_library`
+
+Explicit form when you need custom names:
+
+```yaml
+artifacts:
+  linux-x64:
+    archive: custom-name-linux-x64.tar.gz
     payload:
       type: dynamic_library
   linux-arm64:
-    archive: my_package-linux-arm64.tar.gz
+    archive: custom-name-linux-arm64.tar.gz
     payload:
-      type: dynamic_library
+      type: static_library
 ```
-
-You cannot omit `archive` or `payload` — both are required. The `archive` name
-is the filename uploaded to the release. The `payload.type` is either
-`dynamic_library` (`.so`/`.dylib`/`.dll`) or `static_library` (`.a`).
 
 ### Supported platform labels
 
