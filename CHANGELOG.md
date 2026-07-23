@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.11
+
+- Generate package-specific workflow filenames, manifest outputs, and tag prefixes.
+- Add generated `publish.yml` scaffolds for pub.dev release publishing.
+- Refresh the README and CLI skill docs for the new workflow layout.
+
 ## 0.0.10
 
 - Publish GitLab release assets from the generated GitLab pipeline.

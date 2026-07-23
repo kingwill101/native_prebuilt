@@ -123,12 +123,20 @@ artifacts:
   });
 
   test('workflow templates include expected files', () {
-    final templates = workflowTemplates();
+    final templates = workflowTemplates(packageName: 'native_prebuilt_demo');
     expect(templates.keys, contains('prebuilt.yml'));
+    expect(templates.keys, contains('publish.yml'));
     expect(templates.keys, contains('native-prebuilt-build.yml'));
     expect(templates.keys, contains('native-prebuilt-release.yml'));
     expect(templates.keys, contains('native-prebuilt-update-manifest.yml'));
     expect(templates['prebuilt.yml'], contains('name: Prebuilt'));
+    expect(templates['prebuilt.yml'], contains('native_prebuilt_demo-v*'));
+    expect(
+      templates['prebuilt.yml'],
+      contains('lib/src/hook/native_prebuilt_demo_prebuilts.g.dart'),
+    );
+    expect(templates['publish.yml'], contains('name: Publish to pub.dev'));
+    expect(templates['publish.yml'], contains('dart pub publish --force'));
     expect(templates['prebuilt.yml'], contains('needs:'));
     expect(templates['prebuilt.yml'], contains('build-linux'));
     expect(templates['prebuilt.yml'], contains('build-windows'));
@@ -142,7 +150,7 @@ artifacts:
   });
 
   test('gitlab workflow templates include expected files', () {
-    final templates = gitlabWorkflowTemplates();
+    final templates = gitlabWorkflowTemplates(packageName: 'native_prebuilt_demo');
     expect(templates.keys, contains('.gitlab-ci.yml'));
     expect(
       templates.keys,
@@ -170,6 +178,14 @@ artifacts:
       contains('.gitlab/ci/native-prebuilt-update-manifest.yml'),
     );
     expect(templates['.gitlab-ci.yml'], contains('native-prebuilt-build-ios.yml'));
+    expect(
+      templates['.gitlab-ci.yml'],
+      contains('MANIFEST_OUTPUT: "lib/src/hook/native_prebuilt_demo_prebuilts.g.dart"'),
+    );
+    expect(
+      templates['.gitlab-ci.yml'],
+      contains('RELEASE_PACKAGE_NAME: "native_prebuilt_demo"'),
+    );
     expect(
       templates['.gitlab/ci/native-prebuilt-build-linux.yml'],
       contains('apt-get install -y --no-install-recommends build-essential'),
@@ -221,7 +237,10 @@ artifacts:
   });
 
   test('gitlab workflow templates default to the manifest platforms', () {
-    final templates = gitlabWorkflowTemplates(artifactLabels: ['linux-x64']);
+    final templates = gitlabWorkflowTemplates(
+      packageName: 'native_prebuilt_demo',
+      artifactLabels: ['linux-x64'],
+    );
 
     expect(
       templates.keys,
@@ -258,7 +277,10 @@ artifacts:
   });
 
   test('gitlab workflow templates can be filtered to selected platforms', () {
-    final templates = gitlabWorkflowTemplates(platforms: ['linux', 'windows']);
+    final templates = gitlabWorkflowTemplates(
+      packageName: 'native_prebuilt_demo',
+      platforms: ['linux', 'windows'],
+    );
 
     expect(
       templates.keys,

@@ -307,7 +307,7 @@ class WorkflowInitCommand extends Command<void> {
   Future<void> run() async {
     final configPath = option('config') as String? ?? 'native_prebuilt.yaml';
     final gitlab = (option('gitlab') as bool?) ?? false;
-    final config = gitlab ? NativePrebuiltConfig.loadFile(configPath) : null;
+    final config = NativePrebuiltConfig.loadFile(configPath);
     final output = option('output') as String? ??
         (gitlab ? '.' : '.github/workflows');
     final force = (option('force') as bool?) ?? false;
@@ -316,10 +316,11 @@ class WorkflowInitCommand extends Command<void> {
     final dir = Directory(output)..createSync(recursive: true);
     final templates = gitlab
         ? gitlabWorkflowTemplates(
-            artifactLabels: config!.artifacts.keys,
+            packageName: config.package,
+            artifactLabels: config.artifacts.keys,
             platforms: requestedPlatforms,
           )
-        : workflowTemplates();
+        : workflowTemplates(packageName: config.package);
     for (final entry in templates.entries) {
       final file = File(p.join(dir.path, entry.key));
       file.parent.createSync(recursive: true);
@@ -453,7 +454,7 @@ String _renderManifest(
 ) {
   final b = StringBuffer()
     ..writeln('// GENERATED CODE - DO NOT MODIFY BY HAND.')
-    ..writeln('// ignore_for_file: constant_identifier_names')
+    ..writeln('// ignore_for_file: constant_identifier_names, depend_on_referenced_packages')
     ..writeln()
     ..writeln("import 'package:native_prebuilt/native_prebuilt.dart';")
     ..writeln()
@@ -512,12 +513,17 @@ NativeTarget _targetFromPlatformLabel(String label) {
   );
 }
 
-Map<String, String> workflowTemplates() => {
-  'prebuilt.yml': nativePrebuiltPrebuiltWorkflow,
+Map<String, String> workflowTemplates({required String packageName}) => {
+  'prebuilt.yml': _githubPrebuiltWorkflow(packageName),
+  'publish.yml': nativePrebuiltPublishWorkflow,
   'native-prebuilt-build.yml': nativePrebuiltBuildWorkflow,
   'native-prebuilt-release.yml': nativePrebuiltReleaseWorkflow,
   'native-prebuilt-update-manifest.yml': nativePrebuiltUpdateManifestWorkflow,
 };
+
+String _githubPrebuiltWorkflow(String packageName) => nativePrebuiltPrebuiltWorkflow
+    .replaceAll('native_prebuilt_e2e', packageName)
+    .replaceAll('demo_prebuilts.g.dart', '${packageName}_prebuilts.g.dart');
 
 const _workflowPlatformOrder = <String>[
   'linux',
@@ -573,6 +579,7 @@ String _workflowPlatformFromArtifactLabel(String label) {
 }
 
 Map<String, String> gitlabWorkflowTemplates({
+  required String packageName,
   Iterable<String>? platforms,
   Iterable<String>? artifactLabels,
 }) {
@@ -583,7 +590,7 @@ Map<String, String> gitlabWorkflowTemplates({
           platforms?.toList() ?? const [],
         );
   final templates = <String, String>{
-    '.gitlab-ci.yml': _gitlabRootPipeline(selectedPlatforms),
+    '.gitlab-ci.yml': _gitlabRootPipeline(packageName, selectedPlatforms),
     '.gitlab/ci/native-prebuilt-release.yml': gitlabNativePrebuiltRelease,
     '.gitlab/ci/native-prebuilt-update-manifest.yml':
         _gitlabUpdateManifest(selectedPlatforms),
@@ -609,7 +616,7 @@ String _gitlabBuildTemplate(String platform) {
   return template.replaceFirst(RegExp(r'\n  rules:\n    - if: .*\n'), '\n');
 }
 
-String _gitlabRootPipeline(Iterable<String> platforms) {
+String _gitlabRootPipeline(String packageName, Iterable<String> platforms) {
   final includes = platforms
       .map((platform) => "  - local: '.gitlab/ci/native-prebuilt-build-$platform.yml'")
       .join('\n');
@@ -626,10 +633,10 @@ variables:
   PUB_CACHE: "\$CI_PROJECT_DIR/.pub-cache"
   BUILD_COMMAND: "dart test"
   CONFIG: "native_prebuilt.yaml"
-  MANIFEST_OUTPUT: "lib/src/hook/demo_prebuilts.g.dart"
+  MANIFEST_OUTPUT: "lib/src/hook/${packageName}_prebuilts.g.dart"
   BUILT_LIBRARY_DIR: "built-library"
   RELEASE_ASSETS_DIR: "release-assets"
-  RELEASE_PACKAGE_NAME: "release-assets"
+  RELEASE_PACKAGE_NAME: "${packageName}"
   TAG: "\$CI_COMMIT_TAG"
 
 cache:
@@ -898,6 +905,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: dart run native_prebuilt manifest update --config ${{ inputs.config }} --output lib/src/hook/asset_hashes.dart --built-library-dir ${{ inputs.built-library-dir }} --release-assets-dir ${{ inputs.release-assets-dir }}
+''';
+
+const nativePrebuiltPublishWorkflow = r'''
+name: Publish to pub.dev
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+
+jobs:
+  publish:
+    permissions:
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+      - name: Install dependencies
+        run: dart pub get
+      - name: Publish
+        run: dart pub publish --force
 ''';
 
 const gitlabRootPipeline = r'''

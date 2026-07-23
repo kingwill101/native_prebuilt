@@ -10,13 +10,13 @@ Reusable infrastructure for Dart packages that ship prebuilt native libraries fr
 - `PrebuiltResolver` chain for override / local / cached / downloaded prebuilts
 - `NativeBinaryInspector` and library-name helpers
 - CLI tooling for manifest generation, fetch, verification, and workflow templates
-- Reusable GitHub Actions workflow templates
+- Reusable GitHub Actions and pub.dev workflow templates
 
 ## Install
 
 ```yaml
 dependencies:
-  native_prebuilt: ^0.0.10
+  native_prebuilt: ^0.0.11
 ```
 
 ## Hook usage
@@ -24,7 +24,7 @@ dependencies:
 ```dart
 import 'package:hooks/hooks.dart';
 import 'package:native_prebuilt/hooks.dart';
-import 'package:my_package/src/hook/prebuilts.g.dart';
+import 'package:my_package/src/hook/my_package_prebuilts.g.dart';
 
 void main(List<String> args) async {
   await build(args, (input, output) async {
@@ -66,12 +66,14 @@ Use:
 ```bash
 dart run native_prebuilt manifest update \
   --config native_prebuilt.yaml \
-  --output lib/src/hook/prebuilts.g.dart \
-  --built-library-dir built-library
+  --output lib/src/hook/my_package_prebuilts.g.dart \
+  --built-library-dir built-library \
+  --release-assets-dir release-assets \
 dart run native_prebuilt manifest verify \
   --config native_prebuilt.yaml \
-  --output lib/src/hook/prebuilts.g.dart \
-  --built-library-dir built-library
+  --output lib/src/hook/my_package_prebuilts.g.dart \
+  --built-library-dir built-library \
+  --release-assets-dir release-assets
 ```
 
 ## Fetch locally
@@ -88,8 +90,15 @@ GitHub Actions:
 dart run native_prebuilt workflow init
 ```
 
-This now also writes a repo-level `prebuilt.yml` workflow alongside the reusable workflow templates, and tag runs publish GitHub release assets.
-GitLab CI generated from the same command now uploads GitLab release assets too.
+This writes a repo-level `prebuilt.yml` workflow, a `publish.yml` pub.dev workflow,
+and the reusable workflow templates. The generated tag trigger is package-specific
+(e.g. `my_package-v*`) and tag runs publish GitHub release assets.
+
+GitLab CI generated from the same command uploads GitLab release assets too:
+
+```bash
+dart run native_prebuilt workflow init --gitlab --config native_prebuilt.yaml
+```
 
 GitLab CI (defaults to the platforms declared in `native_prebuilt.yaml`):
 
@@ -102,6 +111,7 @@ dart run native_prebuilt workflow init --gitlab --config native_prebuilt.yaml
 - `hooks.user_defines` is preferred for local override paths.
 - Use `release.provider: gitlab` and `release.project` for GitLab release assets.
 - `workflow init --platform ...` is repeatable; omit it to scaffold the platforms declared in the manifest.
+- Generated GitHub workflows derive filenames and tag prefixes from `package:` in `native_prebuilt.yaml`.
 - Generated GitLab scaffolds stage built libraries in `built-library/` and use the manifest to decide which platform jobs to emit.
 - The package exports `OS`, `Architecture`, and `IOSSdk` from `code_assets`.
 - The cache and installer are designed for repeated hook runs and concurrent builds.
