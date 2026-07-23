@@ -129,6 +129,13 @@ artifacts:
     expect(templates.keys, contains('native-prebuilt-release.yml'));
     expect(templates.keys, contains('native-prebuilt-update-manifest.yml'));
     expect(templates['prebuilt.yml'], contains('name: Prebuilt'));
+    expect(templates['prebuilt.yml'], contains('needs:'));
+    expect(templates['prebuilt.yml'], contains('build-linux'));
+    expect(templates['prebuilt.yml'], contains('build-windows'));
+    expect(templates['prebuilt.yml'], contains('build-macos'));
+    expect(templates['prebuilt.yml'], contains('actions/download-artifact@v4'));
+    expect(templates['prebuilt.yml'], contains('Merge built libraries'));
+    expect(templates['prebuilt.yml'], contains('downloaded/windows/'));
   });
 
   test('gitlab workflow templates include expected files', () {

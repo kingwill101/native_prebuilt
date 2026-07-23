@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.8
+
+- Make the generated `prebuilt.yml` download and merge all desktop built libraries before manifest generation.
+- Keep the repo-level workflow aligned with the reusable templates.
+- Continue using manifest-driven GitLab scaffolds and visible built-library staging.
+
 ## 0.0.7
 
 - Make workflow scaffolds manifest-driven for GitLab.
