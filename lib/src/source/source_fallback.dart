@@ -145,8 +145,8 @@ final class SourceFallbackResolver {
     }
 
     // Copy cached source to a working directory.
-    final workDir = Directory(
-      p.join(input.outputDirectory.path, 'source_work'),
+    final workDir = Directory.fromUri(
+      input.outputDirectory.resolve('source_work/'),
     );
     if (workDir.existsSync()) workDir.deleteSync(recursive: true);
 
