@@ -21,120 +21,135 @@ import 'package:test/test.dart';
 import '../support/fixture_workspace.dart';
 
 void main() {
-  group('native_toolchain_c_fallback fixture (CallbackSourceBuilder + CBuilder)',
-      () {
-    late FixtureWorkspace workspace;
+  group(
+    'native_toolchain_c_fallback fixture (CallbackSourceBuilder + CBuilder)',
+    () {
+      late FixtureWorkspace workspace;
 
-    setUp(() async {
-      workspace = await FixtureWorkspace.create('native_toolchain_c_fallback');
-    });
-
-    tearDown(() async {
-      await workspace.dispose();
-    });
-
-    test(
-      'CallbackSourceBuilder with CBuilder builds C library and FFI works',
-      () async {
-        final cBuilder = CBuilder.library(
-          name: 'native_toolchain_c_fallback',
-          packageName: workspace.source.path,
-          assetName: 'src/native_library.dart',
-          sources: const ['src/native/fixture.c'],
+      setUp(() async {
+        workspace = await FixtureWorkspace.create(
+          'native_toolchain_c_fallback',
         );
+      });
 
-        final inputBuilder = BuildInputBuilder()
-          ..setupShared(
-            packageRoot: workspace.source.uri,
-            packageName: 'native_toolchain_c_fallback',
-            outputFile: workspace.source.uri.resolve('output.json'),
-            outputDirectoryShared: workspace.source.uri.resolve('build/'),
-          )
-          ..setupBuildInput()
-          ..config.setupBuild(linkingEnabled: false)
-          ..config.addBuildAssetTypes(['code_assets/code'])
-          ..config.setupCode(
-            targetArchitecture: Architecture.x64,
-            targetOS: OS.linux,
-            linkModePreference: LinkModePreference.dynamic,
+      tearDown(() async {
+        await workspace.dispose();
+      });
+
+      test(
+        'CallbackSourceBuilder with CBuilder builds C library and FFI works',
+        () async {
+          final cBuilder = CBuilder.library(
+            name: 'native_toolchain_c_fallback',
+            packageName: workspace.source.path,
+            assetName: 'src/native_library.dart',
+            sources: const ['src/native/fixture.c'],
           );
 
-        final input = inputBuilder.build();
-        final output = BuildOutputBuilder();
+          final inputBuilder = BuildInputBuilder()
+            ..setupShared(
+              packageRoot: workspace.source.uri,
+              packageName: 'native_toolchain_c_fallback',
+              outputFile: workspace.source.uri.resolve('output.json'),
+              outputDirectoryShared: workspace.source.uri.resolve('build/'),
+            )
+            ..setupBuildInput()
+            ..config.setupBuild(linkingEnabled: false)
+            ..config.addBuildAssetTypes(['code_assets/code'])
+            ..config.setupCode(
+              targetArchitecture: Architecture.current,
+              targetOS: OS.current,
+              linkModePreference: LinkModePreference.dynamic,
+            );
 
-        print('input.outputDirectory = ${input.outputDirectory}');
-        print('input.outputDirectoryShared = ${input.outputDirectoryShared}');
-        print('input.config.buildAssetTypes = ${input.config.buildAssetTypes}');
-        print('input.config.buildCodeAssets = ${input.config.buildCodeAssets}');
+          final input = inputBuilder.build();
+          final output = BuildOutputBuilder();
 
-        // Run CBuilder through CallbackSourceBuilder pattern
-        final source = ResolvedSource(
-          directory: workspace.source,
-          origin: SourceOrigin.local,
-        );
+          print('input.outputDirectory = ${input.outputDirectory}');
+          print('input.outputDirectoryShared = ${input.outputDirectoryShared}');
+          print(
+            'input.config.buildAssetTypes = ${input.config.buildAssetTypes}',
+          );
+          print(
+            'input.config.buildCodeAssets = ${input.config.buildCodeAssets}',
+          );
 
-        final cCallbackBuilder = CallbackSourceBuilder(
-          callback: ({
-            required source,
-            required input,
-            required output,
-            required logger,
-          }) async {
-            await cBuilder.run(input: input, output: output, logger: logger);
-          },
-        );
+          // Run CBuilder through CallbackSourceBuilder pattern
+          final source = ResolvedSource(
+            directory: workspace.source,
+            origin: SourceOrigin.local,
+          );
 
-        await cCallbackBuilder.build(
-          source: source,
-          input: input,
-          output: output,
-          logger: Logger('test'),
-        );
+          final cCallbackBuilder = CallbackSourceBuilder(
+            callback:
+                ({
+                  required source,
+                  required input,
+                  required output,
+                  required logger,
+                }) async {
+                  await cBuilder.run(
+                    input: input,
+                    output: output,
+                    logger: logger,
+                  );
+                },
+          );
 
-        // Find the built library - search entire workspace recursively
-        final libName = _sharedLibraryName('native_toolchain_c_fallback');
-        final libPath = _findBuiltLibrary(workspace.source, libName);
+          await cCallbackBuilder.build(
+            source: source,
+            input: input,
+            output: output,
+            logger: Logger('test'),
+          );
 
-        if (libPath == null) {
-          print('Workspace contents:');
-          for (final entity in workspace.source.listSync(recursive: true)) {
-            print('  ${entity.path}');
+          // Find the built library - search entire workspace recursively
+          final libName = _sharedLibraryName('native_toolchain_c_fallback');
+          final libPath = _findBuiltLibrary(workspace.source, libName);
+
+          if (libPath == null) {
+            print('Workspace contents:');
+            for (final entity in workspace.source.listSync(recursive: true)) {
+              print('  ${entity.path}');
+            }
+            fail('Built library not found: $libName');
           }
-          fail('Built library not found: $libName');
-        }
 
-        expect(File(libPath).existsSync(), isTrue);
-        print('✅ Built library via CallbackSourceBuilder + CBuilder');
-        print('   Size: ${File(libPath).lengthSync()} bytes');
+          expect(File(libPath).existsSync(), isTrue);
+          print('✅ Built library via CallbackSourceBuilder + CBuilder');
+          print('   Size: ${File(libPath).lengthSync()} bytes');
 
-        // Verify FFI: add(2, 3) should return 5
-        final lib = DynamicLibrary.open(libPath);
+          // Verify FFI: add(2, 3) should return 5
+          final lib = DynamicLibrary.open(libPath);
 
-        final addFn = lib.lookupFunction<
-          Int32 Function(Int32, Int32),
-          int Function(int, int)
-        >('native_toolchain_c_fallback_add');
+          final addFn = lib
+              .lookupFunction<
+                Int32 Function(Int32, Int32),
+                int Function(int, int)
+              >('native_toolchain_c_fallback_add');
 
-        final result = addFn(2, 3);
-        expect(result, equals(5), reason: 'add(2, 3) should return 5');
+          final result = addFn(2, 3);
+          expect(result, equals(5), reason: 'add(2, 3) should return 5');
 
-        final versionFn = lib.lookupFunction<
-          Pointer<Utf8> Function(),
-          Pointer<Utf8> Function()
-        >('native_toolchain_c_fallback_version');
+          final versionFn = lib
+              .lookupFunction<
+                Pointer<Utf8> Function(),
+                Pointer<Utf8> Function()
+              >('native_toolchain_c_fallback_version');
 
-        final version = versionFn().toDartString();
-        expect(version, equals('1.0.0'), reason: 'version should be "1.0.0"');
+          final version = versionFn().toDartString();
+          expect(version, equals('1.0.0'), reason: 'version should be "1.0.0"');
 
-        print('✅ FFI calls work correctly');
-        print('   add(2, 3) = $result');
-        print('   version = $version');
+          print('✅ FFI calls work correctly');
+          print('   add(2, 3) = $result');
+          print('   version = $version');
 
-        lib.close();
-      },
-      timeout: Timeout(Duration(minutes: 2)),
-    );
-  });
+          lib.close();
+        },
+        timeout: Timeout(Duration(minutes: 2)),
+      );
+    },
+  );
 }
 
 String _sharedLibraryName(String stem) {

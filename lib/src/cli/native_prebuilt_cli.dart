@@ -7,7 +7,12 @@ import 'package:path/path.dart' as p;
 import '../archive/archive_entry.dart';
 import '../archive/archive_reader.dart';
 import '../binary/library_name.dart';
+import '../build_cli/native_project_cli.dart';
+import '../build/native_build_recipe.dart';
+import '../build/native_project.dart';
+import '../build/steps/steps.dart';
 import '../download/http_downloader.dart';
+import '../source/source_specification.dart';
 import '../manifest/prebuilt_artifact.dart';
 import '../manifest/prebuilt_manifest.dart';
 import '../manifest/release_source.dart';
@@ -24,7 +29,12 @@ Future<void> runNativePrebuiltCli(List<String> args) async {
         ..addCommand(ManifestCommand())
         ..addCommand(FetchCommand())
         ..addCommand(DoctorCommand())
-        ..addCommand(WorkflowCommand());
+        ..addCommand(WorkflowCommand())
+        ..addCommand(PlanCommand(project: _defaultProject))
+        ..addCommand(BuildCommand(project: _defaultProject))
+        ..addCommand(CacheKeyCommand(project: _defaultProject))
+        ..addCommand(ExplainCacheCommand(project: _defaultProject))
+        ..addCommand(VerifyCommand(project: _defaultProject));
 
   await runner.run(args);
 }
@@ -1144,3 +1154,44 @@ native_prebuilt:update_manifest:
       - "$MANIFEST_OUTPUT"
       - "$RELEASE_ASSETS_DIR/"
 ''';
+
+/// Default NativeProject used by CLI build commands when no project is provided.
+final NativeProject _defaultProject = NativeProject(
+  name: 'native_prebuilt',
+  asset: NativeAssetSpec(
+    assetName: 'src/native_prebuilt.dart',
+    libraryStem: 'native_prebuilt',
+    linkMode: DynamicLoadingBundled(),
+  ),
+  prebuilts: PrebuiltManifest(
+    schemaVersion: 1,
+    release: GitHubReleaseSource(
+      owner: 'example',
+      repository: 'native_prebuilt',
+      tag: 'v0.0.1',
+    ),
+    artifacts: {},
+  ),
+  sources: [
+    GitSource(
+      repository: Uri.parse('https://github.com/example/native_prebuilt.git'),
+      revision: 'abc123',
+    ),
+  ],
+  build: NativeBuildDefinition(
+    recipes: {
+      OS.linux: StepBuildRecipe(
+        steps: [
+          CmakeConfigureStep(
+            sourceDirectory: '.',
+            buildDirectory: 'build',
+          ),
+          CmakeBuildStep(
+            buildDirectory: 'build',
+            targets: ['native_prebuilt'],
+          ),
+        ],
+      ),
+    },
+  ),
+);

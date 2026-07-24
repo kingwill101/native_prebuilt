@@ -369,4 +369,15 @@ artifacts:
       isNot(contains('job: native_prebuilt:build:macos')),
     );
   });
+
+  group('plan command', () {
+    test('plan with --target shows build plan', () async {
+      await runNativePrebuiltCli(['plan', '--target', 'linux-x64']);
+    });
+
+    test('plan without --target shows help', () async {
+      // Without --target, the command prints usage and exits cleanly (exit code 0)
+      await runNativePrebuiltCli(['plan']);
+    });
+  });
 }
