@@ -4,6 +4,6 @@
 #define EXPORT __attribute__((visibility("default")))
 #endif
 
-EXPORT int callback_source_fixture_add(int a, int b) {
+EXPORT int add(int a, int b) {
   return a + b;
 }
