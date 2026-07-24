@@ -56,9 +56,7 @@ abstract interface class PrebuiltResolver {
 ///       prebuilt_path: /absolute/path/to/library.so
 /// ```
 final class UserDefinePrebuiltResolver implements PrebuiltResolver {
-  const UserDefinePrebuiltResolver({
-    this.key = 'prebuilt_path',
-  });
+  const UserDefinePrebuiltResolver({this.key = 'prebuilt_path'});
 
   final String key;
 
@@ -94,9 +92,7 @@ final class UserDefinePrebuiltResolver implements PrebuiltResolver {
 ///
 /// Searches up from the build output directory and from the package root.
 final class LocalPrebuiltResolver implements PrebuiltResolver {
-  const LocalPrebuiltResolver({
-    this.directoryName = '.prebuilt',
-  });
+  const LocalPrebuiltResolver({this.directoryName = '.prebuilt'});
 
   final String directoryName;
 
@@ -111,12 +107,9 @@ final class LocalPrebuiltResolver implements PrebuiltResolver {
     final searchRoots = _computeSearchRoots(context);
 
     for (final root in searchRoots) {
-      final candidate = File(p.join(
-        root.path,
-        directoryName,
-        context.target.label,
-        canonicalName,
-      ));
+      final candidate = File(
+        p.join(root.path, directoryName, context.target.label, canonicalName),
+      );
       if (candidate.existsSync()) {
         try {
           final hash = await ArchiveReader.sha256Hash(candidate);
@@ -177,9 +170,7 @@ final class SharedCacheResolver implements PrebuiltResolver {
   @override
   Future<ResolvedPrebuilt?> resolve(PrebuiltResolutionContext context) async {
     final cache = ArtifactCache(
-      cacheDir: Directory.fromUri(
-        context.input.outputDirectoryShared,
-      ),
+      cacheDir: Directory.fromUri(context.input.outputDirectoryShared),
       installer: DefaultArtifactInstaller(
         downloader: downloader,
         inspector: inspector,

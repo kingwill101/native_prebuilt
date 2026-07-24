@@ -46,20 +46,22 @@ final class NativePrebuiltConfig {
     for (final entry in artifactsMap.entries) {
       final platform = entry.key.toString();
       final artifactMap = _asMapOrNull(entry.value) ?? {};
-      final archive = _asStringOrNull(artifactMap['archive']) ??
+      final archive =
+          _asStringOrNull(artifactMap['archive']) ??
           '$package-$platform.tar.gz';
       final payloadMap = _asMapOrNull(artifactMap['payload']) ?? {};
       final type = _asStringOrNull(payloadMap['type']) ?? 'dynamic_library';
-      final acceptVersionedNames = payloadMap['accept_versioned_names'] != false;
+      final acceptVersionedNames =
+          payloadMap['accept_versioned_names'] != false;
       final payload = switch (type) {
         'dynamic_library' => DynamicLibraryPayload(
-            libraryStem: libraryStem,
-            acceptVersionedNames: acceptVersionedNames,
-          ),
+          libraryStem: libraryStem,
+          acceptVersionedNames: acceptVersionedNames,
+        ),
         'static_library' => StaticLibraryPayload(libraryStem: libraryStem),
         _ => throw FormatException(
-            'Unsupported payload type "$type" for artifacts.$platform',
-          ),
+          'Unsupported payload type "$type" for artifacts.$platform',
+        ),
       };
       artifacts[platform] = NativePrebuiltArtifactConfig(
         archiveName: archive,
@@ -78,25 +80,29 @@ final class NativePrebuiltConfig {
   }
 
   static ReleaseSource _parseReleaseSource(Map<String, dynamic> releaseMap) {
-    final provider = _asStringOrNull(releaseMap['provider'])?.toLowerCase() ??
-        'github';
+    final provider =
+        _asStringOrNull(releaseMap['provider'])?.toLowerCase() ?? 'github';
     final tag = _asString(releaseMap['tag'], 'release.tag');
 
     return switch (provider) {
       'github' => GitHubReleaseSource(
-          owner: _asOwner(_asString(releaseMap['repository'], 'release.repository')),
-          repository: _asRepo(_asString(releaseMap['repository'], 'release.repository')),
-          tag: tag,
+        owner: _asOwner(
+          _asString(releaseMap['repository'], 'release.repository'),
         ),
+        repository: _asRepo(
+          _asString(releaseMap['repository'], 'release.repository'),
+        ),
+        tag: tag,
+      ),
       'gitlab' => GitLabReleaseSource(
-          projectPath: _asString(
-            releaseMap['project'] ??
-                releaseMap['project_path'] ??
-                releaseMap['repository'],
-            'release.project',
-          ),
-          tag: tag,
+        projectPath: _asString(
+          releaseMap['project'] ??
+              releaseMap['project_path'] ??
+              releaseMap['repository'],
+          'release.project',
         ),
+        tag: tag,
+      ),
       _ => throw FormatException('Unsupported release.provider "$provider"'),
     };
   }

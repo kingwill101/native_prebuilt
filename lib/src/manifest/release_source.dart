@@ -48,10 +48,7 @@ final class GitHubReleaseSource extends ReleaseSource {
   /// The base URL for downloading artifacts from this release.
   Uri get baseUrl =>
       baseUri ??
-      Uri.https(
-        'github.com',
-        '/$owner/$repository/releases/download/$tag/',
-      );
+      Uri.https('github.com', '/$owner/$repository/releases/download/$tag/');
 
   @override
   Uri artifactUrl(String archiveName) => baseUrl.resolve(archiveName);
@@ -100,11 +97,8 @@ final class GitLabReleaseSource extends ReleaseSource {
   Uri artifactUrl(String archiveName) => baseUrl.resolve(archiveName);
 
   @override
-  ReleaseSource withTag(String tag) => GitLabReleaseSource(
-    projectPath: projectPath,
-    tag: tag,
-    baseUri: baseUri,
-  );
+  ReleaseSource withTag(String tag) =>
+      GitLabReleaseSource(projectPath: projectPath, tag: tag, baseUri: baseUri);
 
   @override
   String toString() => 'GitLabReleaseSource($projectPath@$tag)';

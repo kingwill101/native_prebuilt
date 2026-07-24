@@ -11,20 +11,14 @@ sealed class SourcePreparation {
   const SourcePreparation();
 
   /// Apply this preparation step to the source [directory].
-  Future<void> apply({
-    required Directory directory,
-    required Logger? logger,
-  });
+  Future<void> apply({required Directory directory, required Logger? logger});
 }
 
 /// Applies one or more patch files to the source directory.
 ///
 /// Patches are applied in order using the `patch` command.
 final class ApplyPatches extends SourcePreparation {
-  const ApplyPatches({
-    required this.paths,
-    this.reverse = false,
-  });
+  const ApplyPatches({required this.paths, this.reverse = false});
 
   /// Relative paths to patch files, resolved against the package root.
   final List<String> paths;
@@ -40,9 +34,7 @@ final class ApplyPatches extends SourcePreparation {
     for (final patchPath in paths) {
       final patchFile = File(patchPath);
       if (!patchFile.existsSync()) {
-        throw SourcePreparationException(
-          'Patch file not found: $patchPath',
-        );
+        throw SourcePreparationException('Patch file not found: $patchPath');
       }
 
       logger?.info('Applying patch: ${p.basename(patchPath)}');

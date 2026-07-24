@@ -94,11 +94,15 @@ final class SourceFallbackResolver {
     }
 
     if (resolved == null) {
-      logger?.warning('No source resolved from ${fallback.sources.length} specifications');
+      logger?.warning(
+        'No source resolved from ${fallback.sources.length} specifications',
+      );
       return null;
     }
 
-    logger?.info('Resolved source: ${resolved.origin.label} at ${resolved.directory.path}');
+    logger?.info(
+      'Resolved source: ${resolved.origin.label} at ${resolved.directory.path}',
+    );
 
     // Apply preparation steps.
     // Work in a copy of the resolved source to keep the cache immutable.
@@ -124,10 +128,7 @@ final class SourceFallbackResolver {
         logger: logger,
       );
 
-      return SourceBuildResult(
-        source: resolved,
-        workDirectory: workDir,
-      );
+      return SourceBuildResult(source: resolved, workDirectory: workDir);
     } catch (e) {
       logger?.severe('Source build failed: $e');
       rethrow;
@@ -182,8 +183,9 @@ final class SourceFallbackResolver {
         await entity.copy(target.path);
       } else if (entity is Directory) {
         final relativePath = p.relative(entity.path, from: source.path);
-        Directory(p.join(destination.path, relativePath))
-            .createSync(recursive: true);
+        Directory(
+          p.join(destination.path, relativePath),
+        ).createSync(recursive: true);
       }
     }
   }
@@ -191,10 +193,7 @@ final class SourceFallbackResolver {
 
 /// Result of a successful source build.
 final class SourceBuildResult {
-  const SourceBuildResult({
-    required this.source,
-    required this.workDirectory,
-  });
+  const SourceBuildResult({required this.source, required this.workDirectory});
 
   /// The resolved source that was built.
   final ResolvedSource source;

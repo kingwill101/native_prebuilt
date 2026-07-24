@@ -51,8 +51,7 @@ final class PrebuiltManifest {
   final Map<String, PrebuiltArtifact> artifacts;
 
   /// Whether the given platform label has a prebuilt artifact.
-  bool supports(String platformLabel) =>
-      artifacts.containsKey(platformLabel);
+  bool supports(String platformLabel) => artifacts.containsKey(platformLabel);
 
   /// Returns the artifact for [platformLabel], or `null` if not available.
   PrebuiltArtifact? operator [](String platformLabel) =>

@@ -30,8 +30,7 @@ final class PrebuiltArtifact {
   final ArtifactPayload payload;
 
   @override
-  String toString() =>
-      'PrebuiltArtifact($archiveName, payload: $payload)';
+  String toString() => 'PrebuiltArtifact($archiveName, payload: $payload)';
 }
 
 /// Describes the expected native binary payload within an archive.
@@ -69,9 +68,7 @@ final class DynamicLibraryPayload extends ArtifactPayload {
 
 /// A static library (`.a` archive).
 final class StaticLibraryPayload extends ArtifactPayload {
-  const StaticLibraryPayload({
-    required this.libraryStem,
-  });
+  const StaticLibraryPayload({required this.libraryStem});
 
   /// The library stem without platform prefix or extension.
   ///

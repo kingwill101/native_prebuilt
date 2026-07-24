@@ -5,10 +5,7 @@ sealed class ResolvedPrebuilt {
 
 /// A prebuilt was found and installed successfully.
 final class ResolvedPrebuiltFound extends ResolvedPrebuilt {
-  const ResolvedPrebuiltFound({
-    required this.file,
-    required this.source,
-  });
+  const ResolvedPrebuiltFound({required this.file, required this.source});
 
   /// The installed native library file.
   final ResolvedFile file;
@@ -33,10 +30,7 @@ final class ResolvedPrebuiltNotFound extends ResolvedPrebuilt {
 
 /// A file that has been resolved and is ready to use.
 final class ResolvedFile {
-  const ResolvedFile({
-    required this.path,
-    required this.hash,
-  });
+  const ResolvedFile({required this.path, required this.hash});
 
   /// Path to the native library file.
   final String path;

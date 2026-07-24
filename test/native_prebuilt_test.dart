@@ -5,10 +5,7 @@ void main() {
   group('NativeTarget', () {
     test('label generation', () {
       expect(
-        const NativeTarget(
-          os: OS.linux,
-          architecture: Architecture.x64,
-        ).label,
+        const NativeTarget(os: OS.linux, architecture: Architecture.x64).label,
         'linux-x64',
       );
 
@@ -39,27 +36,15 @@ void main() {
     });
 
     test('equality', () {
-      const a = NativeTarget(
-        os: OS.linux,
-        architecture: Architecture.x64,
-      );
-      const b = NativeTarget(
-        os: OS.linux,
-        architecture: Architecture.x64,
-      );
+      const a = NativeTarget(os: OS.linux, architecture: Architecture.x64);
+      const b = NativeTarget(os: OS.linux, architecture: Architecture.x64);
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));
     });
 
     test('inequality', () {
-      const a = NativeTarget(
-        os: OS.linux,
-        architecture: Architecture.x64,
-      );
-      const b = NativeTarget(
-        os: OS.linux,
-        architecture: Architecture.arm64,
-      );
+      const a = NativeTarget(os: OS.linux, architecture: Architecture.x64);
+      const b = NativeTarget(os: OS.linux, architecture: Architecture.arm64);
       expect(a, isNot(equals(b)));
     });
   });

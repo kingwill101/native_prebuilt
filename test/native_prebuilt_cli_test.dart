@@ -58,9 +58,18 @@ artifacts:
 
       final config = NativePrebuiltConfig.loadFile(configFile.path);
       expect(config.artifacts.length, 2);
-      expect(config.artifacts['linux-x64']!.archiveName, 'my_package-linux-x64.tar.gz');
-      expect(config.artifacts['linux-arm64']!.archiveName, 'my_package-linux-arm64.tar.gz');
-      expect(config.artifacts['linux-x64']!.payload, isA<DynamicLibraryPayload>());
+      expect(
+        config.artifacts['linux-x64']!.archiveName,
+        'my_package-linux-x64.tar.gz',
+      );
+      expect(
+        config.artifacts['linux-arm64']!.archiveName,
+        'my_package-linux-arm64.tar.gz',
+      );
+      expect(
+        config.artifacts['linux-x64']!.payload,
+        isA<DynamicLibraryPayload>(),
+      );
     } finally {
       dir.deleteSync(recursive: true);
     }
@@ -172,12 +181,20 @@ artifacts:
     expect(templates['prebuilt.yml'], contains('Merge built libraries'));
     expect(templates['prebuilt.yml'], contains('downloaded/windows/'));
     expect(templates['prebuilt.yml'], contains('release-assets'));
-    expect(templates['prebuilt.yml'], contains('softprops/action-gh-release@v2'));
-    expect(templates['prebuilt.yml'], contains('Publish GitHub release assets'));
+    expect(
+      templates['prebuilt.yml'],
+      contains('softprops/action-gh-release@v2'),
+    );
+    expect(
+      templates['prebuilt.yml'],
+      contains('Publish GitHub release assets'),
+    );
   });
 
   test('gitlab workflow templates include expected files', () {
-    final templates = gitlabWorkflowTemplates(packageName: 'native_prebuilt_demo');
+    final templates = gitlabWorkflowTemplates(
+      packageName: 'native_prebuilt_demo',
+    );
     expect(templates.keys, contains('.gitlab-ci.yml'));
     expect(
       templates.keys,
@@ -204,10 +221,15 @@ artifacts:
       templates.keys,
       contains('.gitlab/ci/native-prebuilt-update-manifest.yml'),
     );
-    expect(templates['.gitlab-ci.yml'], contains('native-prebuilt-build-ios.yml'));
     expect(
       templates['.gitlab-ci.yml'],
-      contains('MANIFEST_OUTPUT: "lib/src/hook/native_prebuilt_demo_prebuilts.g.dart"'),
+      contains('native-prebuilt-build-ios.yml'),
+    );
+    expect(
+      templates['.gitlab-ci.yml'],
+      contains(
+        'MANIFEST_OUTPUT: "lib/src/hook/native_prebuilt_demo_prebuilts.g.dart"',
+      ),
     );
     expect(
       templates['.gitlab-ci.yml'],
@@ -229,10 +251,7 @@ artifacts:
       templates['.gitlab/ci/native-prebuilt-build-android.yml'],
       contains('ghcr.io/cirruslabs/flutter:stable'),
     );
-    expect(
-      templates['.gitlab-ci.yml'],
-      contains('RELEASE_ASSETS_DIR'),
-    );
+    expect(templates['.gitlab-ci.yml'], contains('RELEASE_ASSETS_DIR'));
     expect(
       templates['.gitlab/ci/native-prebuilt-update-manifest.yml'],
       contains('--built-library-dir "\$BUILT_LIBRARY_DIR"'),

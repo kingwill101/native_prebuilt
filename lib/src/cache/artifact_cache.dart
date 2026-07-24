@@ -12,10 +12,7 @@ import 'artifact_installer.dart';
 /// This keeps the earlier API working while exposing a more explicit
 /// installer abstraction for advanced use.
 final class ArtifactCache {
-  ArtifactCache({
-    required this.cacheDir,
-    this.installer,
-  });
+  ArtifactCache({required this.cacheDir, this.installer});
 
   /// The root cache directory.
   final Directory cacheDir;

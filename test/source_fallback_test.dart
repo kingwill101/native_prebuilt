@@ -1,15 +1,22 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
 import 'package:code_assets/code_assets.dart';
 import 'package:code_assets/src/code_assets/config.dart';
 import 'package:hooks/hooks.dart';
 import 'package:logging/logging.dart';
-import 'package:native_prebuilt/hooks.dart';
+import 'package:native_prebuilt/native_prebuilt.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 import 'test_utils.dart';
+
+/// Compute SHA-256 hex digest for test data.
+String _testSha256(Uint8List bytes) {
+  return sha256.convert(bytes).toString();
+}
 
 void main() {
   group('SourceSpecification', () {
@@ -83,11 +90,13 @@ void main() {
         srcDir.createSync(recursive: true);
 
         final provider = LocalSourceProvider();
-        final result = await provider.resolve(SourceResolutionContext(
-          specification: LocalSource(paths: ['native']),
-          packageRoot: tempDir,
-          sourceCacheRoot: cacheDir,
-        ));
+        final result = await provider.resolve(
+          SourceResolutionContext(
+            specification: LocalSource(paths: ['native']),
+            packageRoot: tempDir,
+            sourceCacheRoot: cacheDir,
+          ),
+        );
 
         expect(result, isNotNull);
         expect(result!.origin, SourceOrigin.local);
@@ -103,14 +112,16 @@ void main() {
       final cacheDir = Directory.systemTemp.createTempSync('source_cache');
       try {
         final provider = LocalSourceProvider();
-        final result = await provider.resolve(SourceResolutionContext(
-          specification: ArchiveSource(
-            uri: Uri.parse('https://example.com/src.tar.gz'),
-            sha256: 'abc123',
+        final result = await provider.resolve(
+          SourceResolutionContext(
+            specification: ArchiveSource(
+              uri: Uri.parse('https://example.com/src.tar.gz'),
+              sha256: 'abc123',
+            ),
+            packageRoot: tempDir,
+            sourceCacheRoot: cacheDir,
           ),
-          packageRoot: tempDir,
-          sourceCacheRoot: cacheDir,
-        ));
+        );
 
         expect(result, isNull);
       } finally {
@@ -124,23 +135,30 @@ void main() {
       final cacheDir = Directory.systemTemp.createTempSync('source_cache');
       try {
         final archiveBytes = makeTarGz({
-          'repo-123/add.c': utf8.encode('int add(int a, int b) { return a + b; }'),
+          'repo-123/add.c': utf8.encode(
+            'int add(int a, int b) { return a + b; }',
+          ),
         });
         final archiveFile = File(p.join(tempDir.path, 'source.tar.gz'))
           ..writeAsBytesSync(archiveBytes);
 
         final provider = ArchiveSourceProvider();
-        final result = await provider.resolve(SourceResolutionContext(
-          specification: ArchiveSource(
-            uri: Uri.file(archiveFile.path),
-            sha256: sha256Hash(archiveBytes),
+        final result = await provider.resolve(
+          SourceResolutionContext(
+            specification: ArchiveSource(
+              uri: Uri.file(archiveFile.path),
+              sha256: _testSha256(archiveBytes),
+            ),
+            packageRoot: tempDir,
+            sourceCacheRoot: cacheDir,
           ),
-          packageRoot: tempDir,
-          sourceCacheRoot: cacheDir,
-        ));
+        );
 
         expect(result, isNotNull);
-        expect(File(p.join(result!.directory.path, 'add.c')).existsSync(), isTrue);
+        expect(
+          File(p.join(result!.directory.path, 'add.c')).existsSync(),
+          isTrue,
+        );
       } finally {
         tempDir.deleteSync(recursive: true);
         cacheDir.deleteSync(recursive: true);
@@ -153,28 +171,45 @@ void main() {
       try {
         final repoDir = Directory(p.join(tempDir.path, 'repo'))..createSync();
         await Process.run('git', ['init', repoDir.path]);
-        File(p.join(repoDir.path, 'add.c')).writeAsStringSync('int add(int a, int b) { return a + b; }');
+        File(
+          p.join(repoDir.path, 'add.c'),
+        ).writeAsStringSync('int add(int a, int b) { return a + b; }');
         await Process.run('git', ['-C', repoDir.path, 'add', 'add.c']);
         await Process.run('git', [
-          '-C', repoDir.path,
-          '-c', 'user.email=test@example.com',
-          '-c', 'user.name=Test User',
-          'commit', '-m', 'init',
+          '-C',
+          repoDir.path,
+          '-c',
+          'user.email=test@example.com',
+          '-c',
+          'user.name=Test User',
+          'commit',
+          '-m',
+          'init',
         ]);
-        final commit = (await Process.run('git', ['-C', repoDir.path, 'rev-parse', 'HEAD'])).stdout.toString().trim();
+        final commit = (await Process.run('git', [
+          '-C',
+          repoDir.path,
+          'rev-parse',
+          'HEAD',
+        ])).stdout.toString().trim();
 
         final provider = GitSourceProvider();
-        final result = await provider.resolve(SourceResolutionContext(
-          specification: GitSource(
-            repository: Uri.file(repoDir.path),
-            revision: commit,
+        final result = await provider.resolve(
+          SourceResolutionContext(
+            specification: GitSource(
+              repository: Uri.file(repoDir.path),
+              revision: commit,
+            ),
+            packageRoot: tempDir,
+            sourceCacheRoot: cacheDir,
           ),
-          packageRoot: tempDir,
-          sourceCacheRoot: cacheDir,
-        ));
+        );
 
         expect(result, isNotNull);
-        expect(File(p.join(result!.directory.path, 'add.c')).existsSync(), isTrue);
+        expect(
+          File(p.join(result!.directory.path, 'add.c')).existsSync(),
+          isTrue,
+        );
       } finally {
         tempDir.deleteSync(recursive: true);
         cacheDir.deleteSync(recursive: true);
@@ -217,16 +252,19 @@ void main() {
 
           final result = await resolver.resolve(
             fallback: SourceFallback(
-              sources: [LocalSource(paths: ['src'])],
+              sources: [
+                LocalSource(paths: ['src']),
+              ],
               builder: CallbackSourceBuilder(
-                callback: ({
-                  required source,
-                  required input,
-                  required output,
-                  required logger,
-                }) async {
-                  builtSourceDir = source.directory.path;
-                },
+                callback:
+                    ({
+                      required source,
+                      required input,
+                      required output,
+                      required logger,
+                    }) async {
+                      builtSourceDir = source.directory.path;
+                    },
               ),
             ),
             packageRoot: tempDir,
@@ -276,14 +314,17 @@ void main() {
 
           final result = await resolver.resolve(
             fallback: SourceFallback(
-              sources: [LocalSource(paths: ['nonexistent'])],
+              sources: [
+                LocalSource(paths: ['nonexistent']),
+              ],
               builder: CallbackSourceBuilder(
-                callback: ({
-                  required source,
-                  required input,
-                  required output,
-                  required logger,
-                }) async {},
+                callback:
+                    ({
+                      required source,
+                      required input,
+                      required output,
+                      required logger,
+                    }) async {},
               ),
             ),
             packageRoot: tempDir,
@@ -369,16 +410,19 @@ void main() {
           ),
           linkModeResolver: (_) => DynamicLoadingBundled(),
           sourceFallback: SourceFallback(
-            sources: [LocalSource(paths: ['src'])],
+            sources: [
+              LocalSource(paths: ['src']),
+            ],
             builder: CallbackSourceBuilder(
-              callback: ({
-                required source,
-                required input,
-                required output,
-                required logger,
-              }) async {
-                sourceBuilderCalled = true;
-              },
+              callback:
+                  ({
+                    required source,
+                    required input,
+                    required output,
+                    required logger,
+                  }) async {
+                    sourceBuilderCalled = true;
+                  },
             ),
           ),
         ).run(input: input, output: output, logger: Logger('test'));
@@ -430,16 +474,19 @@ void main() {
           ),
           linkModeResolver: (_) => DynamicLoadingBundled(),
           sourceFallback: SourceFallback(
-            sources: [LocalSource(paths: ['src'])],
+            sources: [
+              LocalSource(paths: ['src']),
+            ],
             builder: CallbackSourceBuilder(
-              callback: ({
-                required source,
-                required input,
-                required output,
-                required logger,
-              }) async {
-                sourceBuilderCalled = true;
-              },
+              callback:
+                  ({
+                    required source,
+                    required input,
+                    required output,
+                    required logger,
+                  }) async {
+                    sourceBuilderCalled = true;
+                  },
             ),
           ),
           resolvers: [_FakeResolver(prebuilt)],
@@ -452,19 +499,26 @@ void main() {
     });
 
     test('builds a real native_socket source tree', () async {
-      final realSourceRoot = Directory('/home/kingwill101/code/dart_packages/native_socket');
+      final realSourceRoot = Directory(
+        '/home/kingwill101/code/dart_packages/native_socket',
+      );
       if (!realSourceRoot.existsSync()) {
         return;
       }
 
       final root = await tempPackageRoot('native_socket_real_world');
       try {
-        final srcDir = Directory(p.join(root.path, 'src'))..createSync(recursive: true);
+        final srcDir = Directory(p.join(root.path, 'src'))
+          ..createSync(recursive: true);
         File(p.join(srcDir.path, 'native_socket.c')).writeAsStringSync(
-          File(p.join(realSourceRoot.path, 'src/native_socket.c')).readAsStringSync(),
+          File(
+            p.join(realSourceRoot.path, 'src/native_socket.c'),
+          ).readAsStringSync(),
         );
         File(p.join(srcDir.path, 'native_socket.h')).writeAsStringSync(
-          File(p.join(realSourceRoot.path, 'src/native_socket.h')).readAsStringSync(),
+          File(
+            p.join(realSourceRoot.path, 'src/native_socket.h'),
+          ).readAsStringSync(),
         );
 
         final inputBuilder = BuildInputBuilder()
@@ -500,38 +554,41 @@ void main() {
           ),
           linkModeResolver: (_) => DynamicLoadingBundled(),
           sourceFallback: SourceFallback(
-            sources: [LocalSource(paths: ['.'])],
+            sources: [
+              LocalSource(paths: ['.']),
+            ],
             builder: CallbackSourceBuilder(
-              callback: ({
-                required source,
-                required input,
-                required output,
-                required logger,
-              }) async {
-                final builtLib = File.fromUri(
-                  input.outputDirectory.resolve('libnative_socket.so'),
-                );
-                final result = await Process.run(
-                  'cc',
-                  [
-                    '-shared',
-                    '-fPIC',
-                    '-o',
-                    builtLib.path,
-                    'src/native_socket.c',
-                  ],
-                  workingDirectory: source.directory.path,
-                );
-                expect(result.exitCode, 0, reason: result.stderr.toString());
-                output.assets.code.add(
-                  CodeAsset(
-                    package: input.packageName,
-                    name: 'src/native_socket_real_world.dart',
-                    linkMode: DynamicLoadingBundled(),
-                    file: builtLib.uri,
-                  ),
-                );
-              },
+              callback:
+                  ({
+                    required source,
+                    required input,
+                    required output,
+                    required logger,
+                  }) async {
+                    final builtLib = File.fromUri(
+                      input.outputDirectory.resolve('libnative_socket.so'),
+                    );
+                    final result = await Process.run('cc', [
+                      '-shared',
+                      '-fPIC',
+                      '-o',
+                      builtLib.path,
+                      'src/native_socket.c',
+                    ], workingDirectory: source.directory.path);
+                    expect(
+                      result.exitCode,
+                      0,
+                      reason: result.stderr.toString(),
+                    );
+                    output.assets.code.add(
+                      CodeAsset(
+                        package: input.packageName,
+                        name: 'src/native_socket_real_world.dart',
+                        linkMode: DynamicLoadingBundled(),
+                        file: builtLib.uri,
+                      ),
+                    );
+                  },
             ),
           ),
         ).run(input: input, output: output, logger: Logger('test'));
@@ -540,7 +597,12 @@ void main() {
         expect(built.assets.code, hasLength(1));
         final builtFile = File.fromUri(built.assets.code.single.file!);
         expect(builtFile.existsSync(), isTrue);
-        expect(builtFile.readAsBytesSync().sublist(0, 4), [0x7F, 0x45, 0x4C, 0x46]);
+        expect(builtFile.readAsBytesSync().sublist(0, 4), [
+          0x7F,
+          0x45,
+          0x4C,
+          0x46,
+        ]);
       } finally {
         root.deleteSync(recursive: true);
       }
@@ -557,7 +619,7 @@ final class _FakeResolver implements PrebuiltResolver {
     return ResolvedPrebuiltFound(
       file: ResolvedFile(
         path: file.path,
-        hash: sha256Hash(file.readAsBytesSync()),
+        hash: _testSha256(file.readAsBytesSync()),
       ),
       source: PrebuiltSource.localCache,
     );

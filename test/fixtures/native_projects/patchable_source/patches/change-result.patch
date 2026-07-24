@@ -1,0 +1,11 @@
+--- a/src/fixture.c
++++ b/src/fixture.c
+@@ -5,7 +5,7 @@
+ #endif
+ 
+ FIXTURE_EXPORT int native_prebuilt_fixture_add(int a, int b) {
+-  return RESULT_VALUE;
++  return a + b;
+ }
+ 
+ FIXTURE_EXPORT int native_prebuilt_fixture_unpatched(void) {

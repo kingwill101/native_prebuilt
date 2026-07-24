@@ -283,7 +283,11 @@ class WorkflowCommand extends Command<void> {
 
 class WorkflowInitCommand extends Command<void> {
   WorkflowInitCommand() {
-    argParser.addOption('config', abbr: 'c', help: 'Path to native_prebuilt.yaml.');
+    argParser.addOption(
+      'config',
+      abbr: 'c',
+      help: 'Path to native_prebuilt.yaml.',
+    );
     argParser.addOption('output', abbr: 'o', help: 'Output directory.');
     argParser.addFlag('force', help: 'Overwrite existing files.');
     argParser.addFlag('gitlab', help: 'Write GitLab CI YAML templates.');
@@ -308,11 +312,11 @@ class WorkflowInitCommand extends Command<void> {
     final configPath = option('config') as String? ?? 'native_prebuilt.yaml';
     final gitlab = (option('gitlab') as bool?) ?? false;
     final config = NativePrebuiltConfig.loadFile(configPath);
-    final output = option('output') as String? ??
-        (gitlab ? '.' : '.github/workflows');
+    final output =
+        option('output') as String? ?? (gitlab ? '.' : '.github/workflows');
     final force = (option('force') as bool?) ?? false;
-    final requestedPlatforms = (option('platform') as List<String>?) ??
-        const <String>[];
+    final requestedPlatforms =
+        (option('platform') as List<String>?) ?? const <String>[];
     final dir = Directory(output)..createSync(recursive: true);
     final templates = gitlab
         ? gitlabWorkflowTemplates(
@@ -364,15 +368,10 @@ Future<PrebuiltManifest> _generateManifest({
       );
 
       final archiveFile = File(
-        p.join(
-          (releaseAssetsDir ?? tempDir).path,
-          artifactConfig.archiveName,
-        ),
+        p.join((releaseAssetsDir ?? tempDir).path, artifactConfig.archiveName),
       );
       if (builtLibraryDir != null) {
-        final builtFile = File(
-          p.join(builtLibraryDir.path, canonicalName),
-        );
+        final builtFile = File(p.join(builtLibraryDir.path, canonicalName));
         if (!builtFile.existsSync()) {
           if (allowMissing) continue;
           throw StateError(
@@ -457,13 +456,17 @@ String _renderManifest(
 ) {
   final b = StringBuffer()
     ..writeln('// GENERATED CODE - DO NOT MODIFY BY HAND.')
-    ..writeln('// ignore_for_file: constant_identifier_names, depend_on_referenced_packages')
+    ..writeln(
+      '// ignore_for_file: constant_identifier_names, depend_on_referenced_packages',
+    )
     ..writeln()
     ..writeln("import 'package:native_prebuilt/native_prebuilt.dart';")
     ..writeln()
     ..writeln('const ${config.package}Prebuilts = PrebuiltManifest(')
     ..writeln('  schemaVersion: ${manifest.schemaVersion},')
-    ..writeln('  release: ${_renderReleaseSource(config.release.withTag(tag))},')
+    ..writeln(
+      '  release: ${_renderReleaseSource(config.release.withTag(tag))},',
+    )
     ..writeln('  artifacts: {');
 
   for (final entry in manifest.artifacts.entries) {
@@ -575,17 +578,24 @@ String _githubPrebuiltWorkflow(
   }
 
   final needs = orderedPlatforms.map((p) => 'build-$p').join('\n      - ');
-  final downloads = orderedPlatforms.map((p) =>
-    """      - uses: actions/download-artifact@v4
+  final downloads = orderedPlatforms
+      .map(
+        (p) =>
+            """      - uses: actions/download-artifact@v4
         with:
           name: ${p}-built-library
-          path: downloaded/$p/""").join('\n');
-  final copyLines = orderedPlatforms.map((p) =>
-    '          cp -R downloaded/$p/. built-library/').join('\n');
+          path: downloaded/$p/""",
+      )
+      .join('\n');
+  final copyLines = orderedPlatforms
+      .map((p) => '          cp -R downloaded/$p/. built-library/')
+      .join('\n');
 
   b
     ..writeln('  update-manifest:')
-    ..writeln('    if: github.event_name == \'workflow_dispatch\' || startsWith(github.ref, \'refs/tags/\')')
+    ..writeln(
+      '    if: github.event_name == \'workflow_dispatch\' || startsWith(github.ref, \'refs/tags/\')',
+    )
     ..writeln('    needs:')
     ..writeln('      - $needs')
     ..writeln('    runs-on: ubuntu-latest')
@@ -601,7 +611,9 @@ String _githubPrebuiltWorkflow(
     ..writeln('      - run: dart pub get')
     ..writeln('      - name: Generate manifest and release assets')
     ..writeln('        run: |')
-    ..writeln('          TAG=\"\${{ github.event_name == \'workflow_dispatch\' && github.event.inputs.tag || github.ref_name }}\"')
+    ..writeln(
+      '          TAG=\"\${{ github.event_name == \'workflow_dispatch\' && github.event.inputs.tag || github.ref_name }}\"',
+    )
     ..writeln('          dart run native_prebuilt manifest update \\')
     ..writeln('            --config \"\$CONFIG\" \\')
     ..writeln('            --output \"\$MANIFEST_OUTPUT\" \\')
@@ -615,7 +627,9 @@ String _githubPrebuiltWorkflow(
     ..writeln('          if-no-files-found: error')
     ..writeln()
     ..writeln('  release:')
-    ..writeln('    if: github.event_name == \'workflow_dispatch\' || startsWith(github.ref, \'refs/tags/\')')
+    ..writeln(
+      '    if: github.event_name == \'workflow_dispatch\' || startsWith(github.ref, \'refs/tags/\')',
+    )
     ..writeln('    needs:')
     ..writeln('      - update-manifest')
     ..writeln('    runs-on: ubuntu-latest')
@@ -630,7 +644,9 @@ String _githubPrebuiltWorkflow(
     ..writeln('      - name: Publish GitHub release assets')
     ..writeln('        uses: softprops/action-gh-release@v2')
     ..writeln('        with:')
-    ..writeln('          tag_name: \${{ github.event_name == \'workflow_dispatch\' && github.event.inputs.tag || github.ref_name }}')
+    ..writeln(
+      '          tag_name: \${{ github.event_name == \'workflow_dispatch\' && github.event.inputs.tag || github.ref_name }}',
+    )
     ..writeln('          fail_on_unmatched_files: true')
     ..writeln('          files: release-assets/*');
 
@@ -652,7 +668,9 @@ String _githubBuildJob(String platform) {
     steps.writeln('      - name: Install native toolchain');
     steps.writeln('        run: |');
     steps.writeln('          sudo apt-get update');
-    steps.writeln('          sudo apt-get install -y --no-install-recommends \\');
+    steps.writeln(
+      '          sudo apt-get install -y --no-install-recommends \\',
+    );
     steps.writeln('            build-essential \\');
     steps.writeln('            clang \\');
     steps.writeln('            cmake \\');
@@ -665,8 +683,12 @@ String _githubBuildJob(String platform) {
   steps.writeln('      - name: Stage built library');
   steps.writeln('        run: |');
   if (platform == 'windows') {
-    steps.writeln('          New-Item -ItemType Directory -Force -Path built-library | Out-Null');
-    steps.writeln('          Copy-Item -Recurse -Force ".dart_tool/lib/*" built-library');
+    steps.writeln(
+      '          New-Item -ItemType Directory -Force -Path built-library | Out-Null',
+    );
+    steps.writeln(
+      '          Copy-Item -Recurse -Force ".dart_tool/lib/*" built-library',
+    );
   } else {
     steps.writeln('          mkdir -p built-library');
     steps.writeln('          cp -R .dart_tool/lib/. built-library/');
@@ -705,8 +727,11 @@ List<String> _workflowPlatforms(List<String> rawPlatforms) {
       selected.add(platform);
     }
   }
-  if (selected.isEmpty) return List<String>.unmodifiable(_workflowPlatformOrder);
-  return _workflowPlatformOrder.where(selected.contains).toList(growable: false);
+  if (selected.isEmpty)
+    return List<String>.unmodifiable(_workflowPlatformOrder);
+  return _workflowPlatformOrder
+      .where(selected.contains)
+      .toList(growable: false);
 }
 
 List<String> _workflowPlatformsFromArtifacts(
@@ -721,7 +746,9 @@ List<String> _workflowPlatformsFromArtifacts(
   final filtered = rawPlatforms.isEmpty
       ? configured
       : configured.intersection(_workflowPlatforms(rawPlatforms).toSet());
-  return _workflowPlatformOrder.where(filtered.contains).toList(growable: false);
+  return _workflowPlatformOrder
+      .where(filtered.contains)
+      .toList(growable: false);
 }
 
 String _workflowPlatformFromArtifactLabel(String label) {
@@ -749,8 +776,9 @@ Map<String, String> gitlabWorkflowTemplates({
   final templates = <String, String>{
     '.gitlab-ci.yml': _gitlabRootPipeline(packageName, selectedPlatforms),
     '.gitlab/ci/native-prebuilt-release.yml': gitlabNativePrebuiltRelease,
-    '.gitlab/ci/native-prebuilt-update-manifest.yml':
-        _gitlabUpdateManifest(selectedPlatforms),
+    '.gitlab/ci/native-prebuilt-update-manifest.yml': _gitlabUpdateManifest(
+      selectedPlatforms,
+    ),
   };
 
   for (final platform in selectedPlatforms) {
@@ -775,7 +803,10 @@ String _gitlabBuildTemplate(String platform) {
 
 String _gitlabRootPipeline(String packageName, Iterable<String> platforms) {
   final includes = platforms
-      .map((platform) => "  - local: '.gitlab/ci/native-prebuilt-build-$platform.yml'")
+      .map(
+        (platform) =>
+            "  - local: '.gitlab/ci/native-prebuilt-build-$platform.yml'",
+      )
       .join('\n');
   return '''
 default:
@@ -810,7 +841,8 @@ $includes
 String _gitlabUpdateManifest(Iterable<String> platforms) {
   final needs = platforms
       .map(
-        (platform) => '''
+        (platform) =>
+            '''
     - job: native_prebuilt:build:$platform
       artifacts: true''',
       )

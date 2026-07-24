@@ -13,8 +13,5 @@ NativeTarget targetFromCodeConfig(CodeConfig config) {
 
 /// Returns a [NativeTarget] for the current host machine.
 NativeTarget hostTarget() {
-  return NativeTarget(
-    os: OS.current,
-    architecture: Architecture.current,
-  );
+  return NativeTarget(os: OS.current, architecture: Architecture.current);
 }

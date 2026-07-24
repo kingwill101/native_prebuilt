@@ -27,16 +27,15 @@ abstract interface class SourceBuilder {
 /// This is the simplest way to integrate a custom build step
 /// without implementing the full [SourceBuilder] interface.
 final class CallbackSourceBuilder implements SourceBuilder {
-  const CallbackSourceBuilder({
-    required this.callback,
-  });
+  const CallbackSourceBuilder({required this.callback});
 
   final Future<void> Function({
     required ResolvedSource source,
     required BuildInput input,
     required BuildOutputBuilder output,
     required Logger? logger,
-  }) callback;
+  })
+  callback;
 
   @override
   Future<void> build({

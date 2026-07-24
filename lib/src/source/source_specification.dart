@@ -18,9 +18,7 @@ sealed class SourceSpecification {
 /// Use this for vendored or monorepo layouts where the source
 /// is checked out alongside the Dart package.
 final class LocalSource extends SourceSpecification {
-  const LocalSource({
-    required this.paths,
-  });
+  const LocalSource({required this.paths});
 
   /// Relative paths to search, in priority order.
   ///

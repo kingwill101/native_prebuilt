@@ -38,8 +38,7 @@ final class ArchiveEntry {
   }
 
   @override
-  String toString() =>
-      'ArchiveEntry($name, size: $size, isFile: $isFile)';
+  String toString() => 'ArchiveEntry($name, size: $size, isFile: $isFile)';
 }
 
 /// Context for selecting an entry from an archive.

@@ -77,12 +77,14 @@ final class DefaultArtifactInstaller implements ArtifactInstaller {
     final cachedFile = File(p.join(cacheDirForArtifact.path, canonicalName));
 
     final lock = CacheLock(
-      File(p.join(cacheDirectory.path, '.locks', _cacheKey(
-        manifest.release,
-        target.label,
-        artifact,
-        canonicalName,
-      ) + '.lock')),
+      File(
+        p.join(
+          cacheDirectory.path,
+          '.locks',
+          _cacheKey(manifest.release, target.label, artifact, canonicalName) +
+              '.lock',
+        ),
+      ),
     );
 
     return lock.withLock(() async {
@@ -99,11 +101,15 @@ final class DefaultArtifactInstaller implements ArtifactInstaller {
             logger?.info('Verified cached prebuilt ${target.label}.');
             return cachedFile;
           } on BinaryFormatException {
-            logger?.warning('Cached file failed binary inspection; deleting ${cachedFile.path}.');
+            logger?.warning(
+              'Cached file failed binary inspection; deleting ${cachedFile.path}.',
+            );
             cachedFile.deleteSync();
           }
         } else {
-          logger?.warning('Cached payload hash mismatch for ${target.label}; deleting ${cachedFile.path}.');
+          logger?.warning(
+            'Cached payload hash mismatch for ${target.label}; deleting ${cachedFile.path}.',
+          );
           cachedFile.deleteSync();
         }
       }
@@ -123,7 +129,9 @@ final class DefaultArtifactInstaller implements ArtifactInstaller {
           logger: logger,
         );
       } on HttpDownloadException {
-        logger?.warning('Download failed for ${artifact.archiveName}; will fall back.');
+        logger?.warning(
+          'Download failed for ${artifact.archiveName}; will fall back.',
+        );
         return null;
       }
 
@@ -184,10 +192,12 @@ final class DefaultArtifactInstaller implements ArtifactInstaller {
     PrebuiltArtifact artifact,
     String canonicalName,
   ) {
-    final dir = Directory(p.join(
-      cacheDirectory.path,
-      _cacheKey(source, platformLabel, artifact, canonicalName),
-    ));
+    final dir = Directory(
+      p.join(
+        cacheDirectory.path,
+        _cacheKey(source, platformLabel, artifact, canonicalName),
+      ),
+    );
     dir.createSync(recursive: true);
     return dir;
   }

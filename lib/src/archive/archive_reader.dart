@@ -63,16 +63,12 @@ final class ArchiveReader {
 
     // Validate path safety.
     if (matched.name.startsWith('/') || matched.name.contains('..')) {
-      throw StateError(
-        'Unsafe archive entry path: ${matched.name}',
-      );
+      throw StateError('Unsafe archive entry path: ${matched.name}');
     }
 
     // Write the selected entry.
     outputDir.createSync(recursive: true);
-    final outFile = File(
-      p.join(outputDir.path, p.basename(matched.name)),
-    );
+    final outFile = File(p.join(outputDir.path, p.basename(matched.name)));
     outFile.writeAsBytesSync(matched.content);
     return outFile;
   }
