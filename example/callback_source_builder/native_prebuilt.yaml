@@ -1,0 +1,14 @@
+schema: 1
+package: callback_source_builder_example
+asset_name: callback_source_builder_example_bindings_generated.dart
+library_stem: callback_source_builder_example
+release:
+  provider: github
+  owner: example
+  repository: callback_source_builder_example
+  tag: v0.1.0
+artifacts:
+  linux-x64:
+    archive: callback_source_builder_example-linux-x64.tar.gz
+    payload:
+      type: dynamic_library

@@ -1,0 +1,22 @@
+schema: 1
+package: managed_build_example
+asset_name: managed_build_example_bindings_generated.dart
+library_stem: managed_build_example
+release:
+  provider: github
+  owner: example
+  repository: managed_build_example
+  tag: managed_build_example-v0.1.0
+artifacts:
+  linux-x64:
+    archive: managed_build_example-linux-x64.tar.gz
+    payload:
+      type: dynamic_library
+  macos-arm64:
+    archive: managed_build_example-macos-arm64.tar.gz
+    payload:
+      type: dynamic_library
+  windows-x64:
+    archive: managed_build_example-windows-x64.tar.gz
+    payload:
+      type: dynamic_library
