@@ -13,32 +13,6 @@ import 'package:test/test.dart';
 void main() {
   group('CallbackSourceBuilder', () {
     test('passes parameters to callback', () async {
-      final packageDir = Directory(
-        Directory.current.parent.parent.uri
-            .resolve('test/fixtures/hook_packages/callback_source_builder')
-            .toFilePath(),
-      );
-
-      // Track callback invocation
-      ResolvedSource? receivedSource;
-      BuildInput? receivedInput;
-      BuildOutputBuilder? receivedOutput;
-      Logger? receivedLogger;
-
-      final builder = CallbackSourceBuilder(
-        callback: ({
-          required source,
-          required input,
-          required output,
-          required logger,
-        }) async {
-          receivedSource = source;
-          receivedInput = input;
-          receivedOutput = output;
-          receivedLogger = logger;
-        },
-      );
-
       final tempDir = Directory.systemTemp.createTempSync('callback_test_');
       try {
         final source = ResolvedSource(
@@ -46,7 +20,27 @@ void main() {
           origin: SourceOrigin.local,
         );
 
-        final input = _createMockBuildInput(packageDir, tempDir);
+        // Track callback invocation
+        ResolvedSource? receivedSource;
+        BuildInput? receivedInput;
+        BuildOutputBuilder? receivedOutput;
+        Logger? receivedLogger;
+
+        final builder = CallbackSourceBuilder(
+          callback: ({
+            required source,
+            required input,
+            required output,
+            required logger,
+          }) async {
+            receivedSource = source;
+            receivedInput = input;
+            receivedOutput = output;
+            receivedLogger = logger;
+          },
+        );
+
+        final input = _createMockBuildInput(tempDir);
         final output = BuildOutputBuilder();
         final testLogger = Logger('test');
 
@@ -69,24 +63,6 @@ void main() {
 
   group('HookBuilderSourceBuilder', () {
     test('factory constructor passes input to builder', () async {
-      final packageDir = Directory(
-        Directory.current.parent.parent.uri
-            .resolve('test/fixtures/hook_packages/callback_source_builder')
-            .toFilePath(),
-      );
-
-      var builderCalled = false;
-      String? receivedPackageName;
-
-      final adapter = HookBuilderSourceBuilder.factory(
-        (input) => _MockBuilder(
-          onRun: (input, output, logger) {
-            builderCalled = true;
-            receivedPackageName = input.packageName;
-          },
-        ),
-      );
-
       final tempDir = Directory.systemTemp.createTempSync('adapter_test_');
       try {
         final source = ResolvedSource(
@@ -94,7 +70,20 @@ void main() {
           origin: SourceOrigin.local,
         );
 
-        final input = _createMockBuildInput(packageDir, tempDir);
+        // Track if builder was called
+        var builderCalled = false;
+        String? receivedPackageName;
+
+        final adapter = HookBuilderSourceBuilder.factory(
+          (input) => _MockBuilder(
+            onRun: (input, output, logger) {
+              builderCalled = true;
+              receivedPackageName = input.packageName;
+            },
+          ),
+        );
+
+        final input = _createMockBuildInput(tempDir);
         final output = BuildOutputBuilder();
 
         await adapter.build(
@@ -105,7 +94,7 @@ void main() {
         );
 
         expect(builderCalled, isTrue);
-        expect(receivedPackageName, equals('callback_source_fixture'));
+        expect(receivedPackageName, equals('test_package'));
       } finally {
         tempDir.deleteSync(recursive: true);
       }
@@ -119,6 +108,7 @@ void main() {
           origin: SourceOrigin.local,
         );
 
+        // Track if builder was called
         var builderCalled = false;
 
         final adapter = HookBuilderSourceBuilder.static(
@@ -129,13 +119,7 @@ void main() {
           ),
         );
 
-        final packageDir = Directory(
-          Directory.current.parent.parent.uri
-              .resolve('test/fixtures/hook_packages/callback_source_builder')
-              .toFilePath(),
-        );
-
-        final input = _createMockBuildInput(packageDir, tempDir);
+        final input = _createMockBuildInput(tempDir);
         final output = BuildOutputBuilder();
 
         await adapter.build(
@@ -159,6 +143,7 @@ void main() {
           origin: SourceOrigin.local,
         );
 
+        // Track if logger was received
         Logger? receivedLogger;
 
         final adapter = HookBuilderSourceBuilder.static(
@@ -169,13 +154,7 @@ void main() {
           ),
         );
 
-        final packageDir = Directory(
-          Directory.current.parent.parent.uri
-              .resolve('test/fixtures/hook_packages/callback_source_builder')
-              .toFilePath(),
-        );
-
-        final input = _createMockBuildInput(packageDir, tempDir);
+        final input = _createMockBuildInput(tempDir);
         final output = BuildOutputBuilder();
         final testLogger = Logger('test');
 
@@ -212,13 +191,13 @@ class _MockBuilder implements Builder {
 }
 
 /// Creates a mock BuildInput for testing.
-BuildInput _createMockBuildInput(Directory packageRoot, Directory tempDir) {
+BuildInput _createMockBuildInput(Directory packageRoot) {
   final inputBuilder = BuildInputBuilder()
     ..setupShared(
       packageRoot: packageRoot.uri,
-      packageName: 'callback_source_fixture',
-      outputFile: tempDir.uri.resolve('output.json'),
-      outputDirectoryShared: tempDir.uri.resolve('shared/'),
+      packageName: 'test_package',
+      outputFile: packageRoot.uri.resolve('output.json'),
+      outputDirectoryShared: packageRoot.uri.resolve('shared/'),
     )
     ..setupBuildInput()
     ..config.setupBuild(linkingEnabled: false)
