@@ -2,15 +2,79 @@
 
 Reusable infrastructure for Dart packages that build, cache, and ship native libraries through Dart hooks.
 
-## What it provides
+## Two API paths
 
-- **NativeProject** — Declarative project definition with build recipes
-- **StepBuildRecipe** — Multi-stage build pipelines with fingerprinting
-- **Build cache** — Step-level caching with content-based fingerprints
-- **Platform toolchains** — Auto-detection for Android NDK, Apple SDK, MSVC, vcpkg
-- **NativeProjectBuilder** — High-level build orchestration
-- **CLI tools** — Build, plan, cache inspection, and workflow generation
-- **Test fixtures** — CMake projects for testing native builds
+### 1. Hooks Builder integration (simple packages)
+
+For packages with single-stage builds using existing hooks builders:
+
+```dart
+import 'package:hooks/hooks.dart';
+import 'package:native_prebuilt/native_prebuilt.dart';
+import 'package:native_toolchain_c/native_toolchain_c.dart';
+
+void main(List<String> args) async {
+  await build(args, (input, output) async {
+    await PrebuiltCodeAssetBuilder(
+      assetName: 'src/my_package.dart',
+      libraryStem: 'my_package',
+      manifest: myPackagePrebuilts,
+      linkModeResolver: (_) => DynamicLoadingBundled(),
+      sourceFallback: SourceFallback(
+        sources: [LocalSource(paths: ['.'])],
+        builder: HookBuilderSourceBuilder.factory(
+          (input) => CBuilder.library(
+            name: 'my_package',
+            packageName: input.packageName,
+            assetName: 'src/my_package.dart',
+            sources: const ['src/native/my_package.c'],
+          ),
+        ),
+      ),
+    ).run(input: input, output: output, logger: Logger.root);
+  });
+}
+```
+
+### 2. Managed build recipes (complex packages)
+
+For multi-stage builds with caching and cross-compilation:
+
+```dart
+final project = NativeProject(
+  name: 'tdlib',
+  asset: const NativeAssetSpec(
+    assetName: 'src/tdlib.g.dart',
+    libraryStem: 'tdjson',
+    linkMode: DynamicLoadingBundled(),
+  ),
+  build: NativeBuildDefinition(
+    recipes: {
+      OS.linux: StepBuildRecipe(steps: [
+        CmakeConfigureStep(buildDirectory: 'build'),
+        CmakeBuildStep(buildDirectory: 'build', targets: ['tdjson']),
+        ExportArtifactStep(artifactPath: 'build/td/libtdjson.so'),
+      ]),
+    },
+  ),
+);
+
+// hook/build.dart
+await runNativeProjectCli(args, project: project);
+```
+
+## Comparison
+
+| Capability | Hooks Builder callback | Managed recipe |
+|------------|----------------------:|---------------:|
+| Prebuilt resolution | Yes | Yes |
+| Source fallback | Yes | Yes |
+| Standard hook caching | Yes | Yes |
+| Existing hooks builders | Yes | Not required |
+| Step-level native cache | No | Yes |
+| Multi-stage graph | Manual | Yes |
+| Standalone CI build | Limited | Yes |
+| Central artifact validation | After registration | Yes |
 
 ## Install
 
@@ -19,64 +83,15 @@ dependencies:
   native_prebuilt: ^0.0.13
 ```
 
-## Quick start
+## Source fallback pipeline
 
-### Define your project
+When no prebuilt is available, you can let `native_prebuilt` resolve source and build from it.
 
-```dart
-import 'package:code_assets/code_assets.dart';
-import 'package:native_prebuilt/native_prebuilt.dart';
-
-final myProject = NativeProject(
-  name: 'my_package',
-  asset: NativeAssetSpec(
-    assetName: 'src/bindings.dart',
-    libraryStem: 'my_native',
-    linkMode: DynamicLoadingBundled(),
-  ),
-  build: NativeBuildDefinition(
-    recipes: {
-      OS.linux: StepBuildRecipe(steps: [
-        CmakeConfigureStep(buildDirectory: 'build'),
-        CmakeBuildStep(buildDirectory: 'build', targets: ['my_native']),
-        ExportArtifactStep(artifactPath: 'build/libmy_native.so'),
-      ]),
-      OS.macOS: StepBuildRecipe(steps: [
-        CmakeConfigureStep(buildDirectory: 'build'),
-        CmakeBuildStep(buildDirectory: 'build', targets: ['my_native']),
-        ExportArtifactStep(artifactPath: 'build/libmy_native.dylib'),
-      ]),
-      OS.windows: StepBuildRecipe(steps: [
-        CmakeConfigureStep(buildDirectory: 'build'),
-        CmakeBuildStep(buildDirectory: 'build', targets: ['my_native']),
-        ExportArtifactStep(artifactPath: 'build/my_native.dll'),
-      ]),
-    },
-  ),
-);
-```
-
-### Use in your hook
-
-```dart
-// hook/build.dart
-import 'package:hooks/hooks.dart';
-import 'package:native_prebuilt/native_prebuilt.dart';
-import 'package:my_package/src/my_project.dart';
-
-Future<void> main(List<String> args) {
-  return runNativeProjectCli(args, project: myProject);
-}
-```
-
-### Use in CI
-
-```bash
-dart run native_prebuilt plan --target linux-x64
-dart run native_prebuilt build --target linux-x64 --output built-library
-dart run native_prebuilt cache-key --target linux-x64
-dart run native_prebuilt explain-cache --target linux-x64
-```
+Resolution order:
+1. `hooks.user_defines` override
+2. Local `.prebuilt/` directory
+3. Shared cache / release download
+4. Source build using recipe or callback
 
 ## Build steps
 
@@ -93,114 +108,6 @@ dart run native_prebuilt explain-cache --target linux-x64
 | `CopyStep` | Copy files/directories |
 | `ExportArtifactStep` | Export final artifact to output |
 
-## Multi-stage builds
-
-For complex builds like TDLib (OpenSSL + code generation + cross-compilation):
-
-```dart
-final tdlibProject = NativeProject(
-  name: 'tdlib',
-  asset: const NativeAssetSpec(
-    assetName: 'src/tdlib.g.dart',
-    libraryStem: 'tdjson',
-    linkMode: DynamicLoadingBundled(),
-  ),
-  build: NativeBuildDefinition(
-    recipes: {
-      OS.linux: StepBuildRecipe(steps: [
-        CmakeConfigureStep(
-          buildDirectory: 'build',
-          defines: {'CMAKE_C_COMPILER_LAUNCHER': 'sccache'},
-        ),
-        CmakeBuildStep(buildDirectory: 'build', targets: ['tdjson']),
-        ExportArtifactStep(artifactPath: 'build/td/libtdjson.so'),
-      ]),
-      OS.android: StepBuildRecipe(steps: [
-        // Step 1: Build OpenSSL
-        CommandStep(
-          id: 'build-openssl',
-          commands: [['make', 'OpenSSL-android']],
-        ),
-        // Step 2: Configure TDLib
-        CmakeConfigureStep(
-          buildDirectory: 'build',
-          defines: {
-            'ANDROID_ABI': 'arm64-v8a',
-            'ANDROID_STL': 'c++_static',
-          },
-        ),
-        // Step 3: Build TDLib
-        CmakeBuildStep(buildDirectory: 'build', targets: ['tdjson']),
-        // Step 4: Strip symbols
-        StripStep(
-          inputPath: 'build/td/libtdjson.so',
-          outputPath: 'libtdjson.so',
-        ),
-        // Step 5: Export
-        ExportArtifactStep(artifactPath: 'libtdjson.so'),
-      ]),
-    },
-  ),
-);
-```
-
-## Caching
-
-Build steps are automatically cached using content-based fingerprints:
-
-- Same inputs → cache hit (skip build)
-- Changed source, toolchain, or defines → cache miss (rebuild)
-- Cache stored in `.dart_tool/native_prebuilt/build-cache/`
-
-```bash
-dart run native_prebuilt explain-cache --target linux-x64
-# Shows why each step was cached or rebuilt
-```
-
-## Platform toolchains
-
-Auto-detected from environment:
-
-| Platform | Detection |
-|----------|-----------|
-| Android NDK | `ANDROID_NDK_HOME` or SDK path |
-| Apple SDK | Xcode paths |
-| MSVC | Visual Studio installation |
-| vcpkg | `VCPKG_ROOT` |
-
-## Prebuilt resolution
-
-For packages that also ship prebuilt binaries:
-
-```dart
-final project = NativeProject(
-  name: 'my_package',
-  asset: NativeAssetSpec(...),
-  prebuilts: PrebuiltManifest(
-    schemaVersion: 1,
-    release: GitHubReleaseSource(
-      owner: 'myorg',
-      repository: 'myrepo',
-      tag: 'v1.0.0',
-    ),
-    artifacts: {},
-  ),
-  sources: [
-    GitSource(
-      repository: Uri.parse('https://github.com/myorg/myrepo.git'),
-      revision: 'abc123...',
-    ),
-  ],
-  build: NativeBuildDefinition(recipes: {...}),
-);
-```
-
-Resolution order:
-1. User-defined override via `hooks.user_defines`
-2. Local `.prebuilt/` directory
-3. Shared cache (download from release)
-4. Source build using recipe
-
 ## CLI commands
 
 | Command | Description |
@@ -214,54 +121,20 @@ Resolution order:
 | `manifest verify` | Verify manifest hashes |
 | `workflow init` | Generate CI workflows |
 
-## Test fixtures
+## Platform toolchains
 
-Located in `test/fixtures/native_projects/`:
+Auto-detected from environment:
+- **Android NDK** — `ANDROID_NDK_HOME` or SDK
+- **Apple SDK** — Xcode paths
+- **MSVC** — Visual Studio installation
+- **vcpkg** — `VCPKG_ROOT`
 
-| Fixture | Description |
-|---------|-------------|
-| `simple_shared/` | Basic shared library |
-| `static_library/` | Static library |
-| `generated_source/` | Multi-stage with code generation |
-| `dependency_graph/` | Library with dependencies |
-| `patchable_source/` | Patchable source |
-| `failing_build/` | Intentionally broken |
+## Caching
 
-## CI setup
-
-### GitHub Actions
-
-```yaml
-# .github/workflows/ci.yml
-jobs:
-  build:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dart-lang/setup-dart@v1
-      - run: dart pub get
-      - run: dart test
-```
-
-### GitLab CI
-
-```yaml
-# .gitlab-ci.yml
-stages:
-  - test
-
-test:
-  stage: test
-  script:
-    - dart pub get
-    - dart test
-  rules:
-    - if: $CI_MERGE_REQUEST_IID
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-```
+Build steps are cached using content-based fingerprints:
+- Same inputs → cache hit (skip build)
+- Changed source/toolchain → cache miss (rebuild)
+- Cache stored in `.dart_tool/native_prebuilt/build-cache/`
 
 ## License
 

@@ -4,51 +4,62 @@ Use this skill when you need to work with native libraries in Dart packages - wh
 
 ## Two API Paths
 
-### 1. Legacy API (PrebuiltCodeAssetBuilder)
-For packages that download prebuilt binaries from GitHub/GitLab releases:
+### 1. Hooks Builder integration (simple packages)
+
+For packages with single-stage builds using existing hooks builders like `CBuilder`:
 
 ```dart
-await PrebuiltCodeAssetBuilder(
-  assetName: 'src/bindings.dart',
-  libraryStem: 'my_native',
-  manifest: myPrebuilts,
-  linkModeResolver: (_) => DynamicLoadingBundled(),
-  sourceFallback: SourceFallback(
-    sources: [LocalSource(paths: ['.'])],
-    builder: CallbackSourceBuilder(
-      callback: ({required source, required input, required output, required logger}) async {
-        // Build from source
-      },
-    ),
-  ),
-).run(input: input, output: output, logger: logger);
+import 'package:hooks/hooks.dart';
+import 'package:native_prebuilt/native_prebuilt.dart';
+import 'package:native_toolchain_c/native_toolchain_c.dart';
+
+void main(List<String> args) async {
+  await build(args, (input, output) async {
+    await PrebuiltCodeAssetBuilder(
+      assetName: 'src/my_package.dart',
+      libraryStem: 'my_package',
+      manifest: myPackagePrebuilts,
+      linkModeResolver: (_) => DynamicLoadingBundled(),
+      sourceFallback: SourceFallback(
+        sources: [LocalSource(paths: ['.'])],
+        builder: HookBuilderSourceBuilder.factory(
+          (input) => CBuilder.library(
+            name: 'my_package',
+            packageName: input.packageName,
+            assetName: 'src/my_package.dart',
+            sources: const ['src/native/my_package.c'],
+          ),
+        ),
+      ),
+    ).run(input: input, output: output, logger: Logger.root);
+  });
+}
 ```
 
-### 2. New API (NativeProject + NativeProjectBuilder)
-For packages with multi-stage native builds:
+### 2. Managed build recipes (complex packages)
+
+For multi-stage builds with caching and cross-compilation:
 
 ```dart
 final project = NativeProject(
-  name: 'my_lib',
-  asset: NativeAssetSpec(
-    assetName: 'src/bindings.dart',
-    libraryStem: 'my_native',
+  name: 'tdlib',
+  asset: const NativeAssetSpec(
+    assetName: 'src/tdlib.g.dart',
+    libraryStem: 'tdjson',
     linkMode: DynamicLoadingBundled(),
   ),
   build: NativeBuildDefinition(
     recipes: {
       OS.linux: StepBuildRecipe(steps: [
         CmakeConfigureStep(buildDirectory: 'build'),
-        CmakeBuildStep(buildDirectory: 'build', targets: ['my_native']),
-        ExportArtifactStep(artifactPath: 'build/libmy_native.so'),
+        CmakeBuildStep(buildDirectory: 'build', targets: ['tdjson']),
+        ExportArtifactStep(artifactPath: 'build/td/libtdjson.so'),
       ]),
-      OS.macOS: StepBuildRecipe(steps: [...]),
-      OS.windows: StepBuildRecipe(steps: [...]),
     },
   ),
 );
 
-// In hook/build.dart
+// hook/build.dart
 await runNativeProjectCli(args, project: project);
 ```
 
@@ -69,7 +80,7 @@ await runNativeProjectCli(args, project: project);
 - `dart run native_prebuilt workflow init` - Generate GitHub workflow files
 - `dart run native_prebuilt workflow init --gitlab` - Generate GitLab CI files
 
-## Build Steps Available
+## Build Steps
 
 | Step | Purpose |
 |------|---------|
@@ -86,11 +97,11 @@ await runNativeProjectCli(args, project: project);
 
 ## Platform Toolchains
 
-The package auto-detects:
-- **Android NDK** - From `ANDROID_NDK_HOME` or SDK
-- **Apple SDK** - iOS/macOS from Xcode
-- **MSVC** - Windows Visual Studio
-- **vcpkg** - From `VCPKG_ROOT`
+Auto-detected from environment:
+- **Android NDK** — `ANDROID_NDK_HOME` or SDK
+- **Apple SDK** — Xcode paths
+- **MSVC** — Visual Studio installation
+- **vcpkg** — `VCPKG_ROOT`
 
 ## Caching
 
@@ -107,11 +118,4 @@ Located in `test/fixtures/native_projects/`:
 - `generated_source/` - Multi-stage with code generation
 - `dependency_graph/` - Library with dependencies
 - `patchable_source/` - Patchable source
-- `failing_build/` - Intentionally broken (for error testing)
-
-## Workflow Rules
-
-- The manifest config (`native_prebuilt.yaml`) is the source of truth for release-based packages
-- Generated workflows should use package-specific filenames and tag patterns
-- Release asset archives are written to `release-assets/` during manifest generation
-- Checked-in manifests should live under `lib/src/hook/<package>_prebuilts.g.dart`
+- `failing_build/` - Intentionally broken
