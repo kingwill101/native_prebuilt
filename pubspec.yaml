@@ -16,7 +16,7 @@ topics:
   - code-assets
 
 environment:
-  sdk: ^3.10.4
+  sdk: '>=3.10.4 < 4.0.0'
 
 executables:
   native_prebuilt: native_prebuilt
