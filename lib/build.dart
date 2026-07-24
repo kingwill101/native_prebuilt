@@ -7,10 +7,12 @@
 /// - [NativeBuildContext] - build configuration per target
 /// - [NativeBuildRecipe] - build step recipes
 /// - [NativeBuildResult] - build output artifacts
-/// - [runNativeProjectCli] - project-local CLI entry point
+/// - [runNativePrebuiltCli] - unified CLI entry point
 /// - [nativePrebuiltBuild] - convenience hook entry point
 library native_prebuilt.build;
 
+export 'src/cli/native_prebuilt_cli.dart';
+export 'src/cli/shared.dart';
 export 'src/build/native_build_context.dart';
 export 'src/build/native_build_recipe.dart';
 export 'src/build/native_build_result.dart';
@@ -18,4 +20,3 @@ export 'src/build/native_project.dart';
 export 'src/build/process_runner.dart';
 export 'src/build/steps/steps.dart';
 export 'src/build/toolchains/toolchains.dart';
-export 'src/build_cli/native_project_cli.dart';
