@@ -392,4 +392,47 @@ artifacts:
       await runNativePrebuiltCli(['explain-cache', '--target', 'linux-x64']);
     });
   });
+
+  group('fetch command', () {
+    test('fetch without --config prints usage', () async {
+      await runNativePrebuiltCli(['fetch', '--platform', 'linux-x64']);
+    });
+
+    test('fetch without --platform prints usage', () async {
+      await runNativePrebuiltCli(['fetch', '--config', 'native_prebuilt.yaml']);
+    });
+  });
+
+  group('doctor command', () {
+    test('doctor without --config prints usage', () async {
+      await runNativePrebuiltCli(['doctor']);
+    });
+
+    test('doctor with valid config shows summary', () async {
+      final dir = await Directory.systemTemp.createTemp('native_prebuilt_cli_');
+      try {
+        final configFile = File('${dir.path}/native_prebuilt.yaml');
+        configFile.writeAsStringSync('''
+schema: 1
+package: test
+asset_name: test_bindings.dart
+library_stem: test_lib
+release:
+  provider: github
+  owner: test
+  repository: test/repo
+  tag: v1.0.0
+artifacts:
+  linux-x64:
+    archive: test-linux-x64.tar.gz
+    payload:
+      type: dynamic_library
+''');
+
+        await runNativePrebuiltCli(['doctor', '--config', configFile.path]);
+      } finally {
+        dir.deleteSync(recursive: true);
+      }
+    });
+  });
 }
