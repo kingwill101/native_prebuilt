@@ -11,6 +11,7 @@ This directory contains examples demonstrating different approaches to using nat
 - **Managed**: Build orchestration handled by `NativeProjectBuilder`
 - **Recipe-based**: Uses `StepBuildRecipe` with `CmakeConfigureStep` + `CmakeBuildStep`
 - **Toolchain integration**: Works with `native_toolchain_c` and other toolchains
+- **Extensible**: Add custom steps/recipes easily
 
 **Files**:
 - `lib/src/hook/managed_build_project.dart` - Declarative project definition
