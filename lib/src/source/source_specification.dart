@@ -31,7 +31,9 @@ final class LocalSource extends SourceSpecification {
   /// Resolve the first existing path against [packageRoot].
   Directory? resolve(Directory packageRoot) {
     for (final path in paths) {
-      final candidate = Directory(p.join(packageRoot.path, path));
+      // Normalize the path to handle mixed separators (e.g., 'vendor/lib' on Windows)
+      final normalizedPath = p.normalize(path);
+      final candidate = Directory(p.join(packageRoot.path, normalizedPath));
       if (candidate.existsSync()) return candidate;
     }
     return null;

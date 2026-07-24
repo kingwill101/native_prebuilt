@@ -122,7 +122,11 @@ final class ArchiveSourceProvider implements SourceProvider {
 
       // Verify SHA-256.
       final hashResult = await Process.run('sha256sum', [archivePath]);
-      final hash = (hashResult.stdout as String).split(' ').first;
+      final hashOutput = (hashResult.stdout as String).trim();
+      // Handle different sha256sum output formats:
+      // - Linux/macOS: 'hash  filename'
+      // - Windows (Git Bash): may have backslash prefix or different format
+      final hash = hashOutput.split(RegExp(r'\s+')).first.replaceAll(r'\', '');
       if (hash != spec.sha256) {
         throw Exception(
           'SHA-256 mismatch for ${spec.uri}: expected ${spec.sha256}, got $hash',
