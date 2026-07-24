@@ -17,7 +17,7 @@ Reusable infrastructure for Dart packages that ship prebuilt native libraries fr
 
 ```yaml
 dependencies:
-  native_prebuilt: ^0.0.14
+  native_prebuilt: ^0.0.13
 ```
 
 ## Hook usage

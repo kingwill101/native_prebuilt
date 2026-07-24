@@ -102,7 +102,11 @@ final class SourceFallbackResolver {
 
     // Apply preparation steps.
     // Work in a copy of the resolved source to keep the cache immutable.
-    final workDir = await _prepareWorkingDirectory(resolved, input, logger);
+    final workDir = await _prepareWorkingDirectory(
+      resolved,
+      sourceCacheRoot,
+      logger,
+    );
     try {
       for (final step in fallback.preparation) {
         await step.apply(directory: workDir, logger: logger);
@@ -136,7 +140,7 @@ final class SourceFallbackResolver {
   /// For cached/downloaded sources, creates a copy to keep the cache immutable.
   Future<Directory> _prepareWorkingDirectory(
     ResolvedSource resolved,
-    BuildInput input,
+    Directory sourceCacheRoot,
     Logger? logger,
   ) async {
     if (resolved.origin == SourceOrigin.local) {
@@ -145,8 +149,12 @@ final class SourceFallbackResolver {
     }
 
     // Copy cached source to a working directory.
-    final workDir = Directory.fromUri(
-      input.outputDirectory.resolve('source_work/'),
+    final workDir = Directory(
+      p.join(
+        sourceCacheRoot.path,
+        'work',
+        _sourceWorkKey(resolved, sourceCacheRoot),
+      ),
     );
     if (workDir.existsSync()) workDir.deleteSync(recursive: true);
 
@@ -154,6 +162,14 @@ final class SourceFallbackResolver {
     await _copyDirectory(resolved.directory, workDir);
 
     return workDir;
+  }
+
+  String _sourceWorkKey(ResolvedSource resolved, Directory sourceCacheRoot) {
+    final relative = p.relative(
+      resolved.directory.path,
+      from: sourceCacheRoot.path,
+    );
+    return relative.replaceAll(RegExp(r'[/\\:]'), '_');
   }
 
   Future<void> _copyDirectory(Directory source, Directory destination) async {
