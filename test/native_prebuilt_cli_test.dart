@@ -380,4 +380,18 @@ artifacts:
       await runNativePrebuiltCli(['plan']);
     });
   });
+
+  group('cache-key command', () {
+    test('cache-key with --target shows cache key', () async {
+      await runNativePrebuiltCli(['cache-key', '--target', 'linux-x64']);
+    });
+  });
+
+  group('explain-cache command', () {
+    test('explain-cache with --target shows cache explanation', () async {
+      await runNativePrebuiltCli(['explain-cache', '--target', 'linux-x64']);
+    });
+  });
+
+
 }
