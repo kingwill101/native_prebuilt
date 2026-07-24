@@ -59,10 +59,8 @@ final class HookBuilderSourceBuilder implements SourceBuilder {
     required BuildOutputBuilder output,
     required Logger? logger,
   }) {
-    return _builderFactory(input).run(
-      input: input,
-      output: output,
-      logger: logger,
-    );
+    return _builderFactory(
+      input,
+    ).run(input: input, output: output, logger: logger);
   }
 }

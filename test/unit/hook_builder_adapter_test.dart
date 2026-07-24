@@ -45,7 +45,11 @@ void main() {
           logger: null,
         );
 
-        expect(builderCalled, isTrue, reason: 'Builder should have been called');
+        expect(
+          builderCalled,
+          isTrue,
+          reason: 'Builder should have been called',
+        );
       } finally {
         tempDir.deleteSync(recursive: true);
       }
@@ -82,7 +86,11 @@ void main() {
           logger: null,
         );
 
-        expect(builderCalled, isTrue, reason: 'Builder should have been called');
+        expect(
+          builderCalled,
+          isTrue,
+          reason: 'Builder should have been called',
+        );
         expect(receivedPackageName, equals('test_package'));
       } finally {
         tempDir.deleteSync(recursive: true);
@@ -142,17 +150,18 @@ void main() {
         Logger? receivedLogger;
 
         final builder = CallbackSourceBuilder(
-          callback: ({
-            required source,
-            required input,
-            required output,
-            required logger,
-          }) async {
-            receivedSource = source;
-            receivedInput = input;
-            receivedOutput = output;
-            receivedLogger = logger;
-          },
+          callback:
+              ({
+                required source,
+                required input,
+                required output,
+                required logger,
+              }) async {
+                receivedSource = source;
+                receivedInput = input;
+                receivedOutput = output;
+                receivedLogger = logger;
+              },
         );
 
         final input = _createMockBuildInput(tempDir);
@@ -181,7 +190,12 @@ void main() {
 class _MockBuilder implements Builder {
   _MockBuilder({required this.onRun});
 
-  final void Function(BuildInput input, BuildOutputBuilder output, Logger? logger) onRun;
+  final void Function(
+    BuildInput input,
+    BuildOutputBuilder output,
+    Logger? logger,
+  )
+  onRun;
 
   @override
   Future<void> run({
