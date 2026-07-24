@@ -25,7 +25,9 @@ final managedBuildProject = NativeProject(
   ),
   sources: [
     GitSource(
-      repository: Uri.parse('https://github.com/example/managed_build_example.git'),
+      repository: Uri.parse(
+        'https://github.com/example/managed_build_example.git',
+      ),
       revision: 'main',
     ),
   ],
@@ -33,10 +35,7 @@ final managedBuildProject = NativeProject(
     recipes: {
       OS.linux: StepBuildRecipe(
         steps: [
-          CmakeConfigureStep(
-            sourceDirectory: '.',
-            buildDirectory: 'build',
-          ),
+          CmakeConfigureStep(sourceDirectory: '.', buildDirectory: 'build'),
           CmakeBuildStep(
             buildDirectory: 'build',
             targets: ['managed_build_example'],
@@ -45,10 +44,7 @@ final managedBuildProject = NativeProject(
       ),
       OS.macOS: StepBuildRecipe(
         steps: [
-          CmakeConfigureStep(
-            sourceDirectory: '.',
-            buildDirectory: 'build',
-          ),
+          CmakeConfigureStep(sourceDirectory: '.', buildDirectory: 'build'),
           CmakeBuildStep(
             buildDirectory: 'build',
             targets: ['managed_build_example'],
@@ -57,10 +53,7 @@ final managedBuildProject = NativeProject(
       ),
       OS.windows: StepBuildRecipe(
         steps: [
-          CmakeConfigureStep(
-            sourceDirectory: '.',
-            buildDirectory: 'build',
-          ),
+          CmakeConfigureStep(sourceDirectory: '.', buildDirectory: 'build'),
           CmakeBuildStep(
             buildDirectory: 'build',
             targets: ['managed_build_example'],

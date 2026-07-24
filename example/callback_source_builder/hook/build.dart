@@ -36,18 +36,19 @@ void main(List<String> args) async {
           LocalSource(paths: const ['.']),
         ],
         builder: CallbackSourceBuilder(
-          callback: ({
-            required source,
-            required input,
-            required output,
-            required logger,
-          }) async {
-            await sourceBuilder.run(
-              input: input,
-              output: output,
-              logger: logger,
-            );
-          },
+          callback:
+              ({
+                required source,
+                required input,
+                required output,
+                required logger,
+              }) async {
+                await sourceBuilder.run(
+                  input: input,
+                  output: output,
+                  logger: logger,
+                );
+              },
         ),
       ),
     ).run(input: input, output: output, logger: null);

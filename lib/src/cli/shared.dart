@@ -116,38 +116,31 @@ Future<PrebuiltManifest> generateManifest({
       );
       if (builtLibraryDir != null) {
         final platformBuiltFile = File(
-        p.join(
-          builtLibraryDir.path,
-          platform,
-          canonicalName,
-        ),
-      );
-
-      final legacyBuiltFile = File(
-        p.join(
-          builtLibraryDir.path,
-          canonicalName,
-        ),
-      );
-
-      final builtFile = platformBuiltFile.existsSync()
-          ? platformBuiltFile
-          : legacyBuiltFile;
-
-      if (!builtFile.existsSync()) {
-        if (allowMissing) continue;
-
-        throw StateError(
-          'Missing built library for $platform. Checked:\n'
-          '  ${platformBuiltFile.path}\n'
-          '  ${legacyBuiltFile.path}',
+          p.join(builtLibraryDir.path, platform, canonicalName),
         );
-      }
 
-      await packageBuiltLibrary(
-        builtFile: builtFile,
-        archiveFile: archiveFile,
-      );
+        final legacyBuiltFile = File(
+          p.join(builtLibraryDir.path, canonicalName),
+        );
+
+        final builtFile = platformBuiltFile.existsSync()
+            ? platformBuiltFile
+            : legacyBuiltFile;
+
+        if (!builtFile.existsSync()) {
+          if (allowMissing) continue;
+
+          throw StateError(
+            'Missing built library for $platform. Checked:\n'
+            '  ${platformBuiltFile.path}\n'
+            '  ${legacyBuiltFile.path}',
+          );
+        }
+
+        await packageBuiltLibrary(
+          builtFile: builtFile,
+          archiveFile: archiveFile,
+        );
       } else {
         try {
           await downloader.downloadReleaseArtifact(

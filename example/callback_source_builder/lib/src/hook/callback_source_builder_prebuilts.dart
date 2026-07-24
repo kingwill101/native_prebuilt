@@ -15,7 +15,9 @@ const callbackSourceBuilderExamplePrebuilts = PrebuiltManifest(
       archiveName: 'callback_source_builder_example-linux-x64.tar.gz',
       archiveSha256: 'PLACEHOLDER_HASH',
       payloadSha256: 'PLACEHOLDER_HASH',
-      payload: DynamicLibraryPayload(libraryStem: 'callback_source_builder_example'),
+      payload: DynamicLibraryPayload(
+        libraryStem: 'callback_source_builder_example',
+      ),
     ),
   },
 );
