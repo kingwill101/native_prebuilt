@@ -115,18 +115,39 @@ Future<PrebuiltManifest> generateManifest({
         p.join((releaseAssetsDir ?? tempDir).path, artifactConfig.archiveName),
       );
       if (builtLibraryDir != null) {
-        final builtFile = File(p.join(builtLibraryDir.path, canonicalName));
-        if (!builtFile.existsSync()) {
-          if (allowMissing) continue;
-          throw StateError(
-            'Missing built library for $platform: ${builtFile.path}',
-          );
-        }
-        await packageBuiltLibrary(
-          builtLibraryDir: builtLibraryDir,
-          canonicalName: canonicalName,
-          archiveFile: archiveFile,
+        final platformBuiltFile = File(
+        p.join(
+          builtLibraryDir.path,
+          platform,
+          canonicalName,
+        ),
+      );
+
+      final legacyBuiltFile = File(
+        p.join(
+          builtLibraryDir.path,
+          canonicalName,
+        ),
+      );
+
+      final builtFile = platformBuiltFile.existsSync()
+          ? platformBuiltFile
+          : legacyBuiltFile;
+
+      if (!builtFile.existsSync()) {
+        if (allowMissing) continue;
+
+        throw StateError(
+          'Missing built library for $platform. Checked:\n'
+          '  ${platformBuiltFile.path}\n'
+          '  ${legacyBuiltFile.path}',
         );
+      }
+
+      await packageBuiltLibrary(
+        builtFile: builtFile,
+        archiveFile: archiveFile,
+      );
       } else {
         try {
           await downloader.downloadReleaseArtifact(
@@ -213,19 +234,20 @@ String renderManifest(
 }
 
 Future<void> packageBuiltLibrary({
-  required Directory builtLibraryDir,
-  required String canonicalName,
+  required File builtFile,
   required File archiveFile,
 }) async {
   final result = await Process.run('tar', [
     'czf',
     archiveFile.path,
     '-C',
-    builtLibraryDir.path,
-    canonicalName,
+    builtFile.parent.path,
+    p.basename(builtFile.path),
   ]);
   if (result.exitCode != 0) {
-    throw StateError('tar create failed: ${result.stderr}');
+    throw StateError(
+      'tar create failed for ${builtFile.path}: ${result.stderr}',
+    );
   }
 }
 
