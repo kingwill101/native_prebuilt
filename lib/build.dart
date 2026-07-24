@@ -11,7 +11,7 @@
 /// - [nativePrebuiltBuild] - convenience hook entry point
 library native_prebuilt.build;
 
-export 'src/cli/native_prebuilt_cli.dart';
+export 'src/cli/cli.dart';
 export 'src/cli/shared.dart';
 export 'src/build/native_build_context.dart';
 export 'src/build/native_build_recipe.dart';

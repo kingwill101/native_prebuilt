@@ -4,7 +4,6 @@ import 'package:artisanal/args.dart';
 import 'package:code_assets/code_assets.dart';
 import 'package:hooks/hooks.dart';
 import 'package:logging/logging.dart';
-import 'package:native_prebuilt/src/cli/hook.dart';
 
 import '../build/native_build_recipe.dart';
 import '../build/native_project.dart';
@@ -55,7 +54,6 @@ Future<void> runNativePrebuiltCli(
         ..addCommand(FetchCommand())
         ..addCommand(DoctorCommand())
         ..addCommand(WorkflowCommand())
-        ..addCommand(HookCommand(project: buildProject))
         ..addCommand(PlanCommand(project: buildProject))
         ..addCommand(BuildCommand(project: buildProject))
         ..addCommand(CacheKeyCommand(project: buildProject))

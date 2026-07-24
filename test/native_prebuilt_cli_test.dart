@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:native_prebuilt/native_prebuilt.dart';
-import 'package:native_prebuilt/src/cli/native_prebuilt_cli.dart';
 import 'package:native_prebuilt/src/cli/native_prebuilt_config.dart';
 import 'package:native_prebuilt/src/cli/workflow.dart';
 import 'package:test/test.dart';

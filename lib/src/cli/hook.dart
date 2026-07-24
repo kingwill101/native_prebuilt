@@ -9,7 +9,7 @@ class HookCommand extends Command<void> {
   final NativeProject project;
 
   @override
-  String get name => 'build';
+  String get name => 'hook';
 
   @override
   String get description => 'Build hook command.';
