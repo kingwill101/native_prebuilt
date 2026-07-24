@@ -1,17 +1,16 @@
 # native_prebuilt
 
-Reusable infrastructure for Dart packages that ship prebuilt native libraries from GitHub or GitLab releases.
+Reusable infrastructure for Dart packages that build, cache, and ship native libraries through Dart hooks.
 
 ## What it provides
 
-- `PrebuiltCodeAssetBuilder` for `hook/build.dart`
-- `PrebuiltManifest` / `PrebuiltArtifact` immutable release metadata
-- `ArtifactInstaller` for download → verify → extract → validate → cache
-- `PrebuiltResolver` chain for override / local / cached / downloaded prebuilts
-- `SourceFallback`, `SourceProvider`, and `SourceBuilder` for local / archive / git source builds
-- `NativeBinaryInspector` and library-name helpers
-- CLI tooling for manifest generation, fetch, verification, and workflow templates
-- Reusable GitHub Actions and pub.dev workflow templates
+- **NativeProject** — Declarative project definition with build recipes
+- **StepBuildRecipe** — Multi-stage build pipelines with fingerprinting
+- **Build cache** — Step-level caching with content-based fingerprints
+- **Platform toolchains** — Auto-detection for Android NDK, Apple SDK, MSVC, vcpkg
+- **NativeProjectBuilder** — High-level build orchestration
+- **CLI tools** — Build, plan, cache inspection, and workflow generation
+- **Test fixtures** — CMake projects for testing native builds
 
 ## Install
 
@@ -20,432 +19,250 @@ dependencies:
   native_prebuilt: ^0.0.13
 ```
 
-## Hook usage
+## Quick start
+
+### Define your project
 
 ```dart
-import 'package:hooks/hooks.dart';
-import 'package:logging/logging.dart';
-import 'package:native_prebuilt/hooks.dart';
-import 'package:my_package/src/hook/my_package_prebuilts.g.dart';
+import 'package:code_assets/code_assets.dart';
+import 'package:native_prebuilt/native_prebuilt.dart';
 
-void main(List<String> args) async {
-  await build(args, (input, output) async {
-    await PrebuiltCodeAssetBuilder(
-      assetName: 'my_bindings.dart',
-      libraryStem: 'mylib',
-      manifest: myPrebuilts,
-      linkModeResolver: (_) => DynamicLoadingBundled(),
-      sourceFallback: SourceFallback(
-        sources: [
-          LocalSource(paths: ['.']),
-        ],
-        builder: CallbackSourceBuilder(
-          callback: ({
-            required source,
-            required input,
-            required output,
-            required logger,
-          }) async {
-            // build from source.directory
-          },
-        ),
-      ),
-    ).run(input: input, output: output, logger: Logger.root);
-  });
-}
-```
-
-## Source fallback pipeline
-
-When no prebuilt is available, you can let `native_prebuilt` resolve source and build from it instead of failing immediately.
-
-```dart
-import 'package:logging/logging.dart';
-import 'package:native_prebuilt/hooks.dart';
-
-await PrebuiltCodeAssetBuilder(
-  assetName: 'src/my_package.dart',
-  libraryStem: 'my_package',
-  manifest: myPackagePrebuilts,
-  linkModeResolver: (_) => DynamicLoadingBundled(),
-  sourceFallback: SourceFallback(
-    sources: [
-      LocalSource(paths: ['.']),
-      ArchiveSource(
-        uri: Uri.parse('https://example.com/my_package.tar.gz'),
-        sha256: '...',
-      ),
-      GitSource(
-        repository: Uri.parse('https://github.com/myorg/my_package.git'),
-        revision: 'FULL_COMMIT_SHA',
-      ),
-    ],
-    preparation: [
-      ApplyPatches(paths: ['patches/fix.patch']),
-    ],
-    builder: CallbackSourceBuilder(
-      callback: ({
-        required source,
-        required input,
-        required output,
-        required logger,
-      }) async {
-        // compile source.directory here
-      },
-    ),
+final myProject = NativeProject(
+  name: 'my_package',
+  asset: NativeAssetSpec(
+    assetName: 'src/bindings.dart',
+    libraryStem: 'my_native',
+    linkMode: DynamicLoadingBundled(),
   ),
-).run(
-  input: input,
-  output: output,
-  logger: Logger.root
-    ..level = Level.INFO
-    ..onRecord.listen((record) => print(record.message)),
+  build: NativeBuildDefinition(
+    recipes: {
+      OS.linux: StepBuildRecipe(steps: [
+        CmakeConfigureStep(buildDirectory: 'build'),
+        CmakeBuildStep(buildDirectory: 'build', targets: ['my_native']),
+        ExportArtifactStep(artifactPath: 'build/libmy_native.so'),
+      ]),
+      OS.macOS: StepBuildRecipe(steps: [
+        CmakeConfigureStep(buildDirectory: 'build'),
+        CmakeBuildStep(buildDirectory: 'build', targets: ['my_native']),
+        ExportArtifactStep(artifactPath: 'build/libmy_native.dylib'),
+      ]),
+      OS.windows: StepBuildRecipe(steps: [
+        CmakeConfigureStep(buildDirectory: 'build'),
+        CmakeBuildStep(buildDirectory: 'build', targets: ['my_native']),
+        ExportArtifactStep(artifactPath: 'build/my_native.dll'),
+      ]),
+    },
+  ),
 );
 ```
 
-The resolution order is:
-
-1. `hooks.user_defines`
-2. local `.prebuilt/`
-3. shared cache / release download
-4. `sourceFallback` (local / archive / git → prepare → build)
-
-Pass a `Logger` to see progress messages for cache hits, downloads, source acquisition, patching, and builds.
-
-## Manifest format
-
-`native_prebuilt` expects a YAML config file like:
-
-```yaml
-schema: 1
-package: my_package
-asset_name: my_bindings.dart
-library_stem: mylib
-release:
-  provider: github
-  repository: myorg/myrepo
-  tag: mylib-v1.0.0
-artifacts:
-  linux-x64:
-    archive: mylib-linux-x64.tar.gz
-    payload:
-      type: dynamic_library
-```
-
-Use:
-
-```bash
-dart run native_prebuilt manifest update \
-  --config native_prebuilt.yaml \
-  --output lib/src/hook/my_package_prebuilts.g.dart \
-  --built-library-dir built-library \
-  --release-assets-dir release-assets
-
-dart run native_prebuilt manifest verify \
-  --config native_prebuilt.yaml \
-  --output lib/src/hook/my_package_prebuilts.g.dart \
-  --built-library-dir built-library \
-  --release-assets-dir release-assets
-```
-
-The generated manifest file is the only supported place for `archiveSha256`
-and `payloadSha256`. Do not edit those hashes by hand; rerun `manifest update`
-when the release assets change.
-
-## Fetch locally
-
-```bash
-dart run native_prebuilt fetch --config native_prebuilt.yaml --platform linux-x64
-```
-
-## GitHub Actions
-
-```bash
-dart run native_prebuilt workflow init
-```
-
-Generates into `.github/workflows/`:
-
-| File | Purpose |
-|------|---------|
-| `prebuilt.yml` | Builds native libraries on every platform, generates manifest + release assets on tag pushes |
-| `publish.yml` | Publishes to pub.dev on `v*` tags |
-| `native-prebuilt-build.yml` | Reusable build workflow (called by `prebuilt.yml`) |
-| `native-prebuilt-release.yml` | Reusable release workflow |
-| `native-prebuilt-update-manifest.yml` | Reusable manifest generation workflow |
-
-Tag triggers are package-specific (e.g. `my_package-v*`). On tag push:
-
-1. `build-linux`, `build-windows`, `build-macos` jobs compile native code and upload artifacts
-2. `update-manifest` downloads all artifacts, generates the manifest, and creates release archives
-3. `release` publishes archives to GitHub Releases via `softprops/action-gh-release`
-
-The set of build jobs is automatically filtered to match the platforms declared in `native_prebuilt.yaml`.
-
-### Releasing
-
-```bash
-git tag my_package-v1.0.0
-git push origin my_package-v1.0.0
-```
-
-This triggers `prebuilt.yml` which builds, generates the manifest, and publishes release assets.
-
-## GitLab CI
-
-```bash
-dart run native_prebuilt workflow init --gitlab
-```
-
-Generates into `.gitlab-ci.yml` and `.gitlab/ci/`:
-
-| File | Purpose |
-|------|---------|
-| `.gitlab-ci.yml` | Root pipeline — stages platform build jobs, manifest generation, and release |
-| `.gitlab/ci/native-prebuilt-build-<platform>.yml` | Per-platform build job |
-| `.gitlab/ci/native-prebuilt-release.yml` | Uploads release assets to GitLab Generic Package Registry |
-| `.gitlab/ci/native-prebuilt-update-manifest.yml` | Generates manifest and release archives |
-
-Platforms are determined by the `artifacts:` section in `native_prebuilt.yaml`. Only declared platforms get build jobs.
-
-### GitLab release source
-
-For packages hosted on GitLab, set the release source in `native_prebuilt.yaml`:
-
-```yaml
-release:
-  provider: gitlab
-  project: mygroup/myproject
-  tag: my_package-v1.0.0
-```
-
-### Releasing on GitLab
-
-```bash
-git tag my_package-v1.0.0
-git push origin my_package-v1.0.0
-```
-
-This triggers the GitLab pipeline which builds, generates the manifest, and uploads release assets to the GitLab Generic Package Registry.
-
-## Local overrides
-
-Resolution chain: `user_defines` → `.prebuilt/` directory → shared cache →
-download from release. The first hit wins.
-
-### Option 1: `hooks.user_defines` (per-project override)
-
-In your consumer package's `pubspec.yaml`:
-
-```yaml
-hooks:
-  user_defines:
-    my_package:
-      prebuilt_path: /absolute/path/to/libmy_package.so
-```
-
-The key is the package name. `prebuilt_path` is the default key read by
-`UserDefinePrebuiltResolver`. If the file exists, it is used directly.
-
-### Option 2: `.prebuilt/` directory (per-build override)
-
-Drop a library into `.prebuilt/<platform>/` next to your `pubspec.yaml`:
-
-```
-my_package/
-  .prebuilt/
-    linux-x64/
-      libmy_package.so
-    windows-x64/
-      my_package.dll
-    macos-arm64/
-      libmy_package.dylib
-  pubspec.yaml
-```
-
-The subdirectory must match the platform label from your manifest (e.g.
-`linux-x64`, `macos-arm64`). `LocalPrebuiltResolver` picks up any matching
-library without extra config.
-
-## Platforms
-
-Platforms are declared in `native_prebuilt.yaml` under `artifacts:`. Each key is
-a platform label in the form `<os>-<arch>` (e.g. `linux-x64`, `macos-arm64`,
-`windows-x64`).
-
-Minimal form — `archive` and `payload.type` default automatically:
-
-```yaml
-artifacts:
-  linux-x64:
-  linux-arm64:
-  macos-arm64:
-```
-
-Defaults:
-- `archive` → `<package>-<platform>.tar.gz` (e.g. `my_package-linux-x64.tar.gz`)
-- `payload.type` → `dynamic_library`
-
-Explicit form when you need custom names:
-
-```yaml
-artifacts:
-  linux-x64:
-    archive: custom-name-linux-x64.tar.gz
-    payload:
-      type: dynamic_library
-  linux-arm64:
-    archive: custom-name-linux-arm64.tar.gz
-    payload:
-      type: static_library
-```
-
-Platform labels use the format `<os>-<arch>` and follow the values defined in
-`package:code_assets` ([`OS`](https://pub.dev/documentation/code_assets/latest/code_assets/OS-class.html)
-and [`Architecture`](https://pub.dev/documentation/code_assets/latest/code_assets/Architecture-class.html)).
-Any combination supported by `code_assets` is valid (e.g. `linux-x64`,
-`linux-arm64`, `linux-riscv64`, `macos-arm64`, `android-arm64`, `ios-arm64`,
-`windows-x64`, etc.).
-
-### Adding a platform
-
-Add an entry to `artifacts:` and regenerate:
-
-```yaml
-artifacts:
-  linux-x64:
-    archive: my_package-linux-x64.tar.gz
-    payload:
-      type: dynamic_library
-  linux-arm64:                          # ← new
-    archive: my_package-linux-arm64.tar.gz
-    payload:
-      type: dynamic_library
-```
-
-Then regenerate workflows and the manifest:
-
-```bash
-dart run native_prebuilt workflow init --config native_prebuilt.yaml
-dart run native_prebuilt manifest update \
-  --config native_prebuilt.yaml \
-  --output lib/src/hook/my_package_prebuilts.g.dart \
-  --built-library-dir .dart_tool/lib
-```
-
-The regenerated `prebuilt.yml` will automatically include a `build-linux-arm64`
-job. GitLab CI will include a `native-prebuilt-build-linux.yml` job.
-
-### Removing a platform
-
-Delete the entry from `artifacts:` and regenerate. The build job for that
-platform will be removed from the CI configs.
-
-### Filtering platforms at generation time
-
-Use `--platform` to scaffold only a subset of the declared platforms:
-
-```bash
-dart run native_prebuilt workflow init --platform linux --platform macos
-```
-
-This is useful when you only want to generate CI for the platforms you can
-test locally. The manifest still contains all platforms — `--platform` only
-affects which CI jobs are generated.
-
-## Source build helpers
-
-`sourceFallback.builder` can invoke any build system. Common patterns are C and
-Rust builds, but you can also call a custom script.
-
-### CBuilder (C/C++)
-
-Uses [`native_toolchain_c`](https://pub.dev/packages/native_toolchain_c):
+### Use in your hook
 
 ```dart
+// hook/build.dart
 import 'package:hooks/hooks.dart';
-import 'package:native_prebuilt/hooks.dart';
-import 'package:native_toolchain_c/native_toolchain_c.dart';
-import 'package:my_package/src/hook/my_package_prebuilts.g.dart';
+import 'package:native_prebuilt/native_prebuilt.dart';
+import 'package:my_package/src/my_project.dart';
 
-void main(List<String> args) async {
-  await build(args, (input, output) async {
-    final cBuilder = CBuilder.library(
-      name: 'my_package',
-      packageName: input.packageName,
-      assetName: 'src/my_package.dart',
-      sources: const ['src/native/my_package.c'],
-    );
-
-    await PrebuiltCodeAssetBuilder(
-      assetName: 'src/my_package.dart',
-      libraryStem: 'my_package',
-      manifest: myPackagePrebuilts,
-      linkModeResolver: (code) => DynamicLoadingBundled(),
-      sourceFallback: SourceFallback(
-        sources: [LocalSource(paths: ['.'])],
-        builder: CallbackSourceBuilder(
-          callback: ({
-            required source,
-            required input,
-            required output,
-            required logger,
-          }) async {
-            await cBuilder.run(input: input, output: output, logger: logger);
-          },
-        ),
-      ),
-    ).run(input: input, output: output, logger: Logger.root);
-  });
+Future<void> main(List<String> args) {
+  return runNativeProjectCli(args, project: myProject);
 }
 ```
 
-### RustBuilder
+### Use in CI
 
-Uses [`native_toolchain_rust`](https://pub.dev/packages/native_toolchain_rust).
-Requires a `Cargo.toml` with `crate-type = ["staticlib", "cdylib"]` and a
-`rust-toolchain.toml` pinned to a specific version.
-
-```dart
-import 'package:hooks/hooks.dart';
-import 'package:native_prebuilt/hooks.dart';
-import 'package:native_toolchain_rust/native_toolchain_rust.dart';
-import 'package:my_package/src/hook/my_package_prebuilts.g.dart';
-
-void main(List<String> args) async {
-  await build(args, (input, output) async {
-    final rustBuilder = RustBuilder(
-      assetName: 'src/my_package.dart',
-    );
-
-    await PrebuiltCodeAssetBuilder(
-      assetName: 'src/my_package.dart',
-      libraryStem: 'my_package',
-      manifest: myPackagePrebuilts,
-      linkModeResolver: (code) => DynamicLoadingBundled(),
-      sourceFallback: SourceFallback(
-        sources: [LocalSource(paths: ['.'])],
-        builder: CallbackSourceBuilder(
-          callback: ({
-            required source,
-            required input,
-            required output,
-            required logger,
-          }) async {
-            await rustBuilder.run(input: input, output: output, logger: logger);
-          },
-        ),
-      ),
-    ).run(input: input, output: output, logger: Logger.root);
-  });
-}
+```bash
+dart run native_prebuilt plan --target linux-x64
+dart run native_prebuilt build --target linux-x64 --output built-library
+dart run native_prebuilt cache-key --target linux-x64
+dart run native_prebuilt explain-cache --target linux-x64
 ```
 
-## Notes
+## Build steps
 
-- Use `release.provider: gitlab` and `release.project` for GitLab release assets.
-- `workflow init --platform ...` is repeatable; omit it to scaffold the platforms declared in the manifest.
-- Generated GitHub workflows derive filenames and tag prefixes from `package:` in `native_prebuilt.yaml`.
-- Generated GitLab scaffolds stage built libraries in `built-library/` and use the manifest to decide which platform jobs to emit.
-- The package exports `OS`, `Architecture`, and `IOSSdk` from `code_assets`.
-- The cache and installer are designed for repeated hook runs and concurrent builds.
+| Step | Purpose |
+|------|---------|
+| `CmakeConfigureStep` | Run `cmake -B` with defines |
+| `CmakeBuildStep` | Run `cmake --build` with targets |
+| `CommandStep` | Run arbitrary commands |
+| `DownloadArchiveStep` | Download and extract archives |
+| `GitCheckoutStep` | Clone/update git repositories |
+| `GitApplyPatchStep` | Apply patch files |
+| `StripStep` | Strip debug symbols |
+| `FindArtifactStep` | Find built artifacts |
+| `CopyStep` | Copy files/directories |
+| `ExportArtifactStep` | Export final artifact to output |
+
+## Multi-stage builds
+
+For complex builds like TDLib (OpenSSL + code generation + cross-compilation):
+
+```dart
+final tdlibProject = NativeProject(
+  name: 'tdlib',
+  asset: const NativeAssetSpec(
+    assetName: 'src/tdlib.g.dart',
+    libraryStem: 'tdjson',
+    linkMode: DynamicLoadingBundled(),
+  ),
+  build: NativeBuildDefinition(
+    recipes: {
+      OS.linux: StepBuildRecipe(steps: [
+        CmakeConfigureStep(
+          buildDirectory: 'build',
+          defines: {'CMAKE_C_COMPILER_LAUNCHER': 'sccache'},
+        ),
+        CmakeBuildStep(buildDirectory: 'build', targets: ['tdjson']),
+        ExportArtifactStep(artifactPath: 'build/td/libtdjson.so'),
+      ]),
+      OS.android: StepBuildRecipe(steps: [
+        // Step 1: Build OpenSSL
+        CommandStep(
+          id: 'build-openssl',
+          commands: [['make', 'OpenSSL-android']],
+        ),
+        // Step 2: Configure TDLib
+        CmakeConfigureStep(
+          buildDirectory: 'build',
+          defines: {
+            'ANDROID_ABI': 'arm64-v8a',
+            'ANDROID_STL': 'c++_static',
+          },
+        ),
+        // Step 3: Build TDLib
+        CmakeBuildStep(buildDirectory: 'build', targets: ['tdjson']),
+        // Step 4: Strip symbols
+        StripStep(
+          inputPath: 'build/td/libtdjson.so',
+          outputPath: 'libtdjson.so',
+        ),
+        // Step 5: Export
+        ExportArtifactStep(artifactPath: 'libtdjson.so'),
+      ]),
+    },
+  ),
+);
+```
+
+## Caching
+
+Build steps are automatically cached using content-based fingerprints:
+
+- Same inputs → cache hit (skip build)
+- Changed source, toolchain, or defines → cache miss (rebuild)
+- Cache stored in `.dart_tool/native_prebuilt/build-cache/`
+
+```bash
+dart run native_prebuilt explain-cache --target linux-x64
+# Shows why each step was cached or rebuilt
+```
+
+## Platform toolchains
+
+Auto-detected from environment:
+
+| Platform | Detection |
+|----------|-----------|
+| Android NDK | `ANDROID_NDK_HOME` or SDK path |
+| Apple SDK | Xcode paths |
+| MSVC | Visual Studio installation |
+| vcpkg | `VCPKG_ROOT` |
+
+## Prebuilt resolution
+
+For packages that also ship prebuilt binaries:
+
+```dart
+final project = NativeProject(
+  name: 'my_package',
+  asset: NativeAssetSpec(...),
+  prebuilts: PrebuiltManifest(
+    schemaVersion: 1,
+    release: GitHubReleaseSource(
+      owner: 'myorg',
+      repository: 'myrepo',
+      tag: 'v1.0.0',
+    ),
+    artifacts: {},
+  ),
+  sources: [
+    GitSource(
+      repository: Uri.parse('https://github.com/myorg/myrepo.git'),
+      revision: 'abc123...',
+    ),
+  ],
+  build: NativeBuildDefinition(recipes: {...}),
+);
+```
+
+Resolution order:
+1. User-defined override via `hooks.user_defines`
+2. Local `.prebuilt/` directory
+3. Shared cache (download from release)
+4. Source build using recipe
+
+## CLI commands
+
+| Command | Description |
+|---------|-------------|
+| `plan --target <platform>` | Show build plan |
+| `build --target <platform> --output <dir>` | Build native library |
+| `cache-key --target <platform>` | Show cache key |
+| `explain-cache --target <platform>` | Explain cache state |
+| `verify --target <platform>` | Verify built artifact |
+| `manifest update` | Generate/refresh manifest |
+| `manifest verify` | Verify manifest hashes |
+| `workflow init` | Generate CI workflows |
+
+## Test fixtures
+
+Located in `test/fixtures/native_projects/`:
+
+| Fixture | Description |
+|---------|-------------|
+| `simple_shared/` | Basic shared library |
+| `static_library/` | Static library |
+| `generated_source/` | Multi-stage with code generation |
+| `dependency_graph/` | Library with dependencies |
+| `patchable_source/` | Patchable source |
+| `failing_build/` | Intentionally broken |
+
+## CI setup
+
+### GitHub Actions
+
+```yaml
+# .github/workflows/ci.yml
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+      - run: dart pub get
+      - run: dart test
+```
+
+### GitLab CI
+
+```yaml
+# .gitlab-ci.yml
+stages:
+  - test
+
+test:
+  stage: test
+  script:
+    - dart pub get
+    - dart test
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+```
+
+## License
+
+MIT
