@@ -76,7 +76,7 @@ void main() {
         String? receivedPackageName;
 
         final adapter = HookBuilderSourceBuilder.factory(
-          (input) => _MockBuilder(
+          (input, source) => _MockBuilder(
             onRun: (input, output, logger) {
               builderCalled = true;
               receivedPackageName = input.packageName;

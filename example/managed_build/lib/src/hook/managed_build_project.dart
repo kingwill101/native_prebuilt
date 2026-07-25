@@ -32,34 +32,43 @@ final managedBuildProject = NativeProject(
     ),
   ],
   build: NativeBuildDefinition(
-    recipes: {
-      OS.linux: StepBuildRecipe(
-        steps: [
-          CmakeConfigureStep(sourceDirectory: '.', buildDirectory: 'build'),
-          CmakeBuildStep(
-            buildDirectory: 'build',
-            targets: ['managed_build_example'],
-          ),
-        ],
+    recipes: [
+      NativeTargetRecipe(
+        pattern: const NativeTargetPattern(os: OS.linux),
+        recipe: StepBuildRecipe(
+          steps: [
+            CmakeConfigureStep(sourceDirectory: '.', buildDirectory: 'build'),
+            CmakeBuildStep(
+              buildDirectory: 'build',
+              targets: ['managed_build_example'],
+            ),
+          ],
+        ),
       ),
-      OS.macOS: StepBuildRecipe(
-        steps: [
-          CmakeConfigureStep(sourceDirectory: '.', buildDirectory: 'build'),
-          CmakeBuildStep(
-            buildDirectory: 'build',
-            targets: ['managed_build_example'],
-          ),
-        ],
+      NativeTargetRecipe(
+        pattern: const NativeTargetPattern(os: OS.macOS),
+        recipe: StepBuildRecipe(
+          steps: [
+            CmakeConfigureStep(sourceDirectory: '.', buildDirectory: 'build'),
+            CmakeBuildStep(
+              buildDirectory: 'build',
+              targets: ['managed_build_example'],
+            ),
+          ],
+        ),
       ),
-      OS.windows: StepBuildRecipe(
-        steps: [
-          CmakeConfigureStep(sourceDirectory: '.', buildDirectory: 'build'),
-          CmakeBuildStep(
-            buildDirectory: 'build',
-            targets: ['managed_build_example'],
-          ),
-        ],
+      NativeTargetRecipe(
+        pattern: const NativeTargetPattern(os: OS.windows),
+        recipe: StepBuildRecipe(
+          steps: [
+            CmakeConfigureStep(sourceDirectory: '.', buildDirectory: 'build'),
+            CmakeBuildStep(
+              buildDirectory: 'build',
+              targets: ['managed_build_example'],
+            ),
+          ],
+        ),
       ),
-    },
+    ],
   ),
 );

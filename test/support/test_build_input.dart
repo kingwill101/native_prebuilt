@@ -7,15 +7,16 @@ import 'package:code_assets/code_assets.dart';
 import 'package:native_prebuilt/native_prebuilt.dart';
 import 'package:path/path.dart' as p;
 
-/// Creates a minimal [NativeBuildContext] for testing.
+/// Creates a minimal [NativeBuildContext] and [ResolvedSource] for testing.
 ///
 /// This is useful for testing builders and resolvers without
 /// needing a full hook invocation.
-NativeBuildContext createTestContext({
-  required Directory workDir,
+(NativeBuildContext, ResolvedSource) createTestContext({
+  Directory? workDir,
   OS? targetOS,
   Architecture? targetArchitecture,
 }) {
+  workDir ??= Directory.systemTemp.createTempSync('test_context_');
   targetOS ??= _currentOS;
   targetArchitecture ??= switch (targetOS) {
     OS.linux => Architecture.x64,
@@ -26,7 +27,7 @@ NativeBuildContext createTestContext({
     _ => Architecture.x64,
   };
 
-  return NativeBuildContext(
+  final context = NativeBuildContext(
     target: NativeTarget(os: targetOS, architecture: targetArchitecture),
     hook: NativeHookConfiguration(
       packageName: 'test_package',
@@ -43,6 +44,10 @@ NativeBuildContext createTestContext({
     toolchains: const ToolchainRegistry(),
     environment: {},
   );
+
+  final source = ResolvedSource(directory: workDir, origin: SourceOrigin.local);
+
+  return (context, source);
 }
 
 /// Creates a [ResolvedSource] for testing.

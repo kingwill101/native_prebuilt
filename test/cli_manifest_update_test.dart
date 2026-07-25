@@ -85,11 +85,11 @@ void main() {
     test(
       'generateManifest falls back to flat layout for backwards compatibility',
       () async {
-        // Test that the legacy flat layout still works
-        final legacyDir = Directory('${tempDir.path}/legacy-built-library');
-        legacyDir.createSync(recursive: true);
+        // Test that the flat layout still works
+        final flatDir = Directory('${tempDir.path}/flat-built-library');
+        flatDir.createSync(recursive: true);
 
-        final libFile = File('${legacyDir.path}/libtdjson.so');
+        final libFile = File('${flatDir.path}/libtdjson.so');
         libFile.createSync(recursive: true);
         libFile.writeAsBytesSync([0x7f, 0x45, 0x4c, 0x46]);
 
@@ -119,7 +119,7 @@ void main() {
           config: config,
           tag: 'tdlib-v1.8.65',
           allowMissing: false,
-          builtLibraryDir: legacyDir,
+          builtLibraryDir: flatDir,
           releaseAssetsDir: releaseAssetsDir,
         );
 
@@ -169,7 +169,7 @@ void main() {
           expect(e.message, contains('android-arm64'));
           // After fix, error should show both paths checked
           // expect(e.message, contains('platformBuiltFile')); // after fix
-          // expect(e.message, contains('legacyBuiltFile'));   // after fix
+          // expect(e.message, contains('flatBuiltFile'));   // after fix
         }
       },
     );

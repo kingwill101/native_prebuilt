@@ -1,6 +1,6 @@
 /// CallbackSourceBuilder + CBuilder example
 ///
-/// This demonstrates using native_prebuilt with the legacy SourceBuilder
+/// This demonstrates using native_prebuilt with the SourceBuilder
 /// callback pattern combined with CBuilder from native_toolchain_c.
 library;
 

@@ -1,11 +1,11 @@
 import 'dart:io';
 
-import 'package:code_assets/code_assets.dart';
 import 'package:native_prebuilt/native_prebuilt.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 import '../support/recording_process_runner.dart';
+import '../support/test_build_input.dart';
 
 void main() {
   group('CmakeConfigureStep', () {
@@ -26,7 +26,7 @@ void main() {
         runner: runner,
       );
 
-      final (context, source) = _createTestContext();
+      final (context, source) = createTestContext();
       await step.execute(context, source);
 
       expect(runner.commands, hasLength(1));
@@ -50,7 +50,7 @@ void main() {
         runner: runner,
       );
 
-      final (context, source) = _createTestContext();
+      final (context, source) = createTestContext();
       await step.execute(context, source);
 
       expect(runner.commands, hasLength(1));
@@ -67,7 +67,7 @@ void main() {
         runner: runner,
       );
 
-      final (context, source) = _createTestContext();
+      final (context, source) = createTestContext();
       await step.execute(context, source);
 
       expect(runner.commands, hasLength(1));
@@ -88,7 +88,7 @@ void main() {
         runner: runner,
       );
 
-      final (context, source) = _createTestContext();
+      final (context, source) = createTestContext();
       expect(() => step.execute(context, source), throwsA(isA<Exception>()));
     });
   });
@@ -107,7 +107,7 @@ void main() {
         runner: runner,
       );
 
-      final (context, source) = _createTestContext();
+      final (context, source) = createTestContext();
       await step.execute(context, source);
 
       expect(runner.commands, hasLength(1));
@@ -123,7 +123,7 @@ void main() {
     test('adds parallel flag by default', () async {
       final step = CmakeBuildStep(buildDirectory: 'build', runner: runner);
 
-      final (context, source) = _createTestContext();
+      final (context, source) = createTestContext();
       await step.execute(context, source);
 
       expect(runner.commands, hasLength(1));
@@ -139,7 +139,7 @@ void main() {
         runner: runner,
       );
 
-      final (context, source) = _createTestContext();
+      final (context, source) = createTestContext();
       await step.execute(context, source);
 
       expect(runner.commands, hasLength(1));
@@ -165,7 +165,7 @@ void main() {
         runner: runner,
       );
 
-      final (context, source) = _createTestContext();
+      final (context, source) = createTestContext();
       await step.execute(context, source);
 
       expect(runner.commands, hasLength(1));
@@ -186,7 +186,7 @@ void main() {
         runner: runner,
       );
 
-      final (context, source) = _createTestContext();
+      final (context, source) = createTestContext();
       await step.execute(context, source);
 
       expect(runner.commands, hasLength(3));
@@ -205,7 +205,7 @@ void main() {
         runner: runner,
       );
 
-      final (context, source) = _createTestContext();
+      final (context, source) = createTestContext();
       await step.execute(context, source);
 
       expect(runner.commands, hasLength(1));
@@ -222,7 +222,7 @@ void main() {
         runner: runner,
       );
 
-      final (context, source) = _createTestContext();
+      final (context, source) = createTestContext();
       await step.execute(context, source);
 
       expect(runner.commands, hasLength(1));
@@ -247,7 +247,7 @@ void main() {
         runner: runner,
       );
 
-      final (context, source) = _createTestContext();
+      final (context, source) = createTestContext();
       expect(() => step.execute(context, source), throwsA(isA<Exception>()));
 
       // Only first command should have been executed
@@ -284,7 +284,7 @@ void main() {
         runner: runner,
       );
 
-      final (context, source) = _createTestContext(workDir: tempDir);
+      final (context, source) = createTestContext(workDir: tempDir);
       await step.execute(context, source);
 
       expect(runner.commands, hasLength(1));
@@ -292,10 +292,7 @@ void main() {
 
       // Accept either 'strip' or 'llvm-strip'
       expect(cmd.executable, anyOf('strip', 'llvm-strip'));
-      expect(
-        cmd.arguments,
-        containsAll(['--strip-debug', '--strip-unneeded', outputPath]),
-      );
+      expect(cmd.arguments, containsAll(['-o', outputPath, inputPath]));
     });
   });
 
@@ -313,20 +310,29 @@ void main() {
     });
 
     test('finds and copies artifact', () async {
-      // Create a fake artifact
-      final buildDir = Directory(p.join(tempDir.path, 'build', 'td'));
-      await buildDir.create(recursive: true);
-      await File(p.join(buildDir.path, 'libtdjson.so')).writeAsBytes([0, 1, 2]);
+      // Create a fake artifact in the work directory
+      final artifactFile = File(p.join(tempDir.path, 'libtdjson.so'));
+      await artifactFile.writeAsBytes([0, 1, 2]);
 
       final step = ExportArtifactStep(
-        artifactPath: 'build/td/libtdjson.so',
-        outputName: 'libtdjson.so',
+        id: 'export_tdjson',
+        declaration: NativeArtifactDeclaration(
+          id: 'tdjson',
+          kind: NativeArtifactKind.dynamicLibrary,
+          primaryPath: 'libtdjson.so',
+        ),
       );
 
-      final (context, source) = _createTestContext(workDir: tempDir);
-      await step.execute(context, source);
+      final (context, source) = createTestContext(workDir: tempDir);
+      final result = await step.execute(context, source);
 
-      // Verify the artifact was copied to the output directory
+      // Verify the artifact was produced
+      expect(result.artifacts, hasLength(1));
+      final artifact = result.artifacts.first;
+      expect(artifact.id, 'tdjson');
+      expect(artifact.kind, NativeArtifactKind.dynamicLibrary);
+
+      // Verify the artifact file was copied to the output directory
       final outputDir = context.directories.output;
       final outputFile = File(p.join(outputDir.path, 'libtdjson.so'));
       expect(outputFile.existsSync(), isTrue);
@@ -334,11 +340,15 @@ void main() {
 
     test('throws when artifact not found', () async {
       final step = ExportArtifactStep(
-        artifactPath: 'build/td/nonexistent.so',
-        outputName: 'libtdjson.so',
+        id: 'export_missing',
+        declaration: NativeArtifactDeclaration(
+          id: 'missing',
+          kind: NativeArtifactKind.dynamicLibrary,
+          primaryPath: 'nonexistent.so',
+        ),
       );
 
-      final (context, source) = _createTestContext(workDir: tempDir);
+      final (context, source) = createTestContext(workDir: tempDir);
       expect(() => step.execute(context, source), throwsA(isA<StateError>()));
     });
   });
@@ -385,7 +395,7 @@ void main() {
         ],
       );
 
-      final (context, source) = _createTestContext(workDir: tempDir);
+      final (context, source) = createTestContext(workDir: tempDir);
       await recipe.execute(context, source);
 
       expect(runner.commands, hasLength(3));
@@ -416,36 +426,10 @@ void main() {
         ],
       );
 
-      final (context, source) = _createTestContext(workDir: tempDir);
+      final (context, source) = createTestContext(workDir: tempDir);
       expect(() => recipe.execute(context, source), throwsA(isA<Exception>()));
 
       expect(runner.commands, hasLength(1));
     });
   });
-}
-
-(NativeBuildContext, ResolvedSource) _createTestContext({Directory? workDir}) {
-  workDir ??= Directory.systemTemp.createTempSync('test_context_');
-
-  final context = NativeBuildContext(
-    target: const NativeTarget(os: OS.linux, architecture: Architecture.x64),
-    hook: NativeHookConfiguration(
-      packageName: 'test_package',
-      assetName: 'test_asset',
-      libraryStem: 'test_lib',
-      linkMode: DynamicLoadingBundled(),
-    ),
-    directories: NativeBuildDirectories(
-      source: workDir,
-      output: Directory(p.join(workDir.path, 'output'))..createSync(),
-      cache: Directory(p.join(workDir.path, 'cache'))..createSync(),
-      work: workDir,
-    ),
-    toolchains: const ToolchainRegistry(),
-    environment: {},
-  );
-
-  final source = ResolvedSource(directory: workDir, origin: SourceOrigin.local);
-
-  return (context, source);
 }

@@ -52,7 +52,6 @@ final class RecordingProcessRunner implements ProcessRunnerInterface {
     );
   }
 
-  @override
   Future<ProcessResult> run(
     String executable,
     List<String> arguments, {

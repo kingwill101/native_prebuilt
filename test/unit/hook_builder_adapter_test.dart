@@ -1,4 +1,4 @@
-/// Tests for backward compatibility with the legacy CallbackSourceBuilder API.
+/// Tests for the CallbackSourceBuilder and HookBuilderSourceBuilder APIs.
 ///
 /// This ensures that packages using PrebuiltCodeAssetBuilder with
 /// CallbackSourceBuilder continue to work after the new build pipeline
@@ -68,7 +68,7 @@ void main() {
         String? receivedPackageName;
 
         final adapter = HookBuilderSourceBuilder.factory(
-          (input) => _MockBuilder(
+          (input, source) => _MockBuilder(
             onRun: (input, output, logger) {
               builderCalled = true;
               receivedPackageName = input.packageName;

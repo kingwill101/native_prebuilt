@@ -1,0 +1,1914 @@
+
+---
+events:
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeDetermineSystem.cmake:12 (find_program)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_UNAME"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "uname"
+    candidate_directories:
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/"
+      - "/home/kingwill101/.grok/bin/"
+      - "/home/kingwill101/google-cloud-sdk/bin/"
+      - "/home/kingwill101/.amp/bin/"
+      - "/home/kingwill101/.opencode/bin/"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/"
+      - "/home/kingwill101/.wasmer/bin/"
+      - "/home/kingwill101/.shorebird/bin/"
+      - "/home/kingwill101/.bun/bin/"
+      - "/home/kingwill101/fvm/bin/"
+      - "/home/kingwill101/.cargo/bin/"
+      - "/home/kingwill101/.fly/bin/"
+      - "/home/kingwill101/.turso/"
+      - "/home/kingwill101/.nix-profile/bin/"
+      - "/nix/var/nix/profiles/default/bin/"
+      - "/usr/local/bin/"
+      - "/usr/bin/"
+      - "/var/lib/snapd/snap/bin/"
+      - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts/"
+      - "/home/kingwill101/.dotnet/"
+      - "/home/kingwill101/fvm/"
+      - "/home/kingwill101/fvm/default/bin/"
+      - "/home/kingwill101/.pubi-cache/bin/"
+      - "/home/kingwill101/go/bin/"
+      - "/home/kingwill101/.pulumi/bin/"
+      - "/home/kingwill101/.local/bin/"
+      - "/home/kingwill101/.pub-cache/bin/"
+      - "/home/kingwill101/.local/state/Dart/install/bin/"
+      - "/bin/"
+    searched_directories:
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/uname"
+      - "/home/kingwill101/.grok/bin/uname"
+      - "/home/kingwill101/google-cloud-sdk/bin/uname"
+      - "/home/kingwill101/.amp/bin/uname"
+      - "/home/kingwill101/.opencode/bin/uname"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/uname"
+      - "/home/kingwill101/.wasmer/bin/uname"
+      - "/home/kingwill101/.shorebird/bin/uname"
+      - "/home/kingwill101/.bun/bin/uname"
+      - "/home/kingwill101/fvm/bin/uname"
+      - "/home/kingwill101/.cargo/bin/uname"
+      - "/home/kingwill101/.fly/bin/uname"
+      - "/home/kingwill101/.turso/uname"
+      - "/home/kingwill101/.nix-profile/bin/uname"
+      - "/nix/var/nix/profiles/default/bin/uname"
+      - "/usr/local/bin/uname"
+    found: "/usr/bin/uname"
+    search_context:
+      ENV{PATH}:
+        - "/home/kingwill101/.sdkman/candidates/java/current/bin"
+        - "/home/kingwill101/.grok/bin"
+        - "/home/kingwill101/google-cloud-sdk/bin"
+        - "/home/kingwill101/.amp/bin"
+        - "/home/kingwill101/.opencode/bin"
+        - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin"
+        - "/home/kingwill101/.wasmer/bin"
+        - "/home/kingwill101/.shorebird/bin"
+        - "/home/kingwill101/.bun/bin"
+        - "/home/kingwill101/fvm/bin"
+        - "/home/kingwill101/.cargo/bin"
+        - "/home/kingwill101/.fly/bin"
+        - "/home/kingwill101/.turso"
+        - "/home/kingwill101/.nix-profile/bin"
+        - "/nix/var/nix/profiles/default/bin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/var/lib/snapd/snap/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.dotnet/"
+        - "/home/kingwill101/fvm"
+        - "/home/kingwill101/fvm/default/bin"
+        - "/home/kingwill101/.pubi-cache/bin"
+        - "/home/kingwill101/go/bin"
+        - "/home/kingwill101/.pulumi/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.local/bin"
+        - "/home/kingwill101/.pub-cache/bin/"
+        - "/home/kingwill101/.local/state/Dart/install/bin"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeDetermineSystem.cmake:212 (message)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      The system is: Linux - 7.0.10-1-MANJARO - x86_64
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeUnixFindMake.cmake:5 (find_program)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_MAKE_PROGRAM"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "gmake"
+      - "make"
+      - "smake"
+    candidate_directories:
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/"
+      - "/home/kingwill101/.grok/bin/"
+      - "/home/kingwill101/google-cloud-sdk/bin/"
+      - "/home/kingwill101/.amp/bin/"
+      - "/home/kingwill101/.opencode/bin/"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/"
+      - "/home/kingwill101/.wasmer/bin/"
+      - "/home/kingwill101/.shorebird/bin/"
+      - "/home/kingwill101/.bun/bin/"
+      - "/home/kingwill101/fvm/bin/"
+      - "/home/kingwill101/.cargo/bin/"
+      - "/home/kingwill101/.fly/bin/"
+      - "/home/kingwill101/.turso/"
+      - "/home/kingwill101/.nix-profile/bin/"
+      - "/nix/var/nix/profiles/default/bin/"
+      - "/usr/local/bin/"
+      - "/usr/bin/"
+      - "/var/lib/snapd/snap/bin/"
+      - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts/"
+      - "/home/kingwill101/.dotnet/"
+      - "/home/kingwill101/fvm/"
+      - "/home/kingwill101/fvm/default/bin/"
+      - "/home/kingwill101/.pubi-cache/bin/"
+      - "/home/kingwill101/go/bin/"
+      - "/home/kingwill101/.pulumi/bin/"
+      - "/home/kingwill101/.local/bin/"
+      - "/home/kingwill101/.pub-cache/bin/"
+      - "/home/kingwill101/.local/state/Dart/install/bin/"
+    searched_directories:
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/gmake"
+      - "/home/kingwill101/.grok/bin/gmake"
+      - "/home/kingwill101/google-cloud-sdk/bin/gmake"
+      - "/home/kingwill101/.amp/bin/gmake"
+      - "/home/kingwill101/.opencode/bin/gmake"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/gmake"
+      - "/home/kingwill101/.wasmer/bin/gmake"
+      - "/home/kingwill101/.shorebird/bin/gmake"
+      - "/home/kingwill101/.bun/bin/gmake"
+      - "/home/kingwill101/fvm/bin/gmake"
+      - "/home/kingwill101/.cargo/bin/gmake"
+      - "/home/kingwill101/.fly/bin/gmake"
+      - "/home/kingwill101/.turso/gmake"
+      - "/home/kingwill101/.nix-profile/bin/gmake"
+      - "/nix/var/nix/profiles/default/bin/gmake"
+      - "/usr/local/bin/gmake"
+      - "/usr/bin/gmake"
+      - "/var/lib/snapd/snap/bin/gmake"
+      - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts/gmake"
+      - "/home/kingwill101/.dotnet/gmake"
+      - "/home/kingwill101/fvm/gmake"
+      - "/home/kingwill101/fvm/default/bin/gmake"
+      - "/home/kingwill101/.pubi-cache/bin/gmake"
+      - "/home/kingwill101/go/bin/gmake"
+      - "/home/kingwill101/.pulumi/bin/gmake"
+      - "/home/kingwill101/.local/bin/gmake"
+      - "/home/kingwill101/.pub-cache/bin/gmake"
+      - "/home/kingwill101/.local/state/Dart/install/bin/gmake"
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/make"
+      - "/home/kingwill101/.grok/bin/make"
+      - "/home/kingwill101/google-cloud-sdk/bin/make"
+      - "/home/kingwill101/.amp/bin/make"
+      - "/home/kingwill101/.opencode/bin/make"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/make"
+      - "/home/kingwill101/.wasmer/bin/make"
+      - "/home/kingwill101/.shorebird/bin/make"
+      - "/home/kingwill101/.bun/bin/make"
+      - "/home/kingwill101/fvm/bin/make"
+      - "/home/kingwill101/.cargo/bin/make"
+      - "/home/kingwill101/.fly/bin/make"
+      - "/home/kingwill101/.turso/make"
+      - "/home/kingwill101/.nix-profile/bin/make"
+      - "/nix/var/nix/profiles/default/bin/make"
+      - "/usr/local/bin/make"
+    found: "/usr/bin/make"
+    search_context:
+      ENV{PATH}:
+        - "/home/kingwill101/.sdkman/candidates/java/current/bin"
+        - "/home/kingwill101/.grok/bin"
+        - "/home/kingwill101/google-cloud-sdk/bin"
+        - "/home/kingwill101/.amp/bin"
+        - "/home/kingwill101/.opencode/bin"
+        - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin"
+        - "/home/kingwill101/.wasmer/bin"
+        - "/home/kingwill101/.shorebird/bin"
+        - "/home/kingwill101/.bun/bin"
+        - "/home/kingwill101/fvm/bin"
+        - "/home/kingwill101/.cargo/bin"
+        - "/home/kingwill101/.fly/bin"
+        - "/home/kingwill101/.turso"
+        - "/home/kingwill101/.nix-profile/bin"
+        - "/nix/var/nix/profiles/default/bin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/var/lib/snapd/snap/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.dotnet/"
+        - "/home/kingwill101/fvm"
+        - "/home/kingwill101/fvm/default/bin"
+        - "/home/kingwill101/.pubi-cache/bin"
+        - "/home/kingwill101/go/bin"
+        - "/home/kingwill101/.pulumi/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.local/bin"
+        - "/home/kingwill101/.pub-cache/bin/"
+        - "/home/kingwill101/.local/state/Dart/install/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeDetermineCompiler.cmake:73 (find_program)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCCompiler.cmake:64 (_cmake_find_compiler)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_C_COMPILER"
+    description: "C compiler"
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "cc"
+      - "gcc"
+      - "cl"
+      - "bcc"
+      - "xlc"
+      - "icx"
+      - "clang"
+    candidate_directories:
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/"
+      - "/home/kingwill101/.grok/bin/"
+      - "/home/kingwill101/google-cloud-sdk/bin/"
+      - "/home/kingwill101/.amp/bin/"
+      - "/home/kingwill101/.opencode/bin/"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/"
+      - "/home/kingwill101/.wasmer/bin/"
+      - "/home/kingwill101/.shorebird/bin/"
+      - "/home/kingwill101/.bun/bin/"
+      - "/home/kingwill101/fvm/bin/"
+      - "/home/kingwill101/.cargo/bin/"
+      - "/home/kingwill101/.fly/bin/"
+      - "/home/kingwill101/.turso/"
+      - "/home/kingwill101/.nix-profile/bin/"
+      - "/nix/var/nix/profiles/default/bin/"
+      - "/usr/local/bin/"
+      - "/usr/bin/"
+      - "/var/lib/snapd/snap/bin/"
+      - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts/"
+      - "/home/kingwill101/.dotnet/"
+      - "/home/kingwill101/fvm/"
+      - "/home/kingwill101/fvm/default/bin/"
+      - "/home/kingwill101/.pubi-cache/bin/"
+      - "/home/kingwill101/go/bin/"
+      - "/home/kingwill101/.pulumi/bin/"
+      - "/home/kingwill101/.local/bin/"
+      - "/home/kingwill101/.pub-cache/bin/"
+      - "/home/kingwill101/.local/state/Dart/install/bin/"
+    searched_directories:
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/cc"
+      - "/home/kingwill101/.grok/bin/cc"
+      - "/home/kingwill101/google-cloud-sdk/bin/cc"
+      - "/home/kingwill101/.amp/bin/cc"
+      - "/home/kingwill101/.opencode/bin/cc"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/cc"
+      - "/home/kingwill101/.wasmer/bin/cc"
+      - "/home/kingwill101/.shorebird/bin/cc"
+      - "/home/kingwill101/.bun/bin/cc"
+      - "/home/kingwill101/fvm/bin/cc"
+      - "/home/kingwill101/.cargo/bin/cc"
+      - "/home/kingwill101/.fly/bin/cc"
+      - "/home/kingwill101/.turso/cc"
+      - "/home/kingwill101/.nix-profile/bin/cc"
+      - "/nix/var/nix/profiles/default/bin/cc"
+      - "/usr/local/bin/cc"
+    found: "/usr/bin/cc"
+    search_context:
+      ENV{PATH}:
+        - "/home/kingwill101/.sdkman/candidates/java/current/bin"
+        - "/home/kingwill101/.grok/bin"
+        - "/home/kingwill101/google-cloud-sdk/bin"
+        - "/home/kingwill101/.amp/bin"
+        - "/home/kingwill101/.opencode/bin"
+        - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin"
+        - "/home/kingwill101/.wasmer/bin"
+        - "/home/kingwill101/.shorebird/bin"
+        - "/home/kingwill101/.bun/bin"
+        - "/home/kingwill101/fvm/bin"
+        - "/home/kingwill101/.cargo/bin"
+        - "/home/kingwill101/.fly/bin"
+        - "/home/kingwill101/.turso"
+        - "/home/kingwill101/.nix-profile/bin"
+        - "/nix/var/nix/profiles/default/bin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/var/lib/snapd/snap/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.dotnet/"
+        - "/home/kingwill101/fvm"
+        - "/home/kingwill101/fvm/default/bin"
+        - "/home/kingwill101/.pubi-cache/bin"
+        - "/home/kingwill101/go/bin"
+        - "/home/kingwill101/.pulumi/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.local/bin"
+        - "/home/kingwill101/.pub-cache/bin/"
+        - "/home/kingwill101/.local/state/Dart/install/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeDetermineCompilerId.cmake:468 (find_file)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCompilerId.cmake:506 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCCompilerId.c.in"
+    candidate_directories:
+      - "/usr/share/cmake/Modules/"
+    found: "/usr/share/cmake/Modules/CMakeCCompilerId.c.in"
+    search_context:
+      ENV{PATH}:
+        - "/home/kingwill101/.sdkman/candidates/java/current/bin"
+        - "/home/kingwill101/.grok/bin"
+        - "/home/kingwill101/google-cloud-sdk/bin"
+        - "/home/kingwill101/.amp/bin"
+        - "/home/kingwill101/.opencode/bin"
+        - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin"
+        - "/home/kingwill101/.wasmer/bin"
+        - "/home/kingwill101/.shorebird/bin"
+        - "/home/kingwill101/.bun/bin"
+        - "/home/kingwill101/fvm/bin"
+        - "/home/kingwill101/.cargo/bin"
+        - "/home/kingwill101/.fly/bin"
+        - "/home/kingwill101/.turso"
+        - "/home/kingwill101/.nix-profile/bin"
+        - "/nix/var/nix/profiles/default/bin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/var/lib/snapd/snap/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.dotnet/"
+        - "/home/kingwill101/fvm"
+        - "/home/kingwill101/fvm/default/bin"
+        - "/home/kingwill101/.pubi-cache/bin"
+        - "/home/kingwill101/go/bin"
+        - "/home/kingwill101/.pulumi/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.local/bin"
+        - "/home/kingwill101/.pub-cache/bin/"
+        - "/home/kingwill101/.local/state/Dart/install/bin"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+      Compiler: /usr/bin/cc 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      
+      
+      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
+      
+      The C compiler identification is GNU, found in:
+        /run/media/kingwill101/disk2/code/code/dart_packages/toolchain/native_prebuilt/test/fixtures/native_projects/simple_shared/build/CMakeFiles/4.3.4/CompilerIdC/a.out
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_AR"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "ar"
+    candidate_directories:
+      - "/usr/bin/"
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/"
+      - "/home/kingwill101/.grok/bin/"
+      - "/home/kingwill101/google-cloud-sdk/bin/"
+      - "/home/kingwill101/.amp/bin/"
+      - "/home/kingwill101/.opencode/bin/"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/"
+      - "/home/kingwill101/.wasmer/bin/"
+      - "/home/kingwill101/.shorebird/bin/"
+      - "/home/kingwill101/.bun/bin/"
+      - "/home/kingwill101/fvm/bin/"
+      - "/home/kingwill101/.cargo/bin/"
+      - "/home/kingwill101/.fly/bin/"
+      - "/home/kingwill101/.turso/"
+      - "/home/kingwill101/.nix-profile/bin/"
+      - "/nix/var/nix/profiles/default/bin/"
+      - "/usr/local/bin/"
+      - "/var/lib/snapd/snap/bin/"
+      - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts/"
+      - "/home/kingwill101/.dotnet/"
+      - "/home/kingwill101/fvm/"
+      - "/home/kingwill101/fvm/default/bin/"
+      - "/home/kingwill101/.pubi-cache/bin/"
+      - "/home/kingwill101/go/bin/"
+      - "/home/kingwill101/.pulumi/bin/"
+      - "/home/kingwill101/.local/bin/"
+      - "/home/kingwill101/.pub-cache/bin/"
+      - "/home/kingwill101/.local/state/Dart/install/bin/"
+    found: "/usr/bin/ar"
+    search_context:
+      ENV{PATH}:
+        - "/home/kingwill101/.sdkman/candidates/java/current/bin"
+        - "/home/kingwill101/.grok/bin"
+        - "/home/kingwill101/google-cloud-sdk/bin"
+        - "/home/kingwill101/.amp/bin"
+        - "/home/kingwill101/.opencode/bin"
+        - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin"
+        - "/home/kingwill101/.wasmer/bin"
+        - "/home/kingwill101/.shorebird/bin"
+        - "/home/kingwill101/.bun/bin"
+        - "/home/kingwill101/fvm/bin"
+        - "/home/kingwill101/.cargo/bin"
+        - "/home/kingwill101/.fly/bin"
+        - "/home/kingwill101/.turso"
+        - "/home/kingwill101/.nix-profile/bin"
+        - "/nix/var/nix/profiles/default/bin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/var/lib/snapd/snap/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.dotnet/"
+        - "/home/kingwill101/fvm"
+        - "/home/kingwill101/fvm/default/bin"
+        - "/home/kingwill101/.pubi-cache/bin"
+        - "/home/kingwill101/go/bin"
+        - "/home/kingwill101/.pulumi/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.local/bin"
+        - "/home/kingwill101/.pub-cache/bin/"
+        - "/home/kingwill101/.local/state/Dart/install/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_RANLIB"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "ranlib"
+    candidate_directories:
+      - "/usr/bin/"
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/"
+      - "/home/kingwill101/.grok/bin/"
+      - "/home/kingwill101/google-cloud-sdk/bin/"
+      - "/home/kingwill101/.amp/bin/"
+      - "/home/kingwill101/.opencode/bin/"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/"
+      - "/home/kingwill101/.wasmer/bin/"
+      - "/home/kingwill101/.shorebird/bin/"
+      - "/home/kingwill101/.bun/bin/"
+      - "/home/kingwill101/fvm/bin/"
+      - "/home/kingwill101/.cargo/bin/"
+      - "/home/kingwill101/.fly/bin/"
+      - "/home/kingwill101/.turso/"
+      - "/home/kingwill101/.nix-profile/bin/"
+      - "/nix/var/nix/profiles/default/bin/"
+      - "/usr/local/bin/"
+      - "/var/lib/snapd/snap/bin/"
+      - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts/"
+      - "/home/kingwill101/.dotnet/"
+      - "/home/kingwill101/fvm/"
+      - "/home/kingwill101/fvm/default/bin/"
+      - "/home/kingwill101/.pubi-cache/bin/"
+      - "/home/kingwill101/go/bin/"
+      - "/home/kingwill101/.pulumi/bin/"
+      - "/home/kingwill101/.local/bin/"
+      - "/home/kingwill101/.pub-cache/bin/"
+      - "/home/kingwill101/.local/state/Dart/install/bin/"
+    found: "/usr/bin/ranlib"
+    search_context:
+      ENV{PATH}:
+        - "/home/kingwill101/.sdkman/candidates/java/current/bin"
+        - "/home/kingwill101/.grok/bin"
+        - "/home/kingwill101/google-cloud-sdk/bin"
+        - "/home/kingwill101/.amp/bin"
+        - "/home/kingwill101/.opencode/bin"
+        - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin"
+        - "/home/kingwill101/.wasmer/bin"
+        - "/home/kingwill101/.shorebird/bin"
+        - "/home/kingwill101/.bun/bin"
+        - "/home/kingwill101/fvm/bin"
+        - "/home/kingwill101/.cargo/bin"
+        - "/home/kingwill101/.fly/bin"
+        - "/home/kingwill101/.turso"
+        - "/home/kingwill101/.nix-profile/bin"
+        - "/nix/var/nix/profiles/default/bin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/var/lib/snapd/snap/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.dotnet/"
+        - "/home/kingwill101/fvm"
+        - "/home/kingwill101/fvm/default/bin"
+        - "/home/kingwill101/.pubi-cache/bin"
+        - "/home/kingwill101/go/bin"
+        - "/home/kingwill101/.pulumi/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.local/bin"
+        - "/home/kingwill101/.pub-cache/bin/"
+        - "/home/kingwill101/.local/state/Dart/install/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_STRIP"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "strip"
+    candidate_directories:
+      - "/usr/bin/"
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/"
+      - "/home/kingwill101/.grok/bin/"
+      - "/home/kingwill101/google-cloud-sdk/bin/"
+      - "/home/kingwill101/.amp/bin/"
+      - "/home/kingwill101/.opencode/bin/"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/"
+      - "/home/kingwill101/.wasmer/bin/"
+      - "/home/kingwill101/.shorebird/bin/"
+      - "/home/kingwill101/.bun/bin/"
+      - "/home/kingwill101/fvm/bin/"
+      - "/home/kingwill101/.cargo/bin/"
+      - "/home/kingwill101/.fly/bin/"
+      - "/home/kingwill101/.turso/"
+      - "/home/kingwill101/.nix-profile/bin/"
+      - "/nix/var/nix/profiles/default/bin/"
+      - "/usr/local/bin/"
+      - "/var/lib/snapd/snap/bin/"
+      - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts/"
+      - "/home/kingwill101/.dotnet/"
+      - "/home/kingwill101/fvm/"
+      - "/home/kingwill101/fvm/default/bin/"
+      - "/home/kingwill101/.pubi-cache/bin/"
+      - "/home/kingwill101/go/bin/"
+      - "/home/kingwill101/.pulumi/bin/"
+      - "/home/kingwill101/.local/bin/"
+      - "/home/kingwill101/.pub-cache/bin/"
+      - "/home/kingwill101/.local/state/Dart/install/bin/"
+    found: "/usr/bin/strip"
+    search_context:
+      ENV{PATH}:
+        - "/home/kingwill101/.sdkman/candidates/java/current/bin"
+        - "/home/kingwill101/.grok/bin"
+        - "/home/kingwill101/google-cloud-sdk/bin"
+        - "/home/kingwill101/.amp/bin"
+        - "/home/kingwill101/.opencode/bin"
+        - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin"
+        - "/home/kingwill101/.wasmer/bin"
+        - "/home/kingwill101/.shorebird/bin"
+        - "/home/kingwill101/.bun/bin"
+        - "/home/kingwill101/fvm/bin"
+        - "/home/kingwill101/.cargo/bin"
+        - "/home/kingwill101/.fly/bin"
+        - "/home/kingwill101/.turso"
+        - "/home/kingwill101/.nix-profile/bin"
+        - "/nix/var/nix/profiles/default/bin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/var/lib/snapd/snap/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.dotnet/"
+        - "/home/kingwill101/fvm"
+        - "/home/kingwill101/fvm/default/bin"
+        - "/home/kingwill101/.pubi-cache/bin"
+        - "/home/kingwill101/go/bin"
+        - "/home/kingwill101/.pulumi/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.local/bin"
+        - "/home/kingwill101/.pub-cache/bin/"
+        - "/home/kingwill101/.local/state/Dart/install/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_LINKER"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "ld"
+    candidate_directories:
+      - "/usr/bin/"
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/"
+      - "/home/kingwill101/.grok/bin/"
+      - "/home/kingwill101/google-cloud-sdk/bin/"
+      - "/home/kingwill101/.amp/bin/"
+      - "/home/kingwill101/.opencode/bin/"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/"
+      - "/home/kingwill101/.wasmer/bin/"
+      - "/home/kingwill101/.shorebird/bin/"
+      - "/home/kingwill101/.bun/bin/"
+      - "/home/kingwill101/fvm/bin/"
+      - "/home/kingwill101/.cargo/bin/"
+      - "/home/kingwill101/.fly/bin/"
+      - "/home/kingwill101/.turso/"
+      - "/home/kingwill101/.nix-profile/bin/"
+      - "/nix/var/nix/profiles/default/bin/"
+      - "/usr/local/bin/"
+      - "/var/lib/snapd/snap/bin/"
+      - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts/"
+      - "/home/kingwill101/.dotnet/"
+      - "/home/kingwill101/fvm/"
+      - "/home/kingwill101/fvm/default/bin/"
+      - "/home/kingwill101/.pubi-cache/bin/"
+      - "/home/kingwill101/go/bin/"
+      - "/home/kingwill101/.pulumi/bin/"
+      - "/home/kingwill101/.local/bin/"
+      - "/home/kingwill101/.pub-cache/bin/"
+      - "/home/kingwill101/.local/state/Dart/install/bin/"
+    found: "/usr/bin/ld"
+    search_context:
+      ENV{PATH}:
+        - "/home/kingwill101/.sdkman/candidates/java/current/bin"
+        - "/home/kingwill101/.grok/bin"
+        - "/home/kingwill101/google-cloud-sdk/bin"
+        - "/home/kingwill101/.amp/bin"
+        - "/home/kingwill101/.opencode/bin"
+        - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin"
+        - "/home/kingwill101/.wasmer/bin"
+        - "/home/kingwill101/.shorebird/bin"
+        - "/home/kingwill101/.bun/bin"
+        - "/home/kingwill101/fvm/bin"
+        - "/home/kingwill101/.cargo/bin"
+        - "/home/kingwill101/.fly/bin"
+        - "/home/kingwill101/.turso"
+        - "/home/kingwill101/.nix-profile/bin"
+        - "/nix/var/nix/profiles/default/bin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/var/lib/snapd/snap/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.dotnet/"
+        - "/home/kingwill101/fvm"
+        - "/home/kingwill101/fvm/default/bin"
+        - "/home/kingwill101/.pubi-cache/bin"
+        - "/home/kingwill101/go/bin"
+        - "/home/kingwill101/.pulumi/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.local/bin"
+        - "/home/kingwill101/.pub-cache/bin/"
+        - "/home/kingwill101/.local/state/Dart/install/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_NM"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "nm"
+    candidate_directories:
+      - "/usr/bin/"
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/"
+      - "/home/kingwill101/.grok/bin/"
+      - "/home/kingwill101/google-cloud-sdk/bin/"
+      - "/home/kingwill101/.amp/bin/"
+      - "/home/kingwill101/.opencode/bin/"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/"
+      - "/home/kingwill101/.wasmer/bin/"
+      - "/home/kingwill101/.shorebird/bin/"
+      - "/home/kingwill101/.bun/bin/"
+      - "/home/kingwill101/fvm/bin/"
+      - "/home/kingwill101/.cargo/bin/"
+      - "/home/kingwill101/.fly/bin/"
+      - "/home/kingwill101/.turso/"
+      - "/home/kingwill101/.nix-profile/bin/"
+      - "/nix/var/nix/profiles/default/bin/"
+      - "/usr/local/bin/"
+      - "/var/lib/snapd/snap/bin/"
+      - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts/"
+      - "/home/kingwill101/.dotnet/"
+      - "/home/kingwill101/fvm/"
+      - "/home/kingwill101/fvm/default/bin/"
+      - "/home/kingwill101/.pubi-cache/bin/"
+      - "/home/kingwill101/go/bin/"
+      - "/home/kingwill101/.pulumi/bin/"
+      - "/home/kingwill101/.local/bin/"
+      - "/home/kingwill101/.pub-cache/bin/"
+      - "/home/kingwill101/.local/state/Dart/install/bin/"
+    found: "/usr/bin/nm"
+    search_context:
+      ENV{PATH}:
+        - "/home/kingwill101/.sdkman/candidates/java/current/bin"
+        - "/home/kingwill101/.grok/bin"
+        - "/home/kingwill101/google-cloud-sdk/bin"
+        - "/home/kingwill101/.amp/bin"
+        - "/home/kingwill101/.opencode/bin"
+        - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin"
+        - "/home/kingwill101/.wasmer/bin"
+        - "/home/kingwill101/.shorebird/bin"
+        - "/home/kingwill101/.bun/bin"
+        - "/home/kingwill101/fvm/bin"
+        - "/home/kingwill101/.cargo/bin"
+        - "/home/kingwill101/.fly/bin"
+        - "/home/kingwill101/.turso"
+        - "/home/kingwill101/.nix-profile/bin"
+        - "/nix/var/nix/profiles/default/bin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/var/lib/snapd/snap/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.dotnet/"
+        - "/home/kingwill101/fvm"
+        - "/home/kingwill101/fvm/default/bin"
+        - "/home/kingwill101/.pubi-cache/bin"
+        - "/home/kingwill101/go/bin"
+        - "/home/kingwill101/.pulumi/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.local/bin"
+        - "/home/kingwill101/.pub-cache/bin/"
+        - "/home/kingwill101/.local/state/Dart/install/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_OBJDUMP"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "objdump"
+    candidate_directories:
+      - "/usr/bin/"
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/"
+      - "/home/kingwill101/.grok/bin/"
+      - "/home/kingwill101/google-cloud-sdk/bin/"
+      - "/home/kingwill101/.amp/bin/"
+      - "/home/kingwill101/.opencode/bin/"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/"
+      - "/home/kingwill101/.wasmer/bin/"
+      - "/home/kingwill101/.shorebird/bin/"
+      - "/home/kingwill101/.bun/bin/"
+      - "/home/kingwill101/fvm/bin/"
+      - "/home/kingwill101/.cargo/bin/"
+      - "/home/kingwill101/.fly/bin/"
+      - "/home/kingwill101/.turso/"
+      - "/home/kingwill101/.nix-profile/bin/"
+      - "/nix/var/nix/profiles/default/bin/"
+      - "/usr/local/bin/"
+      - "/var/lib/snapd/snap/bin/"
+      - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts/"
+      - "/home/kingwill101/.dotnet/"
+      - "/home/kingwill101/fvm/"
+      - "/home/kingwill101/fvm/default/bin/"
+      - "/home/kingwill101/.pubi-cache/bin/"
+      - "/home/kingwill101/go/bin/"
+      - "/home/kingwill101/.pulumi/bin/"
+      - "/home/kingwill101/.local/bin/"
+      - "/home/kingwill101/.pub-cache/bin/"
+      - "/home/kingwill101/.local/state/Dart/install/bin/"
+    found: "/usr/bin/objdump"
+    search_context:
+      ENV{PATH}:
+        - "/home/kingwill101/.sdkman/candidates/java/current/bin"
+        - "/home/kingwill101/.grok/bin"
+        - "/home/kingwill101/google-cloud-sdk/bin"
+        - "/home/kingwill101/.amp/bin"
+        - "/home/kingwill101/.opencode/bin"
+        - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin"
+        - "/home/kingwill101/.wasmer/bin"
+        - "/home/kingwill101/.shorebird/bin"
+        - "/home/kingwill101/.bun/bin"
+        - "/home/kingwill101/fvm/bin"
+        - "/home/kingwill101/.cargo/bin"
+        - "/home/kingwill101/.fly/bin"
+        - "/home/kingwill101/.turso"
+        - "/home/kingwill101/.nix-profile/bin"
+        - "/nix/var/nix/profiles/default/bin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/var/lib/snapd/snap/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.dotnet/"
+        - "/home/kingwill101/fvm"
+        - "/home/kingwill101/fvm/default/bin"
+        - "/home/kingwill101/.pubi-cache/bin"
+        - "/home/kingwill101/go/bin"
+        - "/home/kingwill101/.pulumi/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.local/bin"
+        - "/home/kingwill101/.pub-cache/bin/"
+        - "/home/kingwill101/.local/state/Dart/install/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_OBJCOPY"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "objcopy"
+    candidate_directories:
+      - "/usr/bin/"
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/"
+      - "/home/kingwill101/.grok/bin/"
+      - "/home/kingwill101/google-cloud-sdk/bin/"
+      - "/home/kingwill101/.amp/bin/"
+      - "/home/kingwill101/.opencode/bin/"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/"
+      - "/home/kingwill101/.wasmer/bin/"
+      - "/home/kingwill101/.shorebird/bin/"
+      - "/home/kingwill101/.bun/bin/"
+      - "/home/kingwill101/fvm/bin/"
+      - "/home/kingwill101/.cargo/bin/"
+      - "/home/kingwill101/.fly/bin/"
+      - "/home/kingwill101/.turso/"
+      - "/home/kingwill101/.nix-profile/bin/"
+      - "/nix/var/nix/profiles/default/bin/"
+      - "/usr/local/bin/"
+      - "/var/lib/snapd/snap/bin/"
+      - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts/"
+      - "/home/kingwill101/.dotnet/"
+      - "/home/kingwill101/fvm/"
+      - "/home/kingwill101/fvm/default/bin/"
+      - "/home/kingwill101/.pubi-cache/bin/"
+      - "/home/kingwill101/go/bin/"
+      - "/home/kingwill101/.pulumi/bin/"
+      - "/home/kingwill101/.local/bin/"
+      - "/home/kingwill101/.pub-cache/bin/"
+      - "/home/kingwill101/.local/state/Dart/install/bin/"
+    found: "/usr/bin/objcopy"
+    search_context:
+      ENV{PATH}:
+        - "/home/kingwill101/.sdkman/candidates/java/current/bin"
+        - "/home/kingwill101/.grok/bin"
+        - "/home/kingwill101/google-cloud-sdk/bin"
+        - "/home/kingwill101/.amp/bin"
+        - "/home/kingwill101/.opencode/bin"
+        - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin"
+        - "/home/kingwill101/.wasmer/bin"
+        - "/home/kingwill101/.shorebird/bin"
+        - "/home/kingwill101/.bun/bin"
+        - "/home/kingwill101/fvm/bin"
+        - "/home/kingwill101/.cargo/bin"
+        - "/home/kingwill101/.fly/bin"
+        - "/home/kingwill101/.turso"
+        - "/home/kingwill101/.nix-profile/bin"
+        - "/nix/var/nix/profiles/default/bin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/var/lib/snapd/snap/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.dotnet/"
+        - "/home/kingwill101/fvm"
+        - "/home/kingwill101/fvm/default/bin"
+        - "/home/kingwill101/.pubi-cache/bin"
+        - "/home/kingwill101/go/bin"
+        - "/home/kingwill101/.pulumi/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.local/bin"
+        - "/home/kingwill101/.pub-cache/bin/"
+        - "/home/kingwill101/.local/state/Dart/install/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_READELF"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "readelf"
+    candidate_directories:
+      - "/usr/bin/"
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/"
+      - "/home/kingwill101/.grok/bin/"
+      - "/home/kingwill101/google-cloud-sdk/bin/"
+      - "/home/kingwill101/.amp/bin/"
+      - "/home/kingwill101/.opencode/bin/"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/"
+      - "/home/kingwill101/.wasmer/bin/"
+      - "/home/kingwill101/.shorebird/bin/"
+      - "/home/kingwill101/.bun/bin/"
+      - "/home/kingwill101/fvm/bin/"
+      - "/home/kingwill101/.cargo/bin/"
+      - "/home/kingwill101/.fly/bin/"
+      - "/home/kingwill101/.turso/"
+      - "/home/kingwill101/.nix-profile/bin/"
+      - "/nix/var/nix/profiles/default/bin/"
+      - "/usr/local/bin/"
+      - "/var/lib/snapd/snap/bin/"
+      - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts/"
+      - "/home/kingwill101/.dotnet/"
+      - "/home/kingwill101/fvm/"
+      - "/home/kingwill101/fvm/default/bin/"
+      - "/home/kingwill101/.pubi-cache/bin/"
+      - "/home/kingwill101/go/bin/"
+      - "/home/kingwill101/.pulumi/bin/"
+      - "/home/kingwill101/.local/bin/"
+      - "/home/kingwill101/.pub-cache/bin/"
+      - "/home/kingwill101/.local/state/Dart/install/bin/"
+    found: "/usr/bin/readelf"
+    search_context:
+      ENV{PATH}:
+        - "/home/kingwill101/.sdkman/candidates/java/current/bin"
+        - "/home/kingwill101/.grok/bin"
+        - "/home/kingwill101/google-cloud-sdk/bin"
+        - "/home/kingwill101/.amp/bin"
+        - "/home/kingwill101/.opencode/bin"
+        - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin"
+        - "/home/kingwill101/.wasmer/bin"
+        - "/home/kingwill101/.shorebird/bin"
+        - "/home/kingwill101/.bun/bin"
+        - "/home/kingwill101/fvm/bin"
+        - "/home/kingwill101/.cargo/bin"
+        - "/home/kingwill101/.fly/bin"
+        - "/home/kingwill101/.turso"
+        - "/home/kingwill101/.nix-profile/bin"
+        - "/nix/var/nix/profiles/default/bin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/var/lib/snapd/snap/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.dotnet/"
+        - "/home/kingwill101/fvm"
+        - "/home/kingwill101/fvm/default/bin"
+        - "/home/kingwill101/.pubi-cache/bin"
+        - "/home/kingwill101/go/bin"
+        - "/home/kingwill101/.pulumi/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.local/bin"
+        - "/home/kingwill101/.pub-cache/bin/"
+        - "/home/kingwill101/.local/state/Dart/install/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_DLLTOOL"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "dlltool"
+    candidate_directories:
+      - "/usr/bin/"
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/"
+      - "/home/kingwill101/.grok/bin/"
+      - "/home/kingwill101/google-cloud-sdk/bin/"
+      - "/home/kingwill101/.amp/bin/"
+      - "/home/kingwill101/.opencode/bin/"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/"
+      - "/home/kingwill101/.wasmer/bin/"
+      - "/home/kingwill101/.shorebird/bin/"
+      - "/home/kingwill101/.bun/bin/"
+      - "/home/kingwill101/fvm/bin/"
+      - "/home/kingwill101/.cargo/bin/"
+      - "/home/kingwill101/.fly/bin/"
+      - "/home/kingwill101/.turso/"
+      - "/home/kingwill101/.nix-profile/bin/"
+      - "/nix/var/nix/profiles/default/bin/"
+      - "/usr/local/bin/"
+      - "/var/lib/snapd/snap/bin/"
+      - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts/"
+      - "/home/kingwill101/.dotnet/"
+      - "/home/kingwill101/fvm/"
+      - "/home/kingwill101/fvm/default/bin/"
+      - "/home/kingwill101/.pubi-cache/bin/"
+      - "/home/kingwill101/go/bin/"
+      - "/home/kingwill101/.pulumi/bin/"
+      - "/home/kingwill101/.local/bin/"
+      - "/home/kingwill101/.pub-cache/bin/"
+      - "/home/kingwill101/.local/state/Dart/install/bin/"
+    searched_directories:
+      - "/usr/bin/dlltool"
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/dlltool"
+      - "/home/kingwill101/.grok/bin/dlltool"
+      - "/home/kingwill101/google-cloud-sdk/bin/dlltool"
+      - "/home/kingwill101/.amp/bin/dlltool"
+      - "/home/kingwill101/.opencode/bin/dlltool"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/dlltool"
+      - "/home/kingwill101/.wasmer/bin/dlltool"
+      - "/home/kingwill101/.shorebird/bin/dlltool"
+      - "/home/kingwill101/.bun/bin/dlltool"
+      - "/home/kingwill101/fvm/bin/dlltool"
+      - "/home/kingwill101/.cargo/bin/dlltool"
+      - "/home/kingwill101/.fly/bin/dlltool"
+      - "/home/kingwill101/.turso/dlltool"
+      - "/home/kingwill101/.nix-profile/bin/dlltool"
+      - "/nix/var/nix/profiles/default/bin/dlltool"
+      - "/usr/local/bin/dlltool"
+      - "/var/lib/snapd/snap/bin/dlltool"
+      - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts/dlltool"
+      - "/home/kingwill101/.dotnet/dlltool"
+      - "/home/kingwill101/fvm/dlltool"
+      - "/home/kingwill101/fvm/default/bin/dlltool"
+      - "/home/kingwill101/.pubi-cache/bin/dlltool"
+      - "/home/kingwill101/go/bin/dlltool"
+      - "/home/kingwill101/.pulumi/bin/dlltool"
+      - "/home/kingwill101/.local/bin/dlltool"
+      - "/home/kingwill101/.pub-cache/bin/dlltool"
+      - "/home/kingwill101/.local/state/Dart/install/bin/dlltool"
+    found: false
+    search_context:
+      ENV{PATH}:
+        - "/home/kingwill101/.sdkman/candidates/java/current/bin"
+        - "/home/kingwill101/.grok/bin"
+        - "/home/kingwill101/google-cloud-sdk/bin"
+        - "/home/kingwill101/.amp/bin"
+        - "/home/kingwill101/.opencode/bin"
+        - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin"
+        - "/home/kingwill101/.wasmer/bin"
+        - "/home/kingwill101/.shorebird/bin"
+        - "/home/kingwill101/.bun/bin"
+        - "/home/kingwill101/fvm/bin"
+        - "/home/kingwill101/.cargo/bin"
+        - "/home/kingwill101/.fly/bin"
+        - "/home/kingwill101/.turso"
+        - "/home/kingwill101/.nix-profile/bin"
+        - "/nix/var/nix/profiles/default/bin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/var/lib/snapd/snap/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.dotnet/"
+        - "/home/kingwill101/fvm"
+        - "/home/kingwill101/fvm/default/bin"
+        - "/home/kingwill101/.pubi-cache/bin"
+        - "/home/kingwill101/go/bin"
+        - "/home/kingwill101/.pulumi/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.local/bin"
+        - "/home/kingwill101/.pub-cache/bin/"
+        - "/home/kingwill101/.local/state/Dart/install/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_ADDR2LINE"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "addr2line"
+    candidate_directories:
+      - "/usr/bin/"
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/"
+      - "/home/kingwill101/.grok/bin/"
+      - "/home/kingwill101/google-cloud-sdk/bin/"
+      - "/home/kingwill101/.amp/bin/"
+      - "/home/kingwill101/.opencode/bin/"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/"
+      - "/home/kingwill101/.wasmer/bin/"
+      - "/home/kingwill101/.shorebird/bin/"
+      - "/home/kingwill101/.bun/bin/"
+      - "/home/kingwill101/fvm/bin/"
+      - "/home/kingwill101/.cargo/bin/"
+      - "/home/kingwill101/.fly/bin/"
+      - "/home/kingwill101/.turso/"
+      - "/home/kingwill101/.nix-profile/bin/"
+      - "/nix/var/nix/profiles/default/bin/"
+      - "/usr/local/bin/"
+      - "/var/lib/snapd/snap/bin/"
+      - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts/"
+      - "/home/kingwill101/.dotnet/"
+      - "/home/kingwill101/fvm/"
+      - "/home/kingwill101/fvm/default/bin/"
+      - "/home/kingwill101/.pubi-cache/bin/"
+      - "/home/kingwill101/go/bin/"
+      - "/home/kingwill101/.pulumi/bin/"
+      - "/home/kingwill101/.local/bin/"
+      - "/home/kingwill101/.pub-cache/bin/"
+      - "/home/kingwill101/.local/state/Dart/install/bin/"
+    found: "/usr/bin/addr2line"
+    search_context:
+      ENV{PATH}:
+        - "/home/kingwill101/.sdkman/candidates/java/current/bin"
+        - "/home/kingwill101/.grok/bin"
+        - "/home/kingwill101/google-cloud-sdk/bin"
+        - "/home/kingwill101/.amp/bin"
+        - "/home/kingwill101/.opencode/bin"
+        - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin"
+        - "/home/kingwill101/.wasmer/bin"
+        - "/home/kingwill101/.shorebird/bin"
+        - "/home/kingwill101/.bun/bin"
+        - "/home/kingwill101/fvm/bin"
+        - "/home/kingwill101/.cargo/bin"
+        - "/home/kingwill101/.fly/bin"
+        - "/home/kingwill101/.turso"
+        - "/home/kingwill101/.nix-profile/bin"
+        - "/nix/var/nix/profiles/default/bin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/var/lib/snapd/snap/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.dotnet/"
+        - "/home/kingwill101/fvm"
+        - "/home/kingwill101/fvm/default/bin"
+        - "/home/kingwill101/.pubi-cache/bin"
+        - "/home/kingwill101/go/bin"
+        - "/home/kingwill101/.pulumi/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.local/bin"
+        - "/home/kingwill101/.pub-cache/bin/"
+        - "/home/kingwill101/.local/state/Dart/install/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_TAPI"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "tapi"
+    candidate_directories:
+      - "/usr/bin/"
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/"
+      - "/home/kingwill101/.grok/bin/"
+      - "/home/kingwill101/google-cloud-sdk/bin/"
+      - "/home/kingwill101/.amp/bin/"
+      - "/home/kingwill101/.opencode/bin/"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/"
+      - "/home/kingwill101/.wasmer/bin/"
+      - "/home/kingwill101/.shorebird/bin/"
+      - "/home/kingwill101/.bun/bin/"
+      - "/home/kingwill101/fvm/bin/"
+      - "/home/kingwill101/.cargo/bin/"
+      - "/home/kingwill101/.fly/bin/"
+      - "/home/kingwill101/.turso/"
+      - "/home/kingwill101/.nix-profile/bin/"
+      - "/nix/var/nix/profiles/default/bin/"
+      - "/usr/local/bin/"
+      - "/var/lib/snapd/snap/bin/"
+      - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts/"
+      - "/home/kingwill101/.dotnet/"
+      - "/home/kingwill101/fvm/"
+      - "/home/kingwill101/fvm/default/bin/"
+      - "/home/kingwill101/.pubi-cache/bin/"
+      - "/home/kingwill101/go/bin/"
+      - "/home/kingwill101/.pulumi/bin/"
+      - "/home/kingwill101/.local/bin/"
+      - "/home/kingwill101/.pub-cache/bin/"
+      - "/home/kingwill101/.local/state/Dart/install/bin/"
+    searched_directories:
+      - "/usr/bin/tapi"
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/tapi"
+      - "/home/kingwill101/.grok/bin/tapi"
+      - "/home/kingwill101/google-cloud-sdk/bin/tapi"
+      - "/home/kingwill101/.amp/bin/tapi"
+      - "/home/kingwill101/.opencode/bin/tapi"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/tapi"
+      - "/home/kingwill101/.wasmer/bin/tapi"
+      - "/home/kingwill101/.shorebird/bin/tapi"
+      - "/home/kingwill101/.bun/bin/tapi"
+      - "/home/kingwill101/fvm/bin/tapi"
+      - "/home/kingwill101/.cargo/bin/tapi"
+      - "/home/kingwill101/.fly/bin/tapi"
+      - "/home/kingwill101/.turso/tapi"
+      - "/home/kingwill101/.nix-profile/bin/tapi"
+      - "/nix/var/nix/profiles/default/bin/tapi"
+      - "/usr/local/bin/tapi"
+      - "/var/lib/snapd/snap/bin/tapi"
+      - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts/tapi"
+      - "/home/kingwill101/.dotnet/tapi"
+      - "/home/kingwill101/fvm/tapi"
+      - "/home/kingwill101/fvm/default/bin/tapi"
+      - "/home/kingwill101/.pubi-cache/bin/tapi"
+      - "/home/kingwill101/go/bin/tapi"
+      - "/home/kingwill101/.pulumi/bin/tapi"
+      - "/home/kingwill101/.local/bin/tapi"
+      - "/home/kingwill101/.pub-cache/bin/tapi"
+      - "/home/kingwill101/.local/state/Dart/install/bin/tapi"
+    found: false
+    search_context:
+      ENV{PATH}:
+        - "/home/kingwill101/.sdkman/candidates/java/current/bin"
+        - "/home/kingwill101/.grok/bin"
+        - "/home/kingwill101/google-cloud-sdk/bin"
+        - "/home/kingwill101/.amp/bin"
+        - "/home/kingwill101/.opencode/bin"
+        - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin"
+        - "/home/kingwill101/.wasmer/bin"
+        - "/home/kingwill101/.shorebird/bin"
+        - "/home/kingwill101/.bun/bin"
+        - "/home/kingwill101/fvm/bin"
+        - "/home/kingwill101/.cargo/bin"
+        - "/home/kingwill101/.fly/bin"
+        - "/home/kingwill101/.turso"
+        - "/home/kingwill101/.nix-profile/bin"
+        - "/nix/var/nix/profiles/default/bin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/var/lib/snapd/snap/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.dotnet/"
+        - "/home/kingwill101/fvm"
+        - "/home/kingwill101/fvm/default/bin"
+        - "/home/kingwill101/.pubi-cache/bin"
+        - "/home/kingwill101/go/bin"
+        - "/home/kingwill101/.pulumi/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.local/bin"
+        - "/home/kingwill101/.pub-cache/bin/"
+        - "/home/kingwill101/.local/state/Dart/install/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/Compiler/GNU-FindBinUtils.cmake:18 (find_program)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCCompiler.cmake:201 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_C_COMPILER_AR"
+    description: "A wrapper around 'ar' adding the appropriate '--plugin' option for the GCC compiler"
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "gcc-ar-16.1"
+      - "gcc-ar-16"
+      - "gcc-ar16"
+      - "gcc-ar"
+    candidate_directories:
+      - "/usr/bin/"
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/"
+      - "/home/kingwill101/.grok/bin/"
+      - "/home/kingwill101/google-cloud-sdk/bin/"
+      - "/home/kingwill101/.amp/bin/"
+      - "/home/kingwill101/.opencode/bin/"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/"
+      - "/home/kingwill101/.wasmer/bin/"
+      - "/home/kingwill101/.shorebird/bin/"
+      - "/home/kingwill101/.bun/bin/"
+      - "/home/kingwill101/fvm/bin/"
+      - "/home/kingwill101/.cargo/bin/"
+      - "/home/kingwill101/.fly/bin/"
+      - "/home/kingwill101/.turso/"
+      - "/home/kingwill101/.nix-profile/bin/"
+      - "/nix/var/nix/profiles/default/bin/"
+      - "/usr/local/bin/"
+      - "/var/lib/snapd/snap/bin/"
+      - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts/"
+      - "/home/kingwill101/.dotnet/"
+      - "/home/kingwill101/fvm/"
+      - "/home/kingwill101/fvm/default/bin/"
+      - "/home/kingwill101/.pubi-cache/bin/"
+      - "/home/kingwill101/go/bin/"
+      - "/home/kingwill101/.pulumi/bin/"
+      - "/home/kingwill101/.local/bin/"
+      - "/home/kingwill101/.pub-cache/bin/"
+      - "/home/kingwill101/.local/state/Dart/install/bin/"
+    searched_directories:
+      - "/usr/bin/gcc-ar-16.1"
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/gcc-ar-16.1"
+      - "/home/kingwill101/.grok/bin/gcc-ar-16.1"
+      - "/home/kingwill101/google-cloud-sdk/bin/gcc-ar-16.1"
+      - "/home/kingwill101/.amp/bin/gcc-ar-16.1"
+      - "/home/kingwill101/.opencode/bin/gcc-ar-16.1"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/gcc-ar-16.1"
+      - "/home/kingwill101/.wasmer/bin/gcc-ar-16.1"
+      - "/home/kingwill101/.shorebird/bin/gcc-ar-16.1"
+      - "/home/kingwill101/.bun/bin/gcc-ar-16.1"
+      - "/home/kingwill101/fvm/bin/gcc-ar-16.1"
+      - "/home/kingwill101/.cargo/bin/gcc-ar-16.1"
+      - "/home/kingwill101/.fly/bin/gcc-ar-16.1"
+      - "/home/kingwill101/.turso/gcc-ar-16.1"
+      - "/home/kingwill101/.nix-profile/bin/gcc-ar-16.1"
+      - "/nix/var/nix/profiles/default/bin/gcc-ar-16.1"
+      - "/usr/local/bin/gcc-ar-16.1"
+      - "/var/lib/snapd/snap/bin/gcc-ar-16.1"
+      - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts/gcc-ar-16.1"
+      - "/home/kingwill101/.dotnet/gcc-ar-16.1"
+      - "/home/kingwill101/fvm/gcc-ar-16.1"
+      - "/home/kingwill101/fvm/default/bin/gcc-ar-16.1"
+      - "/home/kingwill101/.pubi-cache/bin/gcc-ar-16.1"
+      - "/home/kingwill101/go/bin/gcc-ar-16.1"
+      - "/home/kingwill101/.pulumi/bin/gcc-ar-16.1"
+      - "/home/kingwill101/.local/bin/gcc-ar-16.1"
+      - "/home/kingwill101/.pub-cache/bin/gcc-ar-16.1"
+      - "/home/kingwill101/.local/state/Dart/install/bin/gcc-ar-16.1"
+      - "/usr/bin/gcc-ar-16"
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/gcc-ar-16"
+      - "/home/kingwill101/.grok/bin/gcc-ar-16"
+      - "/home/kingwill101/google-cloud-sdk/bin/gcc-ar-16"
+      - "/home/kingwill101/.amp/bin/gcc-ar-16"
+      - "/home/kingwill101/.opencode/bin/gcc-ar-16"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/gcc-ar-16"
+      - "/home/kingwill101/.wasmer/bin/gcc-ar-16"
+      - "/home/kingwill101/.shorebird/bin/gcc-ar-16"
+      - "/home/kingwill101/.bun/bin/gcc-ar-16"
+      - "/home/kingwill101/fvm/bin/gcc-ar-16"
+      - "/home/kingwill101/.cargo/bin/gcc-ar-16"
+      - "/home/kingwill101/.fly/bin/gcc-ar-16"
+      - "/home/kingwill101/.turso/gcc-ar-16"
+      - "/home/kingwill101/.nix-profile/bin/gcc-ar-16"
+      - "/nix/var/nix/profiles/default/bin/gcc-ar-16"
+      - "/usr/local/bin/gcc-ar-16"
+      - "/var/lib/snapd/snap/bin/gcc-ar-16"
+      - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts/gcc-ar-16"
+      - "/home/kingwill101/.dotnet/gcc-ar-16"
+      - "/home/kingwill101/fvm/gcc-ar-16"
+      - "/home/kingwill101/fvm/default/bin/gcc-ar-16"
+      - "/home/kingwill101/.pubi-cache/bin/gcc-ar-16"
+      - "/home/kingwill101/go/bin/gcc-ar-16"
+      - "/home/kingwill101/.pulumi/bin/gcc-ar-16"
+      - "/home/kingwill101/.local/bin/gcc-ar-16"
+      - "/home/kingwill101/.pub-cache/bin/gcc-ar-16"
+      - "/home/kingwill101/.local/state/Dart/install/bin/gcc-ar-16"
+      - "/usr/bin/gcc-ar16"
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/gcc-ar16"
+      - "/home/kingwill101/.grok/bin/gcc-ar16"
+      - "/home/kingwill101/google-cloud-sdk/bin/gcc-ar16"
+      - "/home/kingwill101/.amp/bin/gcc-ar16"
+      - "/home/kingwill101/.opencode/bin/gcc-ar16"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/gcc-ar16"
+      - "/home/kingwill101/.wasmer/bin/gcc-ar16"
+      - "/home/kingwill101/.shorebird/bin/gcc-ar16"
+      - "/home/kingwill101/.bun/bin/gcc-ar16"
+      - "/home/kingwill101/fvm/bin/gcc-ar16"
+      - "/home/kingwill101/.cargo/bin/gcc-ar16"
+      - "/home/kingwill101/.fly/bin/gcc-ar16"
+      - "/home/kingwill101/.turso/gcc-ar16"
+      - "/home/kingwill101/.nix-profile/bin/gcc-ar16"
+      - "/nix/var/nix/profiles/default/bin/gcc-ar16"
+      - "/usr/local/bin/gcc-ar16"
+      - "/var/lib/snapd/snap/bin/gcc-ar16"
+      - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts/gcc-ar16"
+      - "/home/kingwill101/.dotnet/gcc-ar16"
+      - "/home/kingwill101/fvm/gcc-ar16"
+      - "/home/kingwill101/fvm/default/bin/gcc-ar16"
+      - "/home/kingwill101/.pubi-cache/bin/gcc-ar16"
+      - "/home/kingwill101/go/bin/gcc-ar16"
+      - "/home/kingwill101/.pulumi/bin/gcc-ar16"
+      - "/home/kingwill101/.local/bin/gcc-ar16"
+      - "/home/kingwill101/.pub-cache/bin/gcc-ar16"
+      - "/home/kingwill101/.local/state/Dart/install/bin/gcc-ar16"
+    found: "/usr/bin/gcc-ar"
+    search_context:
+      ENV{PATH}:
+        - "/home/kingwill101/.sdkman/candidates/java/current/bin"
+        - "/home/kingwill101/.grok/bin"
+        - "/home/kingwill101/google-cloud-sdk/bin"
+        - "/home/kingwill101/.amp/bin"
+        - "/home/kingwill101/.opencode/bin"
+        - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin"
+        - "/home/kingwill101/.wasmer/bin"
+        - "/home/kingwill101/.shorebird/bin"
+        - "/home/kingwill101/.bun/bin"
+        - "/home/kingwill101/fvm/bin"
+        - "/home/kingwill101/.cargo/bin"
+        - "/home/kingwill101/.fly/bin"
+        - "/home/kingwill101/.turso"
+        - "/home/kingwill101/.nix-profile/bin"
+        - "/nix/var/nix/profiles/default/bin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/var/lib/snapd/snap/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.dotnet/"
+        - "/home/kingwill101/fvm"
+        - "/home/kingwill101/fvm/default/bin"
+        - "/home/kingwill101/.pubi-cache/bin"
+        - "/home/kingwill101/go/bin"
+        - "/home/kingwill101/.pulumi/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.local/bin"
+        - "/home/kingwill101/.pub-cache/bin/"
+        - "/home/kingwill101/.local/state/Dart/install/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/Compiler/GNU-FindBinUtils.cmake:30 (find_program)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCCompiler.cmake:201 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_C_COMPILER_RANLIB"
+    description: "A wrapper around 'ranlib' adding the appropriate '--plugin' option for the GCC compiler"
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "gcc-ranlib-16.1"
+      - "gcc-ranlib-16"
+      - "gcc-ranlib16"
+      - "gcc-ranlib"
+    candidate_directories:
+      - "/usr/bin/"
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/"
+      - "/home/kingwill101/.grok/bin/"
+      - "/home/kingwill101/google-cloud-sdk/bin/"
+      - "/home/kingwill101/.amp/bin/"
+      - "/home/kingwill101/.opencode/bin/"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/"
+      - "/home/kingwill101/.wasmer/bin/"
+      - "/home/kingwill101/.shorebird/bin/"
+      - "/home/kingwill101/.bun/bin/"
+      - "/home/kingwill101/fvm/bin/"
+      - "/home/kingwill101/.cargo/bin/"
+      - "/home/kingwill101/.fly/bin/"
+      - "/home/kingwill101/.turso/"
+      - "/home/kingwill101/.nix-profile/bin/"
+      - "/nix/var/nix/profiles/default/bin/"
+      - "/usr/local/bin/"
+      - "/var/lib/snapd/snap/bin/"
+      - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts/"
+      - "/home/kingwill101/.dotnet/"
+      - "/home/kingwill101/fvm/"
+      - "/home/kingwill101/fvm/default/bin/"
+      - "/home/kingwill101/.pubi-cache/bin/"
+      - "/home/kingwill101/go/bin/"
+      - "/home/kingwill101/.pulumi/bin/"
+      - "/home/kingwill101/.local/bin/"
+      - "/home/kingwill101/.pub-cache/bin/"
+      - "/home/kingwill101/.local/state/Dart/install/bin/"
+    searched_directories:
+      - "/usr/bin/gcc-ranlib-16.1"
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/gcc-ranlib-16.1"
+      - "/home/kingwill101/.grok/bin/gcc-ranlib-16.1"
+      - "/home/kingwill101/google-cloud-sdk/bin/gcc-ranlib-16.1"
+      - "/home/kingwill101/.amp/bin/gcc-ranlib-16.1"
+      - "/home/kingwill101/.opencode/bin/gcc-ranlib-16.1"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/gcc-ranlib-16.1"
+      - "/home/kingwill101/.wasmer/bin/gcc-ranlib-16.1"
+      - "/home/kingwill101/.shorebird/bin/gcc-ranlib-16.1"
+      - "/home/kingwill101/.bun/bin/gcc-ranlib-16.1"
+      - "/home/kingwill101/fvm/bin/gcc-ranlib-16.1"
+      - "/home/kingwill101/.cargo/bin/gcc-ranlib-16.1"
+      - "/home/kingwill101/.fly/bin/gcc-ranlib-16.1"
+      - "/home/kingwill101/.turso/gcc-ranlib-16.1"
+      - "/home/kingwill101/.nix-profile/bin/gcc-ranlib-16.1"
+      - "/nix/var/nix/profiles/default/bin/gcc-ranlib-16.1"
+      - "/usr/local/bin/gcc-ranlib-16.1"
+      - "/var/lib/snapd/snap/bin/gcc-ranlib-16.1"
+      - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts/gcc-ranlib-16.1"
+      - "/home/kingwill101/.dotnet/gcc-ranlib-16.1"
+      - "/home/kingwill101/fvm/gcc-ranlib-16.1"
+      - "/home/kingwill101/fvm/default/bin/gcc-ranlib-16.1"
+      - "/home/kingwill101/.pubi-cache/bin/gcc-ranlib-16.1"
+      - "/home/kingwill101/go/bin/gcc-ranlib-16.1"
+      - "/home/kingwill101/.pulumi/bin/gcc-ranlib-16.1"
+      - "/home/kingwill101/.local/bin/gcc-ranlib-16.1"
+      - "/home/kingwill101/.pub-cache/bin/gcc-ranlib-16.1"
+      - "/home/kingwill101/.local/state/Dart/install/bin/gcc-ranlib-16.1"
+      - "/usr/bin/gcc-ranlib-16"
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/gcc-ranlib-16"
+      - "/home/kingwill101/.grok/bin/gcc-ranlib-16"
+      - "/home/kingwill101/google-cloud-sdk/bin/gcc-ranlib-16"
+      - "/home/kingwill101/.amp/bin/gcc-ranlib-16"
+      - "/home/kingwill101/.opencode/bin/gcc-ranlib-16"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/gcc-ranlib-16"
+      - "/home/kingwill101/.wasmer/bin/gcc-ranlib-16"
+      - "/home/kingwill101/.shorebird/bin/gcc-ranlib-16"
+      - "/home/kingwill101/.bun/bin/gcc-ranlib-16"
+      - "/home/kingwill101/fvm/bin/gcc-ranlib-16"
+      - "/home/kingwill101/.cargo/bin/gcc-ranlib-16"
+      - "/home/kingwill101/.fly/bin/gcc-ranlib-16"
+      - "/home/kingwill101/.turso/gcc-ranlib-16"
+      - "/home/kingwill101/.nix-profile/bin/gcc-ranlib-16"
+      - "/nix/var/nix/profiles/default/bin/gcc-ranlib-16"
+      - "/usr/local/bin/gcc-ranlib-16"
+      - "/var/lib/snapd/snap/bin/gcc-ranlib-16"
+      - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts/gcc-ranlib-16"
+      - "/home/kingwill101/.dotnet/gcc-ranlib-16"
+      - "/home/kingwill101/fvm/gcc-ranlib-16"
+      - "/home/kingwill101/fvm/default/bin/gcc-ranlib-16"
+      - "/home/kingwill101/.pubi-cache/bin/gcc-ranlib-16"
+      - "/home/kingwill101/go/bin/gcc-ranlib-16"
+      - "/home/kingwill101/.pulumi/bin/gcc-ranlib-16"
+      - "/home/kingwill101/.local/bin/gcc-ranlib-16"
+      - "/home/kingwill101/.pub-cache/bin/gcc-ranlib-16"
+      - "/home/kingwill101/.local/state/Dart/install/bin/gcc-ranlib-16"
+      - "/usr/bin/gcc-ranlib16"
+      - "/home/kingwill101/.sdkman/candidates/java/current/bin/gcc-ranlib16"
+      - "/home/kingwill101/.grok/bin/gcc-ranlib16"
+      - "/home/kingwill101/google-cloud-sdk/bin/gcc-ranlib16"
+      - "/home/kingwill101/.amp/bin/gcc-ranlib16"
+      - "/home/kingwill101/.opencode/bin/gcc-ranlib16"
+      - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin/gcc-ranlib16"
+      - "/home/kingwill101/.wasmer/bin/gcc-ranlib16"
+      - "/home/kingwill101/.shorebird/bin/gcc-ranlib16"
+      - "/home/kingwill101/.bun/bin/gcc-ranlib16"
+      - "/home/kingwill101/fvm/bin/gcc-ranlib16"
+      - "/home/kingwill101/.cargo/bin/gcc-ranlib16"
+      - "/home/kingwill101/.fly/bin/gcc-ranlib16"
+      - "/home/kingwill101/.turso/gcc-ranlib16"
+      - "/home/kingwill101/.nix-profile/bin/gcc-ranlib16"
+      - "/nix/var/nix/profiles/default/bin/gcc-ranlib16"
+      - "/usr/local/bin/gcc-ranlib16"
+      - "/var/lib/snapd/snap/bin/gcc-ranlib16"
+      - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts/gcc-ranlib16"
+      - "/home/kingwill101/.dotnet/gcc-ranlib16"
+      - "/home/kingwill101/fvm/gcc-ranlib16"
+      - "/home/kingwill101/fvm/default/bin/gcc-ranlib16"
+      - "/home/kingwill101/.pubi-cache/bin/gcc-ranlib16"
+      - "/home/kingwill101/go/bin/gcc-ranlib16"
+      - "/home/kingwill101/.pulumi/bin/gcc-ranlib16"
+      - "/home/kingwill101/.local/bin/gcc-ranlib16"
+      - "/home/kingwill101/.pub-cache/bin/gcc-ranlib16"
+      - "/home/kingwill101/.local/state/Dart/install/bin/gcc-ranlib16"
+    found: "/usr/bin/gcc-ranlib"
+    search_context:
+      ENV{PATH}:
+        - "/home/kingwill101/.sdkman/candidates/java/current/bin"
+        - "/home/kingwill101/.grok/bin"
+        - "/home/kingwill101/google-cloud-sdk/bin"
+        - "/home/kingwill101/.amp/bin"
+        - "/home/kingwill101/.opencode/bin"
+        - "/home/kingwill101/.nvm/versions/node/v24.11.0/bin"
+        - "/home/kingwill101/.wasmer/bin"
+        - "/home/kingwill101/.shorebird/bin"
+        - "/home/kingwill101/.bun/bin"
+        - "/home/kingwill101/fvm/bin"
+        - "/home/kingwill101/.cargo/bin"
+        - "/home/kingwill101/.fly/bin"
+        - "/home/kingwill101/.turso"
+        - "/home/kingwill101/.nix-profile/bin"
+        - "/nix/var/nix/profiles/default/bin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/var/lib/snapd/snap/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.dotnet/"
+        - "/home/kingwill101/fvm"
+        - "/home/kingwill101/fvm/default/bin"
+        - "/home/kingwill101/.pubi-cache/bin"
+        - "/home/kingwill101/go/bin"
+        - "/home/kingwill101/.pulumi/bin"
+        - "/home/kingwill101/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/kingwill101/.local/bin"
+        - "/home/kingwill101/.pub-cache/bin/"
+        - "/home/kingwill101/.local/state/Dart/install/bin"
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:83 (try_compile)"
+      - "/usr/share/cmake/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:3 (project)"
+    checks:
+      - "Detecting C compiler ABI info"
+    directories:
+      source: "/run/media/kingwill101/disk2/code/code/dart_packages/toolchain/native_prebuilt/test/fixtures/native_projects/simple_shared/build/CMakeFiles/CMakeScratch/TryCompile-2z58b1"
+      binary: "/run/media/kingwill101/disk2/code/code/dart_packages/toolchain/native_prebuilt/test/fixtures/native_projects/simple_shared/build/CMakeFiles/CMakeScratch/TryCompile-2z58b1"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "CMAKE_C_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: '/run/media/kingwill101/disk2/code/code/dart_packages/toolchain/native_prebuilt/test/fixtures/native_projects/simple_shared/build/CMakeFiles/CMakeScratch/TryCompile-2z58b1'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_0be33/fast
+        /usr/bin/make  -f CMakeFiles/cmTC_0be33.dir/build.make CMakeFiles/cmTC_0be33.dir/build
+        make[1]: Entering directory '/run/media/kingwill101/disk2/code/code/dart_packages/toolchain/native_prebuilt/test/fixtures/native_projects/simple_shared/build/CMakeFiles/CMakeScratch/TryCompile-2z58b1'
+        Building C object CMakeFiles/cmTC_0be33.dir/CMakeCCompilerABI.c.o
+        /usr/bin/cc   -v -o CMakeFiles/cmTC_0be33.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake/Modules/CMakeCCompilerABI.c
+        Using built-in specs.
+        COLLECT_GCC=/usr/bin/cc
+        Target: x86_64-pc-linux-gnu
+        Configured with: ../gcc/configure --enable-languages=ada,c,c++,d,fortran,go,lto,m2,objc,obj-c++,rust,cobol --enable-bootstrap --prefix=/usr --libdir=/usr/lib --libexecdir=/usr/lib --mandir=/usr/share/man --infodir=/usr/share/info --with-bugurl=https://gitlab.archlinux.org/archlinux/packaging/packages/gcc/-/issues --with-build-config=bootstrap-lto --with-gcc-major-version-only --with-linker-hash-style=gnu --with-system-zlib --enable-cet=auto --enable-checking=release --enable-clocale=gnu --enable-default-pie --enable-default-ssp --enable-gnu-indirect-function --enable-gnu-unique-object --enable-libstdcxx-backtrace --enable-link-serialization=1 --enable-linker-build-id --enable-lto --enable-multilib --enable-plugin --enable-shared --enable-threads=posix --disable-fixincludes --disable-libssp --disable-libstdcxx-pch --disable-werror
+        Thread model: posix
+        Supported LTO compression algorithms: zlib zstd
+        gcc version 16.1.1 20260625 (GCC) 
+        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_0be33.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_0be33.dir/'
+         /usr/lib/gcc/x86_64-pc-linux-gnu/16/cc1 -quiet -v /usr/share/cmake/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_0be33.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mtune=generic -march=x86-64 -version -o /tmp/cc9iNHv3.s
+        GNU C23 (GCC) version 16.1.1 20260625 (x86_64-pc-linux-gnu)
+        	compiled by GNU C version 16.1.1 20260625, GMP version 6.3.0, MPFR version 4.2.2, MPC version 1.4.1, isl version isl-0.27-GMP
+        
+        GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
+        ignoring nonexistent directory "/usr/lib/gcc/x86_64-pc-linux-gnu/16/include-fixed"
+        ignoring nonexistent directory "/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../x86_64-pc-linux-gnu/include"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         /usr/lib/gcc/x86_64-pc-linux-gnu/16/include
+         /usr/local/include
+         /usr/include
+        End of search list.
+        Compiler executable checksum: 513320b9f75de00455fdfff1fcba9e5b
+        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_0be33.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_0be33.dir/'
+         as -v --64 -o CMakeFiles/cmTC_0be33.dir/CMakeCCompilerABI.c.o /tmp/cc9iNHv3.s
+        GNU assembler version 2.46.1 (x86_64-pc-linux-gnu) using BFD version (GNU Binutils) 2.46.1
+        COMPILER_PATH=/usr/lib/gcc/x86_64-pc-linux-gnu/16/:/usr/lib/gcc/x86_64-pc-linux-gnu/16/:/usr/lib/gcc/x86_64-pc-linux-gnu/:/usr/lib/gcc/x86_64-pc-linux-gnu/16/:/usr/lib/gcc/x86_64-pc-linux-gnu/
+        LIBRARY_PATH=/usr/lib/gcc/x86_64-pc-linux-gnu/16/:/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib/:/lib/../lib/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../:/lib/:/usr/lib/
+        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_0be33.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_0be33.dir/CMakeCCompilerABI.c.'
+        Linking C executable cmTC_0be33
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_0be33.dir/link.txt --verbose=1
+        Using built-in specs.
+        COLLECT_GCC=/usr/bin/cc
+        COLLECT_LTO_WRAPPER=/usr/lib/gcc/x86_64-pc-linux-gnu/16/lto-wrapper
+        Target: x86_64-pc-linux-gnu
+        Configured with: ../gcc/configure --enable-languages=ada,c,c++,d,fortran,go,lto,m2,objc,obj-c++,rust,cobol --enable-bootstrap --prefix=/usr --libdir=/usr/lib --libexecdir=/usr/lib --mandir=/usr/share/man --infodir=/usr/share/info --with-bugurl=https://gitlab.archlinux.org/archlinux/packaging/packages/gcc/-/issues --with-build-config=bootstrap-lto --with-gcc-major-version-only --with-linker-hash-style=gnu --with-system-zlib --enable-cet=auto --enable-checking=release --enable-clocale=gnu --enable-default-pie --enable-default-ssp --enable-gnu-indirect-function --enable-gnu-unique-object --enable-libstdcxx-backtrace --enable-link-serialization=1 --enable-linker-build-id --enable-lto --enable-multilib --enable-plugin --enable-shared --enable-threads=posix --disable-fixincludes --disable-libssp --disable-libstdcxx-pch --disable-werror
+        Thread model: posix
+        Supported LTO compression algorithms: zlib zstd
+        gcc version 16.1.1 20260625 (GCC) 
+        COMPILER_PATH=/usr/lib/gcc/x86_64-pc-linux-gnu/16/:/usr/lib/gcc/x86_64-pc-linux-gnu/16/:/usr/lib/gcc/x86_64-pc-linux-gnu/:/usr/lib/gcc/x86_64-pc-linux-gnu/16/:/usr/lib/gcc/x86_64-pc-linux-gnu/
+        LIBRARY_PATH=/usr/lib/gcc/x86_64-pc-linux-gnu/16/:/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib/:/lib/../lib/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../:/lib/:/usr/lib/
+        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_0be33' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_0be33.'
+         /usr/lib/gcc/x86_64-pc-linux-gnu/16/collect2 -plugin /usr/lib/gcc/x86_64-pc-linux-gnu/16/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-pc-linux-gnu/16/lto-wrapper -plugin-opt=-fresolution=/tmp/ccYEd77v.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s_asneeded -plugin-opt=-pass-through=-latomic_asneeded -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s_asneeded --build-id --eh-frame-hdr --hash-style=gnu -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -o cmTC_0be33 /usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib/Scrt1.o /usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib/crti.o /usr/lib/gcc/x86_64-pc-linux-gnu/16/crtbeginS.o -L/usr/lib/gcc/x86_64-pc-linux-gnu/16 -L/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib -L/lib/../lib -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../.. -L/lib -L/usr/lib -v CMakeFiles/cmTC_0be33.dir/CMakeCCompilerABI.c.o -lgcc -lgcc_s_asneeded -latomic_asneeded -lc -lgcc -lgcc_s_asneeded /usr/lib/gcc/x86_64-pc-linux-gnu/16/crtendS.o /usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib/crtn.o
+        collect2 version 16.1.1 20260625
+        /usr/bin/ld -plugin /usr/lib/gcc/x86_64-pc-linux-gnu/16/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-pc-linux-gnu/16/lto-wrapper -plugin-opt=-fresolution=/tmp/ccYEd77v.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s_asneeded -plugin-opt=-pass-through=-latomic_asneeded -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s_asneeded --build-id --eh-frame-hdr --hash-style=gnu -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -o cmTC_0be33 /usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib/Scrt1.o /usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib/crti.o /usr/lib/gcc/x86_64-pc-linux-gnu/16/crtbeginS.o -L/usr/lib/gcc/x86_64-pc-linux-gnu/16 -L/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib -L/lib/../lib -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../.. -L/lib -L/usr/lib -v CMakeFiles/cmTC_0be33.dir/CMakeCCompilerABI.c.o -lgcc -lgcc_s_asneeded -latomic_asneeded -lc -lgcc -lgcc_s_asneeded /usr/lib/gcc/x86_64-pc-linux-gnu/16/crtendS.o /usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib/crtn.o
+        GNU ld (GNU Binutils) 2.46.1
+        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_0be33' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_0be33.'
+        /usr/bin/cc  -v -Wl,-v CMakeFiles/cmTC_0be33.dir/CMakeCCompilerABI.c.o -o cmTC_0be33
+        make[1]: Leaving directory '/run/media/kingwill101/disk2/code/code/dart_packages/toolchain/native_prebuilt/test/fixtures/native_projects/simple_shared/build/CMakeFiles/CMakeScratch/TryCompile-2z58b1'
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:217 (message)"
+      - "/usr/share/cmake/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      Parsed C implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [/usr/lib/gcc/x86_64-pc-linux-gnu/16/include]
+          add: [/usr/local/include]
+          add: [/usr/include]
+        end of search list found
+        collapse include dir [/usr/lib/gcc/x86_64-pc-linux-gnu/16/include] ==> [/usr/lib/gcc/x86_64-pc-linux-gnu/16/include]
+        collapse include dir [/usr/local/include] ==> [/usr/local/include]
+        collapse include dir [/usr/include] ==> [/usr/include]
+        implicit include dirs: [/usr/lib/gcc/x86_64-pc-linux-gnu/16/include;/usr/local/include;/usr/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:253 (message)"
+      - "/usr/share/cmake/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      Parsed C implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|"|[0-9]+>[ 	-]*Build:[ 	0-9]+ ms[ 	]*)?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)))("|,| |$)]
+        ignore line: [Change Dir: '/run/media/kingwill101/disk2/code/code/dart_packages/toolchain/native_prebuilt/test/fixtures/native_projects/simple_shared/build/CMakeFiles/CMakeScratch/TryCompile-2z58b1']
+        ignore line: []
+        ignore line: [Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_0be33/fast]
+        ignore line: [/usr/bin/make  -f CMakeFiles/cmTC_0be33.dir/build.make CMakeFiles/cmTC_0be33.dir/build]
+        ignore line: [make[1]: Entering directory '/run/media/kingwill101/disk2/code/code/dart_packages/toolchain/native_prebuilt/test/fixtures/native_projects/simple_shared/build/CMakeFiles/CMakeScratch/TryCompile-2z58b1']
+        ignore line: [Building C object CMakeFiles/cmTC_0be33.dir/CMakeCCompilerABI.c.o]
+        ignore line: [/usr/bin/cc   -v -o CMakeFiles/cmTC_0be33.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake/Modules/CMakeCCompilerABI.c]
+        ignore line: [Using built-in specs.]
+        ignore line: [COLLECT_GCC=/usr/bin/cc]
+        ignore line: [Target: x86_64-pc-linux-gnu]
+        ignore line: [Configured with: ../gcc/configure --enable-languages=ada c c++ d fortran go lto m2 objc obj-c++ rust cobol --enable-bootstrap --prefix=/usr --libdir=/usr/lib --libexecdir=/usr/lib --mandir=/usr/share/man --infodir=/usr/share/info --with-bugurl=https://gitlab.archlinux.org/archlinux/packaging/packages/gcc/-/issues --with-build-config=bootstrap-lto --with-gcc-major-version-only --with-linker-hash-style=gnu --with-system-zlib --enable-cet=auto --enable-checking=release --enable-clocale=gnu --enable-default-pie --enable-default-ssp --enable-gnu-indirect-function --enable-gnu-unique-object --enable-libstdcxx-backtrace --enable-link-serialization=1 --enable-linker-build-id --enable-lto --enable-multilib --enable-plugin --enable-shared --enable-threads=posix --disable-fixincludes --disable-libssp --disable-libstdcxx-pch --disable-werror]
+        ignore line: [Thread model: posix]
+        ignore line: [Supported LTO compression algorithms: zlib zstd]
+        ignore line: [gcc version 16.1.1 20260625 (GCC) ]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_0be33.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_0be33.dir/']
+        ignore line: [ /usr/lib/gcc/x86_64-pc-linux-gnu/16/cc1 -quiet -v /usr/share/cmake/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_0be33.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mtune=generic -march=x86-64 -version -o /tmp/cc9iNHv3.s]
+        ignore line: [GNU C23 (GCC) version 16.1.1 20260625 (x86_64-pc-linux-gnu)]
+        ignore line: [	compiled by GNU C version 16.1.1 20260625  GMP version 6.3.0  MPFR version 4.2.2  MPC version 1.4.1  isl version isl-0.27-GMP]
+        ignore line: []
+        ignore line: [GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072]
+        ignore line: [ignoring nonexistent directory "/usr/lib/gcc/x86_64-pc-linux-gnu/16/include-fixed"]
+        ignore line: [ignoring nonexistent directory "/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../x86_64-pc-linux-gnu/include"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ /usr/lib/gcc/x86_64-pc-linux-gnu/16/include]
+        ignore line: [ /usr/local/include]
+        ignore line: [ /usr/include]
+        ignore line: [End of search list.]
+        ignore line: [Compiler executable checksum: 513320b9f75de00455fdfff1fcba9e5b]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_0be33.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_0be33.dir/']
+        ignore line: [ as -v --64 -o CMakeFiles/cmTC_0be33.dir/CMakeCCompilerABI.c.o /tmp/cc9iNHv3.s]
+        ignore line: [GNU assembler version 2.46.1 (x86_64-pc-linux-gnu) using BFD version (GNU Binutils) 2.46.1]
+        ignore line: [COMPILER_PATH=/usr/lib/gcc/x86_64-pc-linux-gnu/16/:/usr/lib/gcc/x86_64-pc-linux-gnu/16/:/usr/lib/gcc/x86_64-pc-linux-gnu/:/usr/lib/gcc/x86_64-pc-linux-gnu/16/:/usr/lib/gcc/x86_64-pc-linux-gnu/]
+        ignore line: [LIBRARY_PATH=/usr/lib/gcc/x86_64-pc-linux-gnu/16/:/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib/:/lib/../lib/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../:/lib/:/usr/lib/]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_0be33.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_0be33.dir/CMakeCCompilerABI.c.']
+        ignore line: [Linking C executable cmTC_0be33]
+        ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_0be33.dir/link.txt --verbose=1]
+        ignore line: [Using built-in specs.]
+        ignore line: [COLLECT_GCC=/usr/bin/cc]
+        ignore line: [COLLECT_LTO_WRAPPER=/usr/lib/gcc/x86_64-pc-linux-gnu/16/lto-wrapper]
+        ignore line: [Target: x86_64-pc-linux-gnu]
+        ignore line: [Configured with: ../gcc/configure --enable-languages=ada c c++ d fortran go lto m2 objc obj-c++ rust cobol --enable-bootstrap --prefix=/usr --libdir=/usr/lib --libexecdir=/usr/lib --mandir=/usr/share/man --infodir=/usr/share/info --with-bugurl=https://gitlab.archlinux.org/archlinux/packaging/packages/gcc/-/issues --with-build-config=bootstrap-lto --with-gcc-major-version-only --with-linker-hash-style=gnu --with-system-zlib --enable-cet=auto --enable-checking=release --enable-clocale=gnu --enable-default-pie --enable-default-ssp --enable-gnu-indirect-function --enable-gnu-unique-object --enable-libstdcxx-backtrace --enable-link-serialization=1 --enable-linker-build-id --enable-lto --enable-multilib --enable-plugin --enable-shared --enable-threads=posix --disable-fixincludes --disable-libssp --disable-libstdcxx-pch --disable-werror]
+        ignore line: [Thread model: posix]
+        ignore line: [Supported LTO compression algorithms: zlib zstd]
+        ignore line: [gcc version 16.1.1 20260625 (GCC) ]
+        ignore line: [COMPILER_PATH=/usr/lib/gcc/x86_64-pc-linux-gnu/16/:/usr/lib/gcc/x86_64-pc-linux-gnu/16/:/usr/lib/gcc/x86_64-pc-linux-gnu/:/usr/lib/gcc/x86_64-pc-linux-gnu/16/:/usr/lib/gcc/x86_64-pc-linux-gnu/]
+        ignore line: [LIBRARY_PATH=/usr/lib/gcc/x86_64-pc-linux-gnu/16/:/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib/:/lib/../lib/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../:/lib/:/usr/lib/]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_0be33' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_0be33.']
+        link line: [ /usr/lib/gcc/x86_64-pc-linux-gnu/16/collect2 -plugin /usr/lib/gcc/x86_64-pc-linux-gnu/16/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-pc-linux-gnu/16/lto-wrapper -plugin-opt=-fresolution=/tmp/ccYEd77v.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s_asneeded -plugin-opt=-pass-through=-latomic_asneeded -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s_asneeded --build-id --eh-frame-hdr --hash-style=gnu -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -o cmTC_0be33 /usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib/Scrt1.o /usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib/crti.o /usr/lib/gcc/x86_64-pc-linux-gnu/16/crtbeginS.o -L/usr/lib/gcc/x86_64-pc-linux-gnu/16 -L/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib -L/lib/../lib -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../.. -L/lib -L/usr/lib -v CMakeFiles/cmTC_0be33.dir/CMakeCCompilerABI.c.o -lgcc -lgcc_s_asneeded -latomic_asneeded -lc -lgcc -lgcc_s_asneeded /usr/lib/gcc/x86_64-pc-linux-gnu/16/crtendS.o /usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib/crtn.o]
+          arg [/usr/lib/gcc/x86_64-pc-linux-gnu/16/collect2] ==> ignore
+          arg [-plugin] ==> ignore
+          arg [/usr/lib/gcc/x86_64-pc-linux-gnu/16/liblto_plugin.so] ==> ignore
+          arg [-plugin-opt=/usr/lib/gcc/x86_64-pc-linux-gnu/16/lto-wrapper] ==> ignore
+          arg [-plugin-opt=-fresolution=/tmp/ccYEd77v.res] ==> ignore
+          arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
+          arg [-plugin-opt=-pass-through=-lgcc_s_asneeded] ==> ignore
+          arg [-plugin-opt=-pass-through=-latomic_asneeded] ==> ignore
+          arg [-plugin-opt=-pass-through=-lc] ==> ignore
+          arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
+          arg [-plugin-opt=-pass-through=-lgcc_s_asneeded] ==> ignore
+          arg [--build-id] ==> ignore
+          arg [--eh-frame-hdr] ==> ignore
+          arg [--hash-style=gnu] ==> ignore
+          arg [-m] ==> ignore
+          arg [elf_x86_64] ==> ignore
+          arg [-dynamic-linker] ==> ignore
+          arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
+          arg [-pie] ==> ignore
+          arg [-o] ==> ignore
+          arg [cmTC_0be33] ==> ignore
+          arg [/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib/Scrt1.o] ==> obj [/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib/Scrt1.o]
+          arg [/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib/crti.o] ==> obj [/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib/crti.o]
+          arg [/usr/lib/gcc/x86_64-pc-linux-gnu/16/crtbeginS.o] ==> obj [/usr/lib/gcc/x86_64-pc-linux-gnu/16/crtbeginS.o]
+          arg [-L/usr/lib/gcc/x86_64-pc-linux-gnu/16] ==> dir [/usr/lib/gcc/x86_64-pc-linux-gnu/16]
+          arg [-L/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib] ==> dir [/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib]
+          arg [-L/lib/../lib] ==> dir [/lib/../lib]
+          arg [-L/usr/lib/../lib] ==> dir [/usr/lib/../lib]
+          arg [-L/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../..] ==> dir [/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../..]
+          arg [-L/lib] ==> dir [/lib]
+          arg [-L/usr/lib] ==> dir [/usr/lib]
+          arg [-v] ==> ignore
+          arg [CMakeFiles/cmTC_0be33.dir/CMakeCCompilerABI.c.o] ==> ignore
+          arg [-lgcc] ==> lib [gcc]
+          arg [-lgcc_s_asneeded] ==> lib [gcc_s_asneeded]
+          arg [-latomic_asneeded] ==> lib [atomic_asneeded]
+          arg [-lc] ==> lib [c]
+          arg [-lgcc] ==> lib [gcc]
+          arg [-lgcc_s_asneeded] ==> lib [gcc_s_asneeded]
+          arg [/usr/lib/gcc/x86_64-pc-linux-gnu/16/crtendS.o] ==> obj [/usr/lib/gcc/x86_64-pc-linux-gnu/16/crtendS.o]
+          arg [/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib/crtn.o] ==> obj [/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib/crtn.o]
+        ignore line: [collect2 version 16.1.1 20260625]
+        ignore line: [/usr/bin/ld -plugin /usr/lib/gcc/x86_64-pc-linux-gnu/16/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-pc-linux-gnu/16/lto-wrapper -plugin-opt=-fresolution=/tmp/ccYEd77v.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s_asneeded -plugin-opt=-pass-through=-latomic_asneeded -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s_asneeded --build-id --eh-frame-hdr --hash-style=gnu -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -o cmTC_0be33 /usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib/Scrt1.o /usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib/crti.o /usr/lib/gcc/x86_64-pc-linux-gnu/16/crtbeginS.o -L/usr/lib/gcc/x86_64-pc-linux-gnu/16 -L/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib -L/lib/../lib -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../.. -L/lib -L/usr/lib -v CMakeFiles/cmTC_0be33.dir/CMakeCCompilerABI.c.o -lgcc -lgcc_s_asneeded -latomic_asneeded -lc -lgcc -lgcc_s_asneeded /usr/lib/gcc/x86_64-pc-linux-gnu/16/crtendS.o /usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib/crtn.o]
+        linker tool for 'C': /usr/bin/ld
+        collapse obj [/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib/Scrt1.o] ==> [/usr/lib/Scrt1.o]
+        collapse obj [/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib/crti.o] ==> [/usr/lib/crti.o]
+        collapse obj [/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib/crtn.o] ==> [/usr/lib/crtn.o]
+        collapse library dir [/usr/lib/gcc/x86_64-pc-linux-gnu/16] ==> [/usr/lib/gcc/x86_64-pc-linux-gnu/16]
+        collapse library dir [/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../../../lib] ==> [/usr/lib]
+        collapse library dir [/lib/../lib] ==> [/lib]
+        collapse library dir [/usr/lib/../lib] ==> [/usr/lib]
+        collapse library dir [/usr/lib/gcc/x86_64-pc-linux-gnu/16/../../..] ==> [/usr/lib]
+        collapse library dir [/lib] ==> [/lib]
+        collapse library dir [/usr/lib] ==> [/usr/lib]
+        implicit libs: [gcc;gcc_s_asneeded;atomic_asneeded;c;gcc;gcc_s_asneeded]
+        implicit objs: [/usr/lib/Scrt1.o;/usr/lib/crti.o;/usr/lib/gcc/x86_64-pc-linux-gnu/16/crtbeginS.o;/usr/lib/gcc/x86_64-pc-linux-gnu/16/crtendS.o;/usr/lib/crtn.o]
+        implicit dirs: [/usr/lib/gcc/x86_64-pc-linux-gnu/16;/usr/lib;/lib]
+        implicit fwks: []
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/Internal/CMakeDetermineLinkerId.cmake:38 (message)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:299 (cmake_determine_linker_id)"
+      - "/usr/share/cmake/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      Running the C compiler's linker: "/usr/bin/ld" "-v"
+      GNU ld (GNU Binutils) 2.46.1
+...
