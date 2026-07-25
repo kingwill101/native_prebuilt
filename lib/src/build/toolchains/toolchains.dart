@@ -30,10 +30,8 @@ final class AndroidNdkToolchain implements PlatformToolchain {
     List<String> args,
     Directory workingDirectory,
   ) async {
-    // Android-specific build commands
-    final ndkBuildArgs = [...args, '--build-dir=build'];
     final r = runner ?? ProcessRunner();
-    await r.run('ndk-build', ndkBuildArgs, workingDirectory: workingDirectory);
+    await r.runStreaming(command, args, workingDirectory: workingDirectory);
   }
 }
 
@@ -55,20 +53,8 @@ final class AppleSdkToolchain implements PlatformToolchain {
     List<String> args,
     Directory workingDirectory,
   ) async {
-    // Apple-specific build commands
-    final xcodeBuildArgs = [
-      ...args,
-      '-scheme',
-      'MyApp',
-      '-configuration',
-      'Release',
-    ];
     final r = runner ?? ProcessRunner();
-    await r.run(
-      'xcodebuild',
-      xcodeBuildArgs,
-      workingDirectory: workingDirectory,
-    );
+    await r.runStreaming(command, args, workingDirectory: workingDirectory);
   }
 }
 
@@ -90,10 +76,8 @@ final class MsvcToolchain implements PlatformToolchain {
     List<String> args,
     Directory workingDirectory,
   ) async {
-    // MSVC-specific build commands
-    final clArgs = [...args, '/EHsc', '/Fe:output.exe'];
     final r = runner ?? ProcessRunner();
-    await r.run('cl', clArgs, workingDirectory: workingDirectory);
+    await r.runStreaming(command, args, workingDirectory: workingDirectory);
   }
 }
 
@@ -115,9 +99,7 @@ final class VcpkgToolchain implements PlatformToolchain {
     List<String> args,
     Directory workingDirectory,
   ) async {
-    // vcpkg-specific build commands
-    final vcpkgArgs = [...args, '--triplet', triplet];
     final r = runner ?? ProcessRunner();
-    await r.run('vcpkg', vcpkgArgs, workingDirectory: workingDirectory);
+    await r.runStreaming(command, args, workingDirectory: workingDirectory);
   }
 }

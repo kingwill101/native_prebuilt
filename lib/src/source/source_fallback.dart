@@ -128,7 +128,14 @@ final class SourceFallbackResolver {
         logger: logger,
       );
 
-      return SourceBuildResult(source: resolved, workDirectory: workDir);
+      return SourceBuildResult(
+        source: ResolvedSource(
+          directory: workDir,
+          origin: resolved.origin,
+          revision: resolved.revision,
+        ),
+        workDirectory: workDir,
+      );
     } catch (e) {
       logger?.severe('Source build failed: $e');
       rethrow;

@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
+import '../build/process_runner.dart';
+
 /// A preparation step applied to source code before building.
 ///
 /// Preparation runs after source acquisition but before compilation.
@@ -46,12 +48,15 @@ final class ApplyPatches extends SourcePreparation {
         '--strip=1',
       ];
 
-      final result = await Process.run('patch', args);
-      if (result.exitCode != 0) {
-        throw SourcePreparationException(
-          'Failed to apply patch ${p.basename(patchPath)}: ${result.stderr}',
-        );
-      }
+       final result = await ProcessRunner().runStreaming(
+         'patch',
+         args,
+       );
+       if (result.exitCode != 0) {
+         throw SourcePreparationException(
+           'Failed to apply patch ${p.basename(patchPath)}',
+         );
+       }
     }
   }
 }
@@ -75,18 +80,18 @@ final class RunCommand extends SourcePreparation {
   }) async {
     logger?.info('Running: $executable ${arguments.join(' ')}');
 
-    final result = await Process.run(
-      executable,
-      arguments,
-      workingDirectory: directory.path,
-      environment: environment,
-    );
+     final result = await ProcessRunner().runStreaming(
+       executable,
+       arguments,
+       workingDirectory: directory,
+       environment: environment,
+     );
 
-    if (result.exitCode != 0) {
-      throw SourcePreparationException(
-        'Command failed: $executable ${arguments.join(' ')}\n${result.stderr}',
-      );
-    }
+     if (result.exitCode != 0) {
+       throw SourcePreparationException(
+         'Command failed: $executable ${arguments.join(' ')}',
+       );
+     }
   }
 }
 

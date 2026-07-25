@@ -116,7 +116,7 @@ final class PrebuiltCodeAssetBuilder implements Builder {
     // Delegate to NativeProjectBuilder for the actual work.
     // This ensures both PrebuiltCodeAssetBuilder and NativeProjectBuilder
     // use the same resolution and build logic.
-    final builder = NativeProjectBuilder.fromLegacy(
+    final builder = NativeProjectBuilder.fromSourceFallback(
       assetName: assetName,
       libraryStem: libraryStem,
       manifest: manifest,

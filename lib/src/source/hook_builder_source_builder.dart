@@ -8,7 +8,7 @@
 /// SourceFallback(
 ///   sources: [LocalSource(paths: ['.'])],
 ///   builder: HookBuilderSourceBuilder.factory(
-///     (input) => CBuilder.library(
+///     (input, source) => CBuilder.library(
 ///       name: 'my_package',
 ///       packageName: input.packageName,
 ///       assetName: 'src/my_package.dart',
@@ -31,26 +31,30 @@ import 'source_builder.dart';
 /// to be used with `PrebuiltCodeAssetBuilder`'s source fallback system.
 final class HookBuilderSourceBuilder implements SourceBuilder {
   const HookBuilderSourceBuilder({
-    required Builder Function(BuildInput input) builderFactory,
+    required Builder Function(BuildInput input, ResolvedSource source)
+    builderFactory,
   }) : _builderFactory = builderFactory;
 
   /// Creates a [HookBuilderSourceBuilder] from a factory function.
   ///
-  /// Use this when the builder needs access to [BuildInput] at construction time.
+  /// The factory receives both [BuildInput] and the resolved [ResolvedSource],
+  /// allowing the builder to access the source directory at construction time.
   factory HookBuilderSourceBuilder.factory(
-    Builder Function(BuildInput input) builderFactory,
+    Builder Function(BuildInput input, ResolvedSource source) builderFactory,
   ) {
     return HookBuilderSourceBuilder(builderFactory: builderFactory);
   }
 
   /// Creates a [HookBuilderSourceBuilder] from a static builder instance.
   ///
-  /// Use this when the builder doesn't need values from [BuildInput].
+  /// Use this when the builder doesn't need values from [BuildInput] or
+  /// [ResolvedSource].
   factory HookBuilderSourceBuilder.static(Builder builder) {
-    return HookBuilderSourceBuilder(builderFactory: (_) => builder);
+    return HookBuilderSourceBuilder(builderFactory: (_, __) => builder);
   }
 
-  final Builder Function(BuildInput input) _builderFactory;
+  final Builder Function(BuildInput input, ResolvedSource source)
+  _builderFactory;
 
   @override
   Future<void> build({
@@ -61,6 +65,7 @@ final class HookBuilderSourceBuilder implements SourceBuilder {
   }) {
     return _builderFactory(
       input,
+      source,
     ).run(input: input, output: output, logger: logger);
   }
 }

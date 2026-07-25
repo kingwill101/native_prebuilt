@@ -6,6 +6,9 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
 import '../binary/library_name.dart';
+import '../build/native_build_context.dart';
+import '../build/native_project.dart';
+import '../build/native_project_executor.dart';
 import '../manifest/prebuilt_artifact.dart';
 import '../manifest/prebuilt_manifest.dart';
 import '../manifest/release_source.dart';
@@ -15,30 +18,28 @@ import '../resolution/resolution_result.dart';
 import '../source/resolved_source.dart';
 import '../source/source_builder.dart';
 import '../source/source_fallback.dart';
-import '../build/native_build_context.dart';
-import '../build/native_project.dart';
 
 /// High-level builder that orchestrates the complete native build pipeline.
 ///
-/// This replaces the fragmented [PrebuiltCodeAssetBuilder] with a unified
-/// API that handles both prebuilt resolution and source builds through
-/// a single [NativeProject] definition.
+/// This handles both prebuilt resolution and source builds through
+/// a [NativeProject] definition.
 ///
-/// For backward compatibility, this builder can also work with a legacy
-/// [SourceFallback] that uses a [SourceBuilder] callback. Use
-/// [NativeProjectBuilder.fromLegacy] to create an instance from the old API.
+/// For packages that use external hook builders (e.g. [CBuilder]),
+/// use [NativeProjectBuilder.fromSourceFallback] to create an instance
+/// from a [SourceFallback] with a [SourceBuilder] callback.
 final class NativeProjectBuilder {
   const NativeProjectBuilder({
     required this.project,
     this.sourceFallback,
     this.resolvers,
+    this.localDirectoryName = '.prebuilt',
   });
 
-  /// Creates a [NativeProjectBuilder] from legacy parameters.
+  /// Creates a [NativeProjectBuilder] from a [SourceFallback] with callback.
   ///
-  /// This is used by [PrebuiltCodeAssetBuilder] to delegate to the new
-  /// build pipeline while maintaining backward compatibility.
-  factory NativeProjectBuilder.fromLegacy({
+  /// This is used by [PrebuiltCodeAssetBuilder] to bridge the callback-based
+  /// API into the unified build pipeline.
+  factory NativeProjectBuilder.fromSourceFallback({
     required String assetName,
     required String libraryStem,
     required PrebuiltManifest manifest,
@@ -64,7 +65,7 @@ final class NativeProjectBuilder {
         ),
         prebuilts: manifest,
         sources: sourceFallback?.sources ?? [],
-        build: const NativeBuildDefinition(recipes: {}),
+        build: const NativeBuildDefinition(recipes: []),
       ),
       sourceFallback: sourceFallback,
       resolvers: resolvers,
@@ -74,13 +75,16 @@ final class NativeProjectBuilder {
   /// The native project definition.
   final NativeProject project;
 
-  /// Optional legacy source fallback with a [SourceBuilder] callback.
+  /// Optional source fallback with a [SourceBuilder] callback.
   ///
   /// When provided and no recipe exists for the target, this is used instead.
   final SourceFallback? sourceFallback;
 
   /// Custom resolver chain override.
   final List<PrebuiltResolver>? resolvers;
+
+  /// Directory name for local prebuilt overrides.
+  final String localDirectoryName;
 
   /// Run the native build pipeline.
   ///
@@ -125,7 +129,7 @@ final class NativeProjectBuilder {
           resolvers ??
           [
             UserDefinePrebuiltResolver(),
-            LocalPrebuiltResolver(directoryName: '.prebuilt'),
+            LocalPrebuiltResolver(directoryName: localDirectoryName),
             SharedCacheResolver(),
           ];
 
@@ -171,12 +175,11 @@ final class NativeProjectBuilder {
     );
 
     // Check if we have a recipe for this target
-    final recipe = project.build.recipes[target.os];
+    final recipe = project.build.recipeFor(target);
 
     if (recipe != null) {
-      // Use the new recipe-based build system
-      await _buildWithRecipe(
-        recipe: recipe,
+      // Use the new recipe-based build system via executor
+      await _buildWithExecutor(
         target: target,
         linkMode: linkMode,
         payload: payload,
@@ -187,9 +190,9 @@ final class NativeProjectBuilder {
       return;
     }
 
-    // Fall back to legacy SourceBuilder if available
+    // Fall back to source builder callback if available
     if (sourceFallback != null) {
-      await _buildWithLegacySourceBuilder(
+      await _buildWithSourceFallback(
         target: target,
         linkMode: linkMode,
         payload: payload,
@@ -207,9 +210,8 @@ final class NativeProjectBuilder {
     throw StateError(message);
   }
 
-  /// Build using the new recipe-based system.
-  Future<void> _buildWithRecipe({
-    required dynamic recipe,
+  /// Build using the executor.
+  Future<void> _buildWithExecutor({
     required NativeTarget target,
     required LinkMode linkMode,
     required ArtifactPayload payload,
@@ -244,48 +246,45 @@ final class NativeProjectBuilder {
       throw StateError(message);
     }
 
-    // Build using the recipe
-    final buildContext = NativeBuildContext(
-      target: NativeTarget(
-        os: target.os,
-        architecture: target.architecture,
-        iOSSdk: target.iOSSdk,
-      ),
-      hook: NativeHookConfiguration(
-        packageName: input.packageName,
-        assetName: project.asset.assetName,
-        libraryStem: project.asset.libraryStem,
-        linkMode: linkMode,
-      ),
-      directories: NativeBuildDirectories(
-        source: sourceResult.workDirectory,
-        output: Directory.fromUri(input.outputDirectory),
-        cache: Directory(
-          p.join(
-            input.outputDirectoryShared.toFilePath(),
-            'native_prebuilt',
-            'build-cache',
-          ),
-        ),
-        work: sourceResult.workDirectory,
-      ),
-      toolchains: const ToolchainRegistry(),
-      environment: {},
+    // Create output directory for this target
+    final platformDir = '${target.os.name}-${target.architecture.name}';
+    if (target.iOSSdk != null) {
+      // e.g., ios-sim-arm64
+    }
+    final outputDir = Directory(
+      p.join(input.outputDirectory.toFilePath(), platformDir),
+    );
+
+    // Use the executor
+    final executor = NativeProjectExecutor(
+      project: project,
+      source: sourceResult.source,
       logger: logger,
     );
 
-    final buildResult = await recipe.execute(buildContext, sourceResult.source);
+    final buildResult = await executor.build(
+      target: target,
+      outputDir: outputDir,
+      workDir: sourceResult.workDirectory,
+      linkMode: linkMode,
+    );
 
-    // Register the built artifacts
+    // Register built artifacts with the hook output
+    // Hook only stages primary + runtime deps (not symbols/import libs)
     for (final artifact in buildResult.artifacts) {
       final libraryName = canonicalLibraryName(
         target: artifact.target,
         libraryStem: project.asset.libraryStem,
         payload: payload,
       );
-      final bundledLibUri = input.outputDirectory.resolve(libraryName);
+      final bundledLibUri = input.outputDirectory.resolve(
+        '$platformDir/$libraryName',
+      );
 
-      await File(artifact.file.path).copy(File.fromUri(bundledLibUri).path);
+      final srcFile = File.fromUri(artifact.primary.source.uri);
+      if (srcFile.existsSync()) {
+        await srcFile.copy(File.fromUri(bundledLibUri).path);
+      }
 
       output.assets.code.add(
         CodeAsset(
@@ -300,8 +299,8 @@ final class NativeProjectBuilder {
     _logInfo(logger, 'Source build completed for ${target.label}.');
   }
 
-  /// Build using a legacy [SourceBuilder] callback.
-  Future<void> _buildWithLegacySourceBuilder({
+  /// Build using a [SourceBuilder] callback.
+  Future<void> _buildWithSourceFallback({
     required NativeTarget target,
     required LinkMode linkMode,
     required ArtifactPayload payload,
@@ -309,7 +308,7 @@ final class NativeProjectBuilder {
     required BuildOutputBuilder output,
     required Logger? logger,
   }) async {
-    _logInfo(logger, 'Using legacy source builder.');
+    _logInfo(logger, 'Building via source builder callback.');
 
     try {
       final sourceResult = await SourceFallbackResolver().resolve(
@@ -371,7 +370,7 @@ final class NativeProjectBuilder {
   }
 }
 
-/// No-op source builder used as placeholder in legacy adapter.
+/// No-op source builder used as placeholder in source fallback adapter.
 final class _NoOpSourceBuilder implements SourceBuilder {
   const _NoOpSourceBuilder();
 
