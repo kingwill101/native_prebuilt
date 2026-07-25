@@ -1,0 +1,136 @@
+import 'dart:io';
+
+import 'package:path/path.dart' as p;
+
+import '../fingerprint.dart';
+import '../native_artifact_model.dart';
+import '../native_build_context.dart';
+import '../native_build_recipe.dart';
+import '../../source/resolved_source.dart';
+
+/// Artifact export step for native builds.
+///
+/// Resolves declared artifact paths against the build output directory,
+/// copies them to the staging area, and returns a [NativeStepResult]
+/// containing a fully described [BuiltNativeArtifact].
+final class ExportArtifactStep implements NativeBuildStep {
+  const ExportArtifactStep({required this.id, required this.declaration});
+
+  /// Step identifier.
+  @override
+  final String id;
+
+  /// Declarative description of the artifact to export.
+  final NativeArtifactDeclaration declaration;
+
+  @override
+  Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
+    return NativeStepFingerprint(
+      id: id,
+      hash: fingerprintHash('export_${declaration.primaryPath}'),
+    );
+  }
+
+  @override
+  Future<NativeStepResult> execute(
+    NativeBuildContext context,
+    ResolvedSource source,
+  ) async {
+    final logger = context.logger;
+    logger?.info('[export_artifact] Exporting artifact: ${declaration.id}');
+
+    // Resolve primary artifact (required)
+    final primaryEntry = await _resolveRequiredEntry(
+      context: context,
+      path: declaration.primaryPath,
+      role: NativeArtifactRole.primary,
+    );
+
+    // Resolve companion artifacts
+    final companionEntries = <NativeArtifactEntry>[];
+    for (final companion in declaration.companions) {
+      final entry = await _resolveEntry(
+        context: context,
+        path: companion.path,
+        role: companion.role,
+        optional: companion.optional,
+      );
+      if (entry != null) {
+        companionEntries.add(entry);
+      }
+    }
+
+    final artifact = BuiltNativeArtifact(
+      id: declaration.id,
+      target: context.target,
+      kind: declaration.kind,
+      primary: primaryEntry,
+      companions: companionEntries,
+    );
+
+    logger?.info(
+      '[export_artifact] Exported ${declaration.id} '
+      '(${companionEntries.length + 1} entries)',
+    );
+
+    return NativeStepResult(artifacts: [artifact]);
+  }
+
+  /// Resolve a single artifact entry, copying it to the staging directory.
+  Future<NativeArtifactEntry> _resolveRequiredEntry({
+    required NativeBuildContext context,
+    required String path,
+    required NativeArtifactRole role,
+  }) async {
+    final entry = await _resolveEntry(context: context, path: path, role: role);
+    if (entry == null) {
+      throw StateError('Required artifact not found: $path');
+    }
+    return entry;
+  }
+
+  /// Resolve a single artifact entry, copying it to the staging directory.
+  Future<NativeArtifactEntry?> _resolveEntry({
+    required NativeBuildContext context,
+    required String path,
+    required NativeArtifactRole role,
+    bool optional = false,
+  }) async {
+    final logger = context.logger;
+
+    // Resolve source path against build output directory
+    final srcPath = _resolveSourcePath(path, context);
+    final srcFile = File(srcPath);
+
+    if (!srcFile.existsSync()) {
+      if (optional) {
+        logger?.warning('[export_artifact] Optional artifact not found: $path');
+        return null;
+      }
+      throw StateError('Required artifact not found: $srcPath');
+    }
+
+    // Stage the file to the output directory
+    final destPath = p.join(context.directories.output.path, path);
+    final destFile = File(destPath);
+    destFile.parent.createSync(recursive: true);
+    await srcFile.copy(destPath);
+
+    logger?.fine('[export_artifact] Staged: $path');
+
+    return NativeArtifactEntry(
+      source: srcFile,
+      path: path,
+      role: role,
+      optional: optional,
+    );
+  }
+
+  /// Resolve a relative path against the build working directory.
+  String _resolveSourcePath(String relativePath, NativeBuildContext context) {
+    if (p.isAbsolute(relativePath)) {
+      return relativePath;
+    }
+    return p.join(context.directories.work.path, relativePath);
+  }
+}
