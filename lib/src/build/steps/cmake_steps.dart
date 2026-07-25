@@ -44,6 +44,35 @@ final class CmakeConfigureStep implements NativeBuildStep {
   /// Optional process runner.
   final ProcessRunnerInterface? runner;
 
+  /// Creates a [CmakeConfigureStep] from a YAML-derived map.
+  factory CmakeConfigureStep.fromMap(Map<String, dynamic> map) {
+    return CmakeConfigureStep(
+      sourceDirectory: map['source_directory'] as String,
+      buildDirectory: map['build_directory'] as String?,
+      defines: map['defines'] is Map
+          ? Map<String, String>.from(
+              (map['defines'] as Map).map(
+                (k, v) => MapEntry(k.toString(), v.toString()),
+              ),
+            )
+          : const {},
+      generator: map['generator'] as String?,
+      toolchainFile: map['toolchain_file'] as String?,
+    );
+  }
+
+  /// Serializes this step to a map suitable for YAML output.
+  Map<String, dynamic> toMap() {
+    return <String, dynamic>{
+      'type': 'cmake_configure',
+      'source_directory': sourceDirectory,
+      if (buildDirectory != null) 'build_directory': buildDirectory,
+      if (defines.isNotEmpty) 'defines': defines,
+      if (generator != null) 'generator': generator,
+      if (toolchainFile != null) 'toolchain_file': toolchainFile,
+    };
+  }
+
   @override
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
     final buffer = StringBuffer();
@@ -152,6 +181,35 @@ final class CmakeBuildStep implements NativeBuildStep {
 
   /// Optional process runner.
   final ProcessRunnerInterface? runner;
+
+  /// Creates a [CmakeBuildStep] from a YAML-derived map.
+  factory CmakeBuildStep.fromMap(Map<String, dynamic> map) {
+    return CmakeBuildStep(
+      buildDirectory: map['build_directory'] as String,
+      targets: map['targets'] is List
+          ? (map['targets'] as List).map((e) => e.toString()).toList()
+          : const [],
+      parallel: map['parallel'] as bool? ?? true,
+      environment: map['environment'] is Map
+          ? Map<String, String>.from(
+              (map['environment'] as Map).map(
+                (k, v) => MapEntry(k.toString(), v.toString()),
+              ),
+            )
+          : null,
+    );
+  }
+
+  /// Serializes this step to a map suitable for YAML output.
+  Map<String, dynamic> toMap() {
+    return <String, dynamic>{
+      'type': 'cmake_build',
+      'build_directory': buildDirectory,
+      if (targets.isNotEmpty) 'targets': targets,
+      if (parallel != true) 'parallel': parallel,
+      if (environment != null) 'environment': environment,
+    };
+  }
 
   @override
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {

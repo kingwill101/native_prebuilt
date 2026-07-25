@@ -10,6 +10,23 @@ import '../manifest/prebuilt_manifest.dart';
 import '../manifest/release_source.dart';
 import '../source/source_specification.dart';
 
+/// Maps build step type strings to their `fromMap` factories.
+///
+/// When a `native_prebuilt.yaml` contains a `build` section with
+/// platform-specific step lists, each step is looked up by its
+/// `type` key and constructed via this registry.
+final Map<String, NativeBuildStep Function(Map<String, dynamic>)> recipeRegistry = {
+  'cmake_configure': (map) => CmakeConfigureStep.fromMap(map),
+  'cmake_build': (map) => CmakeBuildStep.fromMap(map),
+  'export_artifact': (map) => ExportArtifactStep.fromMap(map),
+  'command': (map) => CommandStep.fromMap(map),
+  'download_archive': (map) => DownloadArchiveStep.fromMap(map),
+  'git_checkout': (map) => GitCheckoutStep.fromMap(map),
+  'git_apply_patch': (map) => GitApplyPatchStep.fromMap(map),
+  'copy': (map) => CopyStep.fromMap(map),
+  'strip': (map) => StripStep.fromMap(map),
+};
+
 /// Attempts to auto-discover a [NativeProject] from
 /// `native_prebuilt.yaml` in [workingDirectory].
 ///
@@ -79,6 +96,9 @@ NativeProject? detect(Directory workingDirectory) {
     );
   }
 
+  // Build recipes: prefer YAML-defined recipes, fall back to generic CMake.
+  final build = _parseBuildRecipes(doc, libraryStem);
+
   return NativeProject(
     name: packageName,
     asset: NativeAssetSpec(
@@ -92,7 +112,7 @@ NativeProject? detect(Directory workingDirectory) {
       artifacts: artifacts,
     ),
     sources: sources,
-    build: _genericCmakeBuildDefinition(libraryStem),
+    build: build,
   );
 }
 
@@ -162,6 +182,109 @@ SourceSpecification _parseGitSource(Map yaml) {
     submodules: yaml['submodules'] as bool? ?? false,
   );
 }
+
+// -- YAML recipe parsing -------------------------------------------------
+
+/// Parses the optional `build` section of `native_prebuilt.yaml` into
+/// a [NativeBuildDefinition].
+///
+/// The YAML structure is:
+///
+/// ```yaml
+/// build:
+///   linux-x64:
+///     steps:
+///       - type: cmake_configure
+///         source_directory: .
+///         build_directory: build
+///         ...
+///       - type: cmake_build
+///         build_directory: build
+///       - type: export_artifact
+///         id: tdjson
+///         kind: dynamic_library
+///         primary_path: build/libtdjson.so
+/// ```
+///
+/// When the `build` section is absent or a platform has no matching
+/// recipe entries, [defaultSteps] is returned as a fallback.
+NativeBuildDefinition _parseBuildRecipes(
+  Map<dynamic, dynamic> doc,
+  String libraryStem,
+) {
+  final buildSection = doc['build'] as Map?;
+  if (buildSection == null) {
+    return _genericCmakeBuildDefinition(libraryStem);
+  }
+  final recipes = <NativeTargetRecipe>[];
+  for (final entry in buildSection.entries) {
+    final platformName = entry.key as String?;
+    final platformConfig = entry.value as Map?;
+    if (platformName == null || platformConfig == null) continue;
+    final steps = _parseStepList(platformConfig['steps'] as List?);
+    if (steps.isEmpty) continue;
+    final os = _parseOS(platformName);
+    if (os == null) continue;
+    recipes.add(
+      NativeTargetRecipe(
+        pattern: NativeTargetPattern(os: os),
+        recipe: StepBuildRecipe(steps: steps),
+      ),
+    );
+  }
+  if (recipes.isEmpty) {
+    return _genericCmakeBuildDefinition(libraryStem);
+  }
+  return NativeBuildDefinition(recipes: recipes);
+}
+
+/// Parses a list of YAML step maps into [NativeBuildStep] instances
+/// using [recipeRegistry].
+List<NativeBuildStep> _parseStepList(List<dynamic>? stepDocs) {
+  if (stepDocs == null) return [];
+  return stepDocs.map((stepDoc) {
+    // YAML parsing returns YamlMap, not Map<String, dynamic>.
+    // Convert to a plain Dart map first.
+    final Map<String, dynamic> stepMap;
+    if (stepDoc is Map) {
+      stepMap = {
+        for (final entry in stepDoc.entries) entry.key.toString(): entry.value,
+      };
+    } else {
+      throw StateError('Each build step must be a map; got: ${stepDoc.runtimeType}');
+    }
+    final type = stepMap['type'] as String?;
+    if (type == null) {
+      throw StateError('Each build step must have a "type" key');
+    }
+    final factory = recipeRegistry[type];
+    if (factory == null) {
+      throw StateError(
+        'Unknown build step type "$type". '
+        'Known types: ${recipeRegistry.keys.join(", ")}',
+      );
+    }
+    return factory(stepMap);
+  }).toList();
+}
+
+/// Maps a platform identifier string (e.g. "linux-x64") to an [OS].
+OS? _parseOS(String platform) {
+  return switch (platform) {
+    'linux-x64' => OS.linux,
+    'linux-arm64' => OS.linux,
+    'macos-arm64' => OS.macOS,
+    'macos-x64' => OS.macOS,
+    'windows-x64' => OS.windows,
+    'windows-arm64' => OS.windows,
+    'android-arm64' => OS.android,
+    'android-arm' => OS.android,
+    'ios-arm64' => OS.iOS,
+    _ => null,
+  };
+}
+
+// -- Legacy generic recipe (fallback) ------------------------------------
 
 /// Builds generic CMake recipes for all supported platforms
 /// using [libraryStem] for the output artifact name.

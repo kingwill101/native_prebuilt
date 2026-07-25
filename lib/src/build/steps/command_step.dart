@@ -35,6 +35,35 @@ final class CommandStep implements NativeBuildStep {
   /// Optional process runner.
   final ProcessRunnerInterface? runner;
 
+  /// Creates a [CommandStep] from a YAML-derived map.
+  factory CommandStep.fromMap(Map<String, dynamic> map) {
+    return CommandStep(
+      id: map['id'] as String,
+      commands: (map['commands'] as List<dynamic>)
+          .map((cmd) => (cmd as List<dynamic>).map((e) => e.toString()).toList())
+          .toList(),
+      workingDirectory: map['working_directory'] as String?,
+      environment: map['environment'] is Map
+          ? Map<String, String>.from(
+              (map['environment'] as Map).map(
+                (k, v) => MapEntry(k.toString(), v.toString()),
+              ),
+            )
+          : null,
+    );
+  }
+
+  /// Serializes this step to a map suitable for YAML output.
+  Map<String, dynamic> toMap() {
+    return <String, dynamic>{
+      'type': 'command',
+      'id': id,
+      'commands': commands,
+      if (workingDirectory != null) 'working_directory': workingDirectory,
+      if (environment != null) 'environment': environment,
+    };
+  }
+
   @override
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
     final buffer = StringBuffer();

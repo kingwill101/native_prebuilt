@@ -41,6 +41,29 @@ final class GitCheckoutStep implements NativeBuildStep {
   /// Optional process runner.
   final ProcessRunnerInterface? runner;
 
+  /// Creates a [GitCheckoutStep] from a YAML-derived map.
+  factory GitCheckoutStep.fromMap(Map<String, dynamic> map) {
+    return GitCheckoutStep(
+      id: map['id'] as String,
+      repository: map['repository'] as String,
+      revision: map['revision'] as String,
+      targetDirectory: map['target_directory'] as String?,
+      submodules: map['submodules'] as bool? ?? false,
+    );
+  }
+
+  /// Serializes this step to a map suitable for YAML output.
+  Map<String, dynamic> toMap() {
+    return <String, dynamic>{
+      'type': 'git_checkout',
+      'id': id,
+      'repository': repository,
+      'revision': revision,
+      if (targetDirectory != null) 'target_directory': targetDirectory,
+      if (submodules) 'submodules': submodules,
+    };
+  }
+
   @override
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
     final buffer = StringBuffer();
@@ -127,6 +150,23 @@ final class GitApplyPatchStep implements NativeBuildStep {
 
   /// Optional process runner.
   final ProcessRunnerInterface? runner;
+
+  /// Creates a [GitApplyPatchStep] from a YAML-derived map.
+  factory GitApplyPatchStep.fromMap(Map<String, dynamic> map) {
+    return GitApplyPatchStep(
+      patchPath: map['patch_path'] as String,
+      targetDirectory: map['target_directory'] as String?,
+    );
+  }
+
+  /// Serializes this step to a map suitable for YAML output.
+  Map<String, dynamic> toMap() {
+    return <String, dynamic>{
+      'type': 'git_apply_patch',
+      'patch_path': patchPath,
+      if (targetDirectory != null) 'target_directory': targetDirectory,
+    };
+  }
 
   @override
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {

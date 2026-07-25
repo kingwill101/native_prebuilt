@@ -29,6 +29,27 @@ final class CopyStep implements NativeBuildStep {
   /// Whether to copy directories recursively.
   final bool recursive;
 
+  /// Creates a [CopyStep] from a YAML-derived map.
+  factory CopyStep.fromMap(Map<String, dynamic> map) {
+    return CopyStep(
+      id: map['id'] as String,
+      sourcePath: map['source_path'] as String,
+      destinationPath: map['destination_path'] as String,
+      recursive: map['recursive'] as bool? ?? true,
+    );
+  }
+
+  /// Serializes this step to a map suitable for YAML output.
+  Map<String, dynamic> toMap() {
+    return <String, dynamic>{
+      'type': 'copy',
+      'id': id,
+      'source_path': sourcePath,
+      'destination_path': destinationPath,
+      if (recursive != true) 'recursive': recursive,
+    };
+  }
+
   @override
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
     return NativeStepFingerprint(

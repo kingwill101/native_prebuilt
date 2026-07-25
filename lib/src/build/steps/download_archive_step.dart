@@ -37,6 +37,27 @@ final class DownloadArchiveStep implements NativeBuildStep {
   /// Optional process runner.
   final ProcessRunnerInterface? runner;
 
+  /// Creates a [DownloadArchiveStep] from a YAML-derived map.
+  factory DownloadArchiveStep.fromMap(Map<String, dynamic> map) {
+    return DownloadArchiveStep(
+      id: map['id'] as String,
+      url: map['url'] as String,
+      sha256: map['sha256'] as String?,
+      outputDirectory: map['output_directory'] as String?,
+    );
+  }
+
+  /// Serializes this step to a map suitable for YAML output.
+  Map<String, dynamic> toMap() {
+    return <String, dynamic>{
+      'type': 'download_archive',
+      'id': id,
+      'url': url,
+      if (sha256 != null) 'sha256': sha256,
+      if (outputDirectory != null) 'output_directory': outputDirectory,
+    };
+  }
+
   @override
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
     final buffer = StringBuffer();

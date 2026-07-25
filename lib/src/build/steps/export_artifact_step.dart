@@ -23,6 +23,59 @@ final class ExportArtifactStep implements NativeBuildStep {
   /// Declarative description of the artifact to export.
   final NativeArtifactDeclaration declaration;
 
+  /// Creates an [ExportArtifactStep] from a YAML-derived map.
+  factory ExportArtifactStep.fromMap(Map<String, dynamic> map) {
+    final kindString = map['kind'] as String? ?? 'dynamic_library';
+    final kind = NativeArtifactKind.values.firstWhere(
+      (k) => k.name == kindString,
+      orElse: () => NativeArtifactKind.dynamicLibrary,
+    );
+    final companions = <NativeArtifactCompanion>[];
+    if (map['companions'] is List) {
+      for (final c in map['companions'] as List) {
+        if (c is Map<String, dynamic>) {
+          final roleString = c['role'] as String? ?? 'primary';
+          final role = NativeArtifactRole.values.firstWhere(
+            (r) => r.name == roleString,
+            orElse: () => NativeArtifactRole.primary,
+          );
+          companions.add(
+            NativeArtifactCompanion(
+              path: c['path'] as String,
+              role: role,
+              optional: c['optional'] as bool? ?? false,
+            ),
+          );
+        }
+      }
+    }
+    return ExportArtifactStep(
+      id: map['id'] as String,
+      declaration: NativeArtifactDeclaration(
+        id: map['id'] as String,
+        kind: kind,
+        primaryPath: map['primary_path'] as String,
+        companions: companions,
+      ),
+    );
+  }
+
+  /// Serializes this step to a map suitable for YAML output.
+  Map<String, dynamic> toMap() {
+    return <String, dynamic>{
+      'type': 'export_artifact',
+      'id': declaration.id,
+      'kind': declaration.kind.name,
+      'primary_path': declaration.primaryPath,
+      if (declaration.companions.isNotEmpty)
+        'companions': declaration.companions.map((c) => <String, dynamic>{
+              'path': c.path,
+              'role': c.role.name,
+              'optional': c.optional,
+            }).toList(),
+    };
+  }
+
   @override
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
     return NativeStepFingerprint(

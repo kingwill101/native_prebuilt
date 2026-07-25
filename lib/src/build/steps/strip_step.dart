@@ -34,6 +34,27 @@ final class StripStep implements NativeBuildStep {
   /// Optional process runner.
   final ProcessRunnerInterface? runner;
 
+  /// Creates a [StripStep] from a YAML-derived map.
+  factory StripStep.fromMap(Map<String, dynamic> map) {
+    return StripStep(
+      id: map['id'] as String,
+      inputPath: map['input_path'] as String,
+      outputPath: map['output_path'] as String,
+      stripAll: map['strip_all'] as bool? ?? false,
+    );
+  }
+
+  /// Serializes this step to a map suitable for YAML output.
+  Map<String, dynamic> toMap() {
+    return <String, dynamic>{
+      'type': 'strip',
+      'id': id,
+      'input_path': inputPath,
+      'output_path': outputPath,
+      if (stripAll) 'strip_all': stripAll,
+    };
+  }
+
   @override
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
     return NativeStepFingerprint(
