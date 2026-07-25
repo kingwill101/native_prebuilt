@@ -1,6 +1,7 @@
 import 'package:code_assets/code_assets.dart';
 
 import '../manifest/prebuilt_manifest.dart';
+import '../platform/native_target.dart';
 import '../source/source_specification.dart';
 import 'native_build_recipe.dart';
 
@@ -72,12 +73,60 @@ final class _ForceSourceBuild implements PrebuiltPolicy {
   const _ForceSourceBuild();
 }
 
+/// A pattern that matches native build targets.
+///
+/// Used to look up recipes for specific platform/architecture combinations.
+/// The [os] is required; [architecture] and [iOSSdk] are optional matchers.
+/// When null, they match any value.
+final class NativeTargetPattern {
+  const NativeTargetPattern({required this.os, this.architecture, this.iOSSdk});
+
+  /// The target OS (required).
+  final OS os;
+
+  /// If non-null, only matches targets with this architecture.
+  final Architecture? architecture;
+
+  /// If non-null, only matches targets with this iOS SDK.
+  final IOSSdk? iOSSdk;
+
+  /// Whether this pattern matches the given [target].
+  bool matches(NativeTarget target) {
+    if (target.os != os) return false;
+    if (architecture != null && target.architecture != architecture)
+      return false;
+    if (iOSSdk != null && target.iOSSdk != iOSSdk) return false;
+    return true;
+  }
+}
+
+/// A recipe associated with a target pattern.
+final class NativeTargetRecipe {
+  const NativeTargetRecipe({required this.pattern, required this.recipe});
+
+  /// The target pattern this recipe handles.
+  final NativeTargetPattern pattern;
+
+  /// The build recipe to execute.
+  final NativeBuildRecipe recipe;
+}
+
 /// Definition of how to build a native project for different platforms.
 final class NativeBuildDefinition {
   const NativeBuildDefinition({required this.recipes});
 
-  /// Build recipes keyed by target OS.
-  final Map<OS, NativeBuildRecipe> recipes;
+  /// Build recipes with target patterns.
+  final List<NativeTargetRecipe> recipes;
+
+  /// Find the first recipe that matches the given [target].
+  NativeBuildRecipe? recipeFor(NativeTarget target) {
+    for (final entry in recipes) {
+      if (entry.pattern.matches(target)) {
+        return entry.recipe;
+      }
+    }
+    return null;
+  }
 }
 
 /// A complete native project definition combining prebuilts, sources, and build logic.
@@ -112,8 +161,8 @@ final class NativeProject {
   /// Policy for preferring prebuilts vs source builds.
   final PrebuiltPolicy prebuiltPolicy;
 
-  /// Creates a NativeProject from legacy parameters for backward compatibility.
-  factory NativeProject.fromLegacy({
+  /// Creates a NativeProject from a [SourceFallback]-based configuration.
+  factory NativeProject.fromSourceFallback({
     required String name,
     required String assetName,
     required String libraryStem,
@@ -130,7 +179,26 @@ final class NativeProject {
       ),
       prebuilts: manifest,
       sources: sources,
-      build: const NativeBuildDefinition(recipes: {}),
+      build: const NativeBuildDefinition(recipes: []),
+    );
+  }
+
+  /// Creates a copy of this project with optional overrides.
+  NativeProject copyWith({
+    String? name,
+    NativeAssetSpec? asset,
+    PrebuiltManifest? prebuilts,
+    List<SourceSpecification>? sources,
+    NativeBuildDefinition? build,
+    PrebuiltPolicy? prebuiltPolicy,
+  }) {
+    return NativeProject(
+      name: name ?? this.name,
+      asset: asset ?? this.asset,
+      prebuilts: prebuilts ?? this.prebuilts,
+      sources: sources ?? this.sources,
+      build: build ?? this.build,
+      prebuiltPolicy: prebuiltPolicy ?? this.prebuiltPolicy,
     );
   }
 }

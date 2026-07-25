@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:code_assets/code_assets.dart';
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
-import 'package:logging/logging.dart';
-
+import '../cache/build_cache.dart';
 import '../source/resolved_source.dart';
 import 'native_build_context.dart';
 import 'native_build_result.dart';
@@ -25,11 +26,18 @@ abstract interface class NativeBuildRecipe {
 }
 
 /// Composable build recipe that executes a sequence of steps.
+///
+/// When a [BuildCache] is provided, each step is checked against the cache
+/// before execution. On cache hit, the step is skipped. On cache miss,
+/// the step is executed and its output recorded.
 final class StepBuildRecipe implements NativeBuildRecipe {
-  const StepBuildRecipe({required this.steps});
+  const StepBuildRecipe({required this.steps, this.cache});
 
   /// The ordered list of build steps to execute.
   final List<NativeBuildStep> steps;
+
+  /// Optional build cache for step-level caching.
+  final BuildCache? cache;
 
   @override
   Future<NativeBuildResult> execute(
@@ -38,35 +46,171 @@ final class StepBuildRecipe implements NativeBuildRecipe {
   ) async {
     final logger = context.logger ?? Logger('StepBuildRecipe');
     logger.fine('Starting build recipe for ${context.target.label}');
-    logger.fine('Recipe has ${steps.length} steps: ${steps.map((s) => s.id).join(', ')}');
+    logger.fine(
+      'Recipe has ${steps.length} steps: ${steps.map((s) => s.id).join(', ')}',
+    );
 
     final artifacts = <BuiltNativeArtifact>[];
 
     for (final step in steps) {
       logger.info('Executing step: ${step.id}');
       final stopwatch = Stopwatch()..start();
-      await step.execute(context, source);
-      stopwatch.stop();
-      logger.info('Step ${step.id} completed in ${stopwatch.elapsedMilliseconds}ms');
 
-      // Collect artifacts from ExportArtifactStep
-      if (step is ExportArtifactStep) {
-        final outputName = step.outputName ?? step.artifactPath.split('/').last;
-        final artifactFile = File(p.join(
-          context.directories.output.path,
-          outputName,
-        ));
-        if (artifactFile.existsSync()) {
-          artifacts.add(BuiltNativeArtifact(
-            file: artifactFile,
-            type: NativeArtifactType.dynamicLibrary,
-            target: context.target,
-          ));
+      // Check cache if available
+      if (cache != null) {
+        final stepContext = NativeStepContext(
+          buildContext: context,
+          source: source,
+          stepId: step.id,
+        );
+        final fingerprint = await step.fingerprint(stepContext);
+        final cached = await cache!.isCached(fingerprint);
+
+        if (cached) {
+          logger.info('Step ${step.id} skipped (cache hit)');
+          // Reconstruct artifacts from cached declarations
+          final cachedDecls = await cache!.getCachedArtifacts(fingerprint);
+          for (final decl in cachedDecls) {
+            final artifact = _reconstructArtifact(decl, context);
+            if (artifact != null) artifacts.add(artifact);
+          }
+          stopwatch.stop();
+          continue;
         }
+
+        // Execute the step
+        final result = await step.execute(context, source);
+        stopwatch.stop();
+        logger.info(
+          'Step ${step.id} completed in ${stopwatch.elapsedMilliseconds}ms',
+        );
+
+        // Record in cache with artifact declarations
+        final artifactDecls = result.artifacts
+            .map((a) => _serializeArtifact(a))
+            .toList();
+        await cache!.record(
+          fingerprint: fingerprint,
+          artifactDeclarations: artifactDecls,
+        );
+
+        // Collect artifacts from step results
+        artifacts.addAll(result.artifacts);
+      } else {
+        // No cache: just execute
+        final result = await step.execute(context, source);
+        stopwatch.stop();
+        logger.info(
+          'Step ${step.id} completed in ${stopwatch.elapsedMilliseconds}ms',
+        );
+
+        // Collect artifacts from step results
+        artifacts.addAll(result.artifacts);
       }
     }
 
     return NativeBuildResult(artifacts: artifacts);
+  }
+
+  /// Serialize a [BuiltNativeArtifact] to a JSON-serializable map.
+  Map<String, Object?> _serializeArtifact(BuiltNativeArtifact artifact) {
+    return {
+      'id': artifact.id,
+      'target_os': artifact.target.os.name,
+      'target_arch': artifact.target.architecture.name,
+      'kind': artifact.kind.name,
+      'primary_path': artifact.primary.path,
+      'primary_role': artifact.primary.role.name,
+      'companions': artifact.companions
+          .map(
+            (c) => {
+              'path': c.path,
+              'role': c.role.name,
+              'optional': c.optional,
+            },
+          )
+          .toList(),
+    };
+  }
+
+  /// Reconstruct a [BuiltNativeArtifact] from a cached JSON declaration.
+  BuiltNativeArtifact? _reconstructArtifact(
+    Map<String, Object?> decl,
+    NativeBuildContext context,
+  ) {
+    try {
+      final targetOs = OS.values.firstWhere(
+        (o) => o.name == decl['target_os'],
+        orElse: () => OS.current,
+      );
+      final targetArch = Architecture.values.firstWhere(
+        (a) => a.name == decl['target_arch'],
+        orElse: () => Architecture.current,
+      );
+      final kind = NativeArtifactKind.values.firstWhere(
+        (k) => k.name == decl['kind'],
+        orElse: () => NativeArtifactKind.dynamicLibrary,
+      );
+
+      // Resolve primary source path against work directory
+      final primaryPath = decl['primary_path'] as String;
+      final sourceFile = File(
+        p.isAbsolute(primaryPath)
+            ? primaryPath
+            : p.join(context.directories.work.path, primaryPath),
+      );
+
+      if (!sourceFile.existsSync()) {
+        context.logger?.warning(
+          'Cached artifact source missing: ${sourceFile.path}',
+        );
+        return null;
+      }
+
+      final primaryEntry = NativeArtifactEntry(
+        source: sourceFile,
+        path: primaryPath,
+        role: NativeArtifactRole.primary,
+      );
+
+      final companionEntries = <NativeArtifactEntry>[];
+      final companions = decl['companions'] as List<dynamic>? ?? [];
+      for (final c in companions) {
+        final cMap = c as Map<String, dynamic>;
+        final cPath = cMap['path'] as String;
+        final cRole = NativeArtifactRole.values.firstWhere(
+          (r) => r.name == cMap['role'],
+          orElse: () => NativeArtifactRole.primary,
+        );
+        final cOptional = cMap['optional'] as bool? ?? false;
+        final cFile = File(
+          p.isAbsolute(cPath)
+              ? cPath
+              : p.join(context.directories.work.path, cPath),
+        );
+        if (cFile.existsSync() || !cOptional) {
+          companionEntries.add(
+            NativeArtifactEntry(
+              source: cFile,
+              path: cPath,
+              role: cRole,
+              optional: cOptional,
+            ),
+          );
+        }
+      }
+
+      return BuiltNativeArtifact(
+        id: decl['id'] as String,
+        target: NativeTarget(os: targetOs, architecture: targetArch),
+        kind: kind,
+        primary: primaryEntry,
+        companions: companionEntries,
+      );
+    } catch (e) {
+      context.logger?.warning('Failed to reconstruct cached artifact: $e');
+      return null;
+    }
   }
 }
 
@@ -83,7 +227,23 @@ abstract interface class NativeBuildStep {
   /// Execute this build step.
   ///
   /// The [context] provides access to the build configuration and logger.
-  Future<void> execute(NativeBuildContext context, ResolvedSource source);
+  /// Returns a [NativeStepResult] containing any artifacts produced by this step.
+  Future<NativeStepResult> execute(
+    NativeBuildContext context,
+    ResolvedSource source,
+  );
+}
+
+/// Result of executing a single build step.
+///
+/// Contains any artifacts produced by the step. Most steps return an empty
+/// result. Only steps that produce exportable artifacts (like
+/// [ExportArtifactStep]) return non-empty results.
+final class NativeStepResult {
+  const NativeStepResult({this.artifacts = const []});
+
+  /// Artifacts produced by this step.
+  final List<BuiltNativeArtifact> artifacts;
 }
 
 /// Fingerprint for a build step, used for caching.
