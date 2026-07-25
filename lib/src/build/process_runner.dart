@@ -66,15 +66,24 @@ final class ProcessRunner implements ProcessRunnerInterface {
     final stderrBuffer = StringBuffer();
 
     process.stdout.listen((data) {
-      final line = String.fromCharCodes(data);
-      stdoutBuffer.write(line);
-      logger?.info('  $line');
+      final raw = String.fromCharCodes(data);
+      stdoutBuffer.write(raw);
+      // Strip trailing newlines to avoid blank lines in log output —
+      // the logger adds its own line terminator.
+      final line = raw.trimRight();
+      if (line.isNotEmpty) {
+        logger?.info('  $line');
+      }
     });
 
     process.stderr.listen((data) {
-      final line = String.fromCharCodes(data);
-      stderrBuffer.write(line);
-      logger?.warning('  $line');
+      final raw = String.fromCharCodes(data);
+      stderrBuffer.write(raw);
+      // Strip trailing newlines to avoid blank lines in log output.
+      final line = raw.trimRight();
+      if (line.isNotEmpty) {
+        logger?.warning('  $line');
+      }
     });
 
     final exitCode = await process.exitCode;

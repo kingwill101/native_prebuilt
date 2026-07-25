@@ -12,6 +12,7 @@ import 'native_build_recipe.dart';
 import 'native_project.dart';
 import '../cache/build_cache.dart';
 import '../source/resolved_source.dart';
+import '../source/source_builder.dart';
 import '../source/source_fallback.dart';
 
 /// Shared build entry point for CLI, hooks, CI, and tests.
@@ -73,7 +74,18 @@ final class NativeProjectExecutor {
     // 2. Resolve source if not provided
     var resolvedSource = source;
     if (resolvedSource == null) {
-      if (sourceFallback == null) {
+      // When no explicit source or sourceFallback is given, fall back
+      // to project.sources so that CLI callers (and any executor user)
+      // can build from the project's declared sources automatically.
+      final effectiveFallback = sourceFallback ??
+          (project.sources.isNotEmpty
+              ? SourceFallback(
+                  sources: project.sources,
+                  builder: const NoOpSourceBuilder(),
+                  preparation: [],
+                )
+              : null);
+      if (effectiveFallback == null) {
         throw StateError(
           'No source provided and no source fallback configured for '
           '${project.name} on ${target.label}.',
@@ -82,7 +94,7 @@ final class NativeProjectExecutor {
 
       logger?.info('Resolving source...');
       final sourceResult = await SourceFallbackResolver().resolve(
-        fallback: sourceFallback!,
+        fallback: effectiveFallback,
         packageRoot: Directory.current,
         sourceCacheRoot: Directory(
           p.join(

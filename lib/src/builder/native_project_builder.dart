@@ -223,7 +223,7 @@ final class NativeProjectBuilder {
     final sourceResult = await SourceFallbackResolver().resolve(
       fallback: SourceFallback(
         sources: project.sources,
-        builder: const _NoOpSourceBuilder(),
+        builder: const NoOpSourceBuilder(),
         preparation: [],
       ),
       packageRoot: Directory.fromUri(input.packageRoot),
@@ -370,17 +370,4 @@ final class NativeProjectBuilder {
   }
 }
 
-/// No-op source builder used as placeholder in source fallback adapter.
-final class _NoOpSourceBuilder implements SourceBuilder {
-  const _NoOpSourceBuilder();
 
-  @override
-  Future<void> build({
-    required ResolvedSource source,
-    required BuildInput input,
-    required BuildOutputBuilder output,
-    required Logger? logger,
-  }) async {
-    // No-op: actual source builds are handled by NativeBuildRecipe.
-  }
-}

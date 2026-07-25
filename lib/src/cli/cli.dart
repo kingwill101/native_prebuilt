@@ -15,6 +15,7 @@ import '../resolution/prebuilt_resolver.dart';
 import '../source/source_specification.dart';
 import 'build.dart';
 import 'cache_key.dart';
+import 'cli_config.dart';
 import 'doctor.dart';
 import 'explain_cache.dart';
 import 'fetch.dart';
@@ -44,7 +45,12 @@ Future<void> runNativePrebuiltCli(
   List<String> args, {
   NativeProject? project,
 }) async {
-  final buildProject = project ?? _defaultProject;
+  // If no project is explicitly passed, try to auto-discover it
+  // from native_prebuilt.yaml in the current working directory.
+  // Fall back to the hardcoded example project if not found.
+  final buildProject = project ??
+      detect(Directory.current) ??
+      _defaultProject;
   final runner =
       CommandRunner<void>(
           'native_prebuilt',
