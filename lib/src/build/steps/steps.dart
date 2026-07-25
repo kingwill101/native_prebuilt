@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+
 import 'package:path/path.dart' as p;
 
 import '../native_build_context.dart';
@@ -585,13 +586,18 @@ final class GitApplyPatchStep implements NativeBuildStep {
     NativeBuildContext context,
     ResolvedSource source,
   ) async {
+    final logger = context.logger;
+    logger?.info('[git_apply_patch] Applying patch');
     final r = runner ?? const ProcessRunner();
     final patch = p.isAbsolute(patchPath)
         ? patchPath
         : p.join(source.directory.path, patchPath);
     final target = targetDirectory ?? context.directories.work.path;
 
+    logger?.info('[git_apply_patch] Patch: $patch');
+    logger?.info('[git_apply_patch] Target: $target');
     await r.run('git', ['apply', patch], workingDirectory: Directory(target));
+    logger?.info('[git_apply_patch] Patch applied');
   }
 }
 
@@ -629,6 +635,8 @@ final class CopyStep implements NativeBuildStep {
     NativeBuildContext context,
     ResolvedSource source,
   ) async {
+    final logger = context.logger;
+    logger?.info('[copy] Copying files');
     final src = p.isAbsolute(sourcePath)
         ? sourcePath
         : p.join(source.directory.path, sourcePath);
@@ -636,6 +644,8 @@ final class CopyStep implements NativeBuildStep {
         ? destinationPath
         : p.join(context.directories.work.path, destinationPath);
 
+    logger?.info('[copy] Source: $src');
+    logger?.info('[copy] Destination: $dest');
     final srcEntity = FileSystemEntity.typeSync(src);
     if (srcEntity == FileSystemEntityType.directory) {
       await _copyDirectory(Directory(src), Directory(dest));
@@ -643,6 +653,7 @@ final class CopyStep implements NativeBuildStep {
       Directory(p.dirname(dest)).createSync(recursive: true);
       File(src).copySync(dest);
     }
+    logger?.info('[copy] Copy completed');
   }
 
   Future<void> _copyDirectory(Directory source, Directory destination) async {

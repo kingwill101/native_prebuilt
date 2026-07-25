@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:code_assets/code_assets.dart';
+import 'package:logging/logging.dart';
 
 import '../platform/native_target.dart';
 import '../build/toolchains/toolchains.dart';
@@ -76,6 +77,7 @@ final class NativeBuildContext {
     required this.directories,
     required this.toolchains,
     required this.environment,
+    this.logger,
   });
 
   /// The target platform to build for.
@@ -92,6 +94,9 @@ final class NativeBuildContext {
 
   /// Environment variables to pass to build tools.
   final Map<String, String> environment;
+
+  /// Optional logger for build output.
+  final Logger? logger;
 }
 
 /// Hook configuration for a native build.

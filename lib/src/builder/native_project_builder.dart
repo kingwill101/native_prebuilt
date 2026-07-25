@@ -271,6 +271,7 @@ final class NativeProjectBuilder {
       ),
       toolchains: const ToolchainRegistry(),
       environment: {},
+      logger: logger,
     );
 
     final buildResult = await recipe.execute(buildContext, sourceResult.source);

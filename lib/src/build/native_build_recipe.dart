@@ -1,8 +1,14 @@
 import 'dart:async';
+import 'dart:io';
+
+import 'package:path/path.dart' as p;
+
+import 'package:logging/logging.dart';
 
 import '../source/resolved_source.dart';
 import 'native_build_context.dart';
 import 'native_build_result.dart';
+import 'steps/steps.dart';
 
 /// Abstract interface for a native build recipe.
 ///
@@ -30,13 +36,37 @@ final class StepBuildRecipe implements NativeBuildRecipe {
     NativeBuildContext context,
     ResolvedSource source,
   ) async {
+    final logger = context.logger ?? Logger('StepBuildRecipe');
+    logger.info('Starting build recipe for ${context.target.label}');
+    logger.fine('Recipe has ${steps.length} steps: ${steps.map((s) => s.id).join(', ')}');
+
+    final artifacts = <BuiltNativeArtifact>[];
+
     for (final step in steps) {
+      logger.info('Executing step: ${step.id}');
+      final stopwatch = Stopwatch()..start();
       await step.execute(context, source);
+      stopwatch.stop();
+      logger.info('Step ${step.id} completed in ${stopwatch.elapsedMilliseconds}ms');
+
+      // Collect artifacts from ExportArtifactStep
+      if (step is ExportArtifactStep) {
+        final outputName = step.outputName ?? step.artifactPath.split('/').last;
+        final artifactFile = File(p.join(
+          context.directories.output.path,
+          outputName,
+        ));
+        if (artifactFile.existsSync()) {
+          artifacts.add(BuiltNativeArtifact(
+            file: artifactFile,
+            type: NativeArtifactType.dynamicLibrary,
+            target: context.target,
+          ));
+        }
+      }
     }
 
-    // Find the export artifact step and return its result.
-    // In a full implementation, this would collect results from all steps.
-    return NativeBuildResult(artifacts: []);
+    return NativeBuildResult(artifacts: artifacts);
   }
 }
 
@@ -51,6 +81,8 @@ abstract interface class NativeBuildStep {
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context);
 
   /// Execute this build step.
+  ///
+  /// The [context] provides access to the build configuration and logger.
   Future<void> execute(NativeBuildContext context, ResolvedSource source);
 }
 

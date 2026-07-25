@@ -160,7 +160,10 @@ final class SourceFallbackResolver {
     if (workDir.existsSync()) workDir.deleteSync(recursive: true);
 
     logger?.info('Copying source to working directory: ${workDir.path}');
-    await _copyDirectory(resolved.directory, workDir);
+    await _copyDirectory(logger, resolved.directory, workDir);
+    logger?.info(
+      'Finished copying source to working directory: ${workDir.path}',
+    );
 
     return workDir;
   }
@@ -173,19 +176,25 @@ final class SourceFallbackResolver {
     return relative.replaceAll(RegExp(r'[/\\:]'), '_');
   }
 
-  Future<void> _copyDirectory(Directory source, Directory destination) async {
-    destination.createSync(recursive: true);
+  Future<void> _copyDirectory(
+    Logger? logger,
+    Directory source,
+    Directory destination,
+  ) async {
+    await destination.create(recursive: true);
     await for (final entity in source.list(recursive: true)) {
       if (entity is File) {
         final relativePath = p.relative(entity.path, from: source.path);
         final target = File(p.join(destination.path, relativePath));
-        target.parent.createSync(recursive: true);
+        logger?.info("Copying -> ${target.path}");
+        await target.parent.create(recursive: true);
         await entity.copy(target.path);
       } else if (entity is Directory) {
         final relativePath = p.relative(entity.path, from: source.path);
-        Directory(
+        logger?.info("Copying -> ${relativePath}");
+        await (Directory(
           p.join(destination.path, relativePath),
-        ).createSync(recursive: true);
+        ).create(recursive: true));
       }
     }
   }
