@@ -23,7 +23,7 @@ void main(List<String> args) async {
       sourceFallback: SourceFallback(
         sources: [LocalSource(paths: ['.'])],
         builder: HookBuilderSourceBuilder.factory(
-          (input) => CBuilder.library(
+          (input, source) => CBuilder.library(
             name: 'my_package',
             packageName: input.packageName,
             assetName: 'src/my_package.dart',
@@ -112,13 +112,15 @@ Resolution order:
 
 | Command | Description |
 |---------|-------------|
-| `plan --target <platform>` | Show build plan |
+| `plan --target <platform>` | Show build plan and recipe steps |
 | `build --target <platform> --output <dir>` | Build native library |
 | `cache-key --target <platform>` | Show cache key |
 | `explain-cache --target <platform>` | Explain cache state |
 | `verify --target <platform>` | Verify built artifact |
-| `manifest update` | Generate/refresh manifest |
+| `manifest update` | Generate/refresh Dart manifest |
 | `manifest verify` | Verify manifest hashes |
+| `fetch` | Download prebuilt artifacts |
+| `doctor` | Check build environment |
 | `workflow init` | Generate CI workflows |
 
 ## Platform toolchains

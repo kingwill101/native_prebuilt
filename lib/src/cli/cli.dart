@@ -138,13 +138,19 @@ final NativeProject _defaultProject = NativeProject(
     ),
   ],
   build: NativeBuildDefinition(
-    recipes: {
-      OS.linux: StepBuildRecipe(
-        steps: [
-          CmakeConfigureStep(sourceDirectory: '.', buildDirectory: 'build'),
-          CmakeBuildStep(buildDirectory: 'build', targets: ['native_prebuilt']),
-        ],
+    recipes: [
+      NativeTargetRecipe(
+        pattern: const NativeTargetPattern(os: OS.linux),
+        recipe: StepBuildRecipe(
+          steps: [
+            CmakeConfigureStep(sourceDirectory: '.', buildDirectory: 'build'),
+            CmakeBuildStep(
+              buildDirectory: 'build',
+              targets: ['native_prebuilt'],
+            ),
+          ],
+        ),
       ),
-    },
+    ],
   ),
 );

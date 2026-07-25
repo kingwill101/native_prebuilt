@@ -57,7 +57,7 @@ jobs:
         run: dart test test/builder_test.dart --reporter expanded
 
   integration:
-    name: Integration
+    name: Integration (${{ matrix.os }})
     needs: analyze
     runs-on: ${{ matrix.os }}
     strategy:
@@ -88,25 +88,3 @@ jobs:
 
       - name: Run integration tests
         run: dart test test/integration/ --reporter expanded
-
-  # Run all tests together for final verification
-  all-tests:
-    name: All Tests
-    needs: [test, integration]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: dart-lang/setup-dart@v1
-        with:
-          sdk: stable
-
-      - name: Install dependencies
-        run: dart pub get
-
-      - name: Run all tests
-        run: dart test --reporter expanded

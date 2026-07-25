@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:code_assets/code_assets.dart';
+import 'package:crypto/crypto.dart';
 import 'package:hooks/hooks.dart';
 import 'package:path/path.dart' as p;
 
@@ -12,26 +13,21 @@ import '../download/http_downloader.dart';
 import '../manifest/prebuilt_artifact.dart';
 import '../manifest/prebuilt_manifest.dart';
 import '../manifest/release_source.dart';
-import '../platform/native_target.dart';
 import 'native_prebuilt_config.dart';
 
 /// Compute a cache key for a target.
+///
+/// Uses SHA-256 for reproducible cache identity across runs.
 String computeCacheKey(NativeTarget target) {
-  // In a full implementation, this would include:
-  // - Recipe schema
-  // - Source revision
-  // - Patch hashes
-  // - Toolchain versions
-  // - CMake definitions
-  // - Environment inputs
-  // - Step implementation version
   final buffer = StringBuffer();
-  buffer.write('v1-');
   buffer.write('${target.os.name}-${target.architecture.name}');
   if (target.iOSSdk != null) {
     buffer.write('-${target.iOSSdk}');
   }
-  return buffer.toString();
+  return sha256
+      .convert(buffer.toString().codeUnits)
+      .toString()
+      .substring(0, 16);
 }
 
 /// Expected library filename for a given [target] and library [stem].
@@ -119,13 +115,11 @@ Future<PrebuiltManifest> generateManifest({
           p.join(builtLibraryDir.path, platform, canonicalName),
         );
 
-        final legacyBuiltFile = File(
-          p.join(builtLibraryDir.path, canonicalName),
-        );
+        final flatBuiltFile = File(p.join(builtLibraryDir.path, canonicalName));
 
         final builtFile = platformBuiltFile.existsSync()
             ? platformBuiltFile
-            : legacyBuiltFile;
+            : flatBuiltFile;
 
         if (!builtFile.existsSync()) {
           if (allowMissing) continue;
@@ -133,7 +127,7 @@ Future<PrebuiltManifest> generateManifest({
           throw StateError(
             'Missing built library for $platform. Checked:\n'
             '  ${platformBuiltFile.path}\n'
-            '  ${legacyBuiltFile.path}',
+            '  ${flatBuiltFile.path}',
           );
         }
 
@@ -230,16 +224,19 @@ Future<void> packageBuiltLibrary({
   required File builtFile,
   required File archiveFile,
 }) async {
-  final result = await Process.run('tar', [
-    'czf',
-    archiveFile.path,
-    '-C',
-    builtFile.parent.path,
-    p.basename(builtFile.path),
-  ]);
+  final result = await ProcessRunner().runStreaming(
+    'tar',
+    [
+      'czf',
+      archiveFile.path,
+      '-C',
+      builtFile.parent.path,
+      p.basename(builtFile.path),
+    ],
+  );
   if (result.exitCode != 0) {
     throw StateError(
-      'tar create failed for ${builtFile.path}: ${result.stderr}',
+      'tar create failed for ${builtFile.path}',
     );
   }
 }

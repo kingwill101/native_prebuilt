@@ -38,7 +38,6 @@ class CacheKeyCommand extends Command<void> {
       exit(1);
     }
 
-    // Compute cache key based on project and target
     final cacheKey = computeCacheKey(target);
     print(cacheKey);
   }

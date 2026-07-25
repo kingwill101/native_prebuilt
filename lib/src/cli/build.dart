@@ -1,13 +1,19 @@
 import 'dart:io';
 
 import 'package:artisanal/args.dart';
+import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 
 import '../build/native_project.dart';
+import '../build/native_project_executor.dart';
+import '../source/source_fallback.dart';
 import 'shared.dart';
 
-/// Command that builds a native library for a specific target.
+/// Thin CLI adapter that delegates to [NativeProjectExecutor].
+///
+/// Parses CLI arguments and invokes the shared build entry point.
 class BuildCommand extends Command<void> {
-  BuildCommand({required this.project}) {
+  BuildCommand({required this.project, this.sourceFallback}) {
     argParser.addOption(
       'target',
       abbr: 't',
@@ -16,12 +22,23 @@ class BuildCommand extends Command<void> {
     argParser.addOption(
       'output',
       abbr: 'o',
-      help: 'Output directory for built artifacts.',
+      help: 'Root output directory for built artifacts.',
       defaultsTo: 'built-library',
+    );
+    argParser.addFlag(
+      'from-source',
+      negatable: false,
+      help: 'Force building from source, ignoring prebuilts.',
+    );
+    argParser.addFlag(
+      'verbose',
+      negatable: false,
+      help: 'Enable verbose logging.',
     );
   }
 
   final NativeProject project;
+  final SourceFallback? sourceFallback;
 
   @override
   String get name => 'build';
@@ -42,27 +59,58 @@ class BuildCommand extends Command<void> {
     final target = parseTarget(targetLabel);
     if (target == null) {
       print('Unknown target: $targetLabel');
+      print(
+        'Valid targets: linux-x64, linux-arm64, macos-arm64, android-arm64',
+      );
       exit(1);
     }
 
     final outputPath = option('output') as String? ?? 'built-library';
-    final outputDir = Directory(outputPath);
-    outputDir.createSync(recursive: true);
+    final forceSource = option('from-source') as bool? ?? false;
+    final verbose = option('verbose') as bool? ?? false;
 
-    print('Building ${project.name} for ${target.label}...');
+    // Configure logging
+    Logger.root.level = verbose ? Level.FINE : Level.INFO;
+    Logger.root.onRecord.listen((record) {
+      stderr.writeln('[${record.level.name}] ${record.message}');
+    });
+
+    final logger = Logger('native_prebuilt.cli');
+
+    // Platform-specific output directory
+    final platformDir = '${target.os.name}-${target.architecture.name}';
+    final outputDir = Directory(p.join(outputPath, platformDir)).absolute;
+
+    print('Building for ${target.label}...');
     print('Output: ${outputDir.path}');
 
-    // Find and execute recipe
-    final recipe = project.build.recipes[target.os];
-    if (recipe == null) {
-      print('Error: No build recipe for ${target.os.name}.');
+    // Override prebuilt policy if --from-source is set
+    final effectiveProject = forceSource
+        ? project.copyWith(prebuiltPolicy: PrebuiltPolicy.forceSourceBuild)
+        : project;
+
+    // Create the shared executor and delegate
+    final executor = NativeProjectExecutor(
+      project: effectiveProject,
+      sourceFallback: sourceFallback,
+      logger: logger,
+    );
+
+    try {
+      final result = await executor.build(
+        target: target,
+        outputDir: outputDir,
+        linkMode: project.asset.linkMode,
+      );
+
+      print('Build completed successfully.');
+      print('Artifacts:');
+      for (final artifact in result.artifacts) {
+        print('  ${artifact.primary.path} (${artifact.target.label})');
+      }
+    } catch (e) {
+      print('Build failed: $e');
       exit(1);
     }
-
-    // For now, we need a source. In a full implementation, this would
-    // resolve source from the project's source specifications.
-    print('Build recipe: ${recipe.runtimeType}');
-    print('Build would execute here with resolved source.');
-    print('Build completed successfully.');
   }
 }

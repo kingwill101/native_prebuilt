@@ -2,8 +2,9 @@ import 'dart:io';
 
 import 'package:artisanal/args.dart';
 
-import '../build/native_build_context.dart';
+import '../build/native_build_recipe.dart';
 import '../build/native_project.dart';
+import '../platform/native_target.dart';
 import 'shared.dart';
 
 /// Command that displays the build plan for a target.
@@ -13,18 +14,6 @@ class PlanCommand extends Command<void> {
       'target',
       abbr: 't',
       help: 'Target platform (e.g., linux-x64, android-arm64, ios-sim-arm64).',
-      allowed: [
-        'linux-x64',
-        'linux-arm64',
-        'macos-x64',
-        'macos-arm64',
-        'windows-x64',
-        'android-arm64',
-        'android-arm',
-        'android-x64',
-        'ios-arm64',
-        'ios-sim-arm64',
-      ],
     );
   }
 
@@ -55,8 +44,8 @@ class PlanCommand extends Command<void> {
 
   void _printAvailableTargets() {
     print('Available targets:');
-    for (final os in project.build.recipes.keys) {
-      print('  - ${os.name}');
+    for (final entry in project.build.recipes) {
+      print('  - ${entry.pattern.os.name}');
     }
     print('');
     print(
@@ -77,9 +66,15 @@ class PlanCommand extends Command<void> {
     print('');
 
     // Check if recipe exists
-    final recipe = project.build.recipes[target.os];
+    final recipe = project.build.recipeFor(target);
     if (recipe != null) {
       print('Build Recipe: ${recipe.runtimeType}');
+      if (recipe is StepBuildRecipe) {
+        print('  Steps: ${recipe.steps.map((s) => s.id).join(' → ')}');
+        if (recipe.cache != null) {
+          print('  Caching: enabled');
+        }
+      }
     } else {
       print('Build Recipe: None available');
     }
@@ -91,5 +86,3 @@ class PlanCommand extends Command<void> {
     }
   }
 }
-
-///
