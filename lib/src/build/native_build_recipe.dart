@@ -37,7 +37,7 @@ final class StepBuildRecipe implements NativeBuildRecipe {
     ResolvedSource source,
   ) async {
     final logger = context.logger ?? Logger('StepBuildRecipe');
-    logger.info('Starting build recipe for ${context.target.label}');
+    logger.fine('Starting build recipe for ${context.target.label}');
     logger.fine('Recipe has ${steps.length} steps: ${steps.map((s) => s.id).join(', ')}');
 
     final artifacts = <BuiltNativeArtifact>[];

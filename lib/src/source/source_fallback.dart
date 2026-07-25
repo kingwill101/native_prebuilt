@@ -186,12 +186,12 @@ final class SourceFallbackResolver {
       if (entity is File) {
         final relativePath = p.relative(entity.path, from: source.path);
         final target = File(p.join(destination.path, relativePath));
-        logger?.info("Copying -> ${target.path}");
+        logger?.fine("Copying -> ${target.path}");
         await target.parent.create(recursive: true);
         await entity.copy(target.path);
       } else if (entity is Directory) {
         final relativePath = p.relative(entity.path, from: source.path);
-        logger?.info("Copying -> ${relativePath}");
+        logger?.fine("Copying -> ${relativePath}");
         await (Directory(
           p.join(destination.path, relativePath),
         ).create(recursive: true));

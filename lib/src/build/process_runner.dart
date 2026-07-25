@@ -120,7 +120,7 @@ final class ProcessRunner implements ProcessRunnerInterface {
     process.stdout.listen((data) {
       final line = String.fromCharCodes(data);
       stdoutBuffer.write(line);
-      logger?.fine('  $line');
+      logger?.info('  $line');
     });
 
     process.stderr.listen((data) {
