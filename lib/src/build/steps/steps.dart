@@ -76,6 +76,8 @@ final class CommandStep implements NativeBuildStep {
     NativeBuildContext context,
     ResolvedSource source,
   ) async {
+    final logger = context.logger;
+    logger?.info('[${id}] Starting command step');
     final r = runner ?? const ProcessRunner();
     final workDir = workingDirectory != null
         ? Directory(workingDirectory!)
@@ -147,6 +149,8 @@ final class CmakeConfigureStep implements NativeBuildStep {
     NativeBuildContext context,
     ResolvedSource source,
   ) async {
+    final logger = context.logger;
+    logger?.info('[${id}] Starting command step');
     final r = runner ?? const ProcessRunner();
     final srcDir = p.isAbsolute(sourceDirectory)
         ? sourceDirectory
@@ -171,7 +175,8 @@ final class CmakeConfigureStep implements NativeBuildStep {
       args.add('-D${entry.key}=${entry.value}');
     }
 
-    await r.run('cmake', args);
+    logger?.info('[cmake_configure] Running: cmake ${args.join(' ')}');
+    await r.runStreaming('cmake', args);
   }
 }
 
@@ -223,6 +228,8 @@ final class CmakeBuildStep implements NativeBuildStep {
     NativeBuildContext context,
     ResolvedSource source,
   ) async {
+    final logger = context.logger;
+    logger?.info('[${id}] Starting command step');
     final r = runner ?? const ProcessRunner();
     final buildDir = p.isAbsolute(buildDirectory)
         ? buildDirectory
@@ -334,6 +341,8 @@ final class DownloadArchiveStep implements NativeBuildStep {
     NativeBuildContext context,
     ResolvedSource source,
   ) async {
+    final logger = context.logger;
+    logger?.info('[${id}] Starting command step');
     final r = runner ?? const ProcessRunner();
     final outDir = outputDirectory ?? p.join(context.directories.work.path, id);
     Directory(outDir).createSync(recursive: true);
@@ -402,6 +411,8 @@ final class GitCheckoutStep implements NativeBuildStep {
     NativeBuildContext context,
     ResolvedSource source,
   ) async {
+    final logger = context.logger;
+    logger?.info('[${id}] Starting command step');
     final r = runner ?? const ProcessRunner();
     final cloneDir = directory ?? p.join(context.directories.work.path, id);
     final dir = Directory(cloneDir);
@@ -466,6 +477,8 @@ final class StripStep implements NativeBuildStep {
     NativeBuildContext context,
     ResolvedSource source,
   ) async {
+    final logger = context.logger;
+    logger?.info('[${id}] Starting command step');
     final r = runner ?? const ProcessRunner();
     final input = p.isAbsolute(inputPath)
         ? inputPath
