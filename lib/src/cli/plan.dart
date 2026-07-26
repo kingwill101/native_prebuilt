@@ -45,7 +45,7 @@ class PlanCommand extends Command<void> {
   void _printAvailableTargets() {
     print('Available targets:');
     for (final entry in project.build.recipes) {
-      print('  - ${entry.pattern.os.name}');
+      print('  - ${entry.pattern.os?.name ?? 'any'}');
     }
     print('');
     print(

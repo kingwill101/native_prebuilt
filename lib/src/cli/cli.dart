@@ -28,19 +28,12 @@ import 'workflow.dart';
 /// Runs the `native_prebuilt` CLI.
 ///
 /// If [project] is provided, it is used for the build-related commands
-/// (plan, build, cache-key, explain-cache, verify). Otherwise
-/// [_defaultProject] is used.
+/// (plan, build, cache-key, explain-cache, verify). Otherwise the CLI
+/// auto-discovers the nearest `native_prebuilt.yaml` and falls back to
+/// [_defaultProject] if none is found.
 ///
 /// Runs the native project CLI for package-local builds.
-/// This provides build commands for packages that define a [NativeProject]:
-///
-/// ```bash
-/// dart run native_prebuilt_cli plan --target android-arm64
-/// dart run native_prebuilt_cli build --target android-arm64 --output built-library
-/// dart run native_prebuilt_cli cache-key --target android-arm64
-/// dart run native_prebuilt_cli explain-cache --target android-arm64
-/// dart run native_prebuilt_cli verify --target android-arm64
-/// ```
+/// This provides build commands for packages that define a [NativeProject].
 Future<void> runNativePrebuiltCli(
   List<String> args, {
   NativeProject? project,
@@ -48,9 +41,7 @@ Future<void> runNativePrebuiltCli(
   // If no project is explicitly passed, try to auto-discover it
   // from native_prebuilt.yaml in the current working directory.
   // Fall back to the hardcoded example project if not found.
-  final buildProject = project ??
-      detect(Directory.current) ??
-      _defaultProject;
+  final buildProject = project ?? detect(Directory.current) ?? _defaultProject;
   final runner =
       CommandRunner<void>(
           'native_prebuilt',
@@ -77,10 +68,9 @@ Future<void> runNativePrebuiltCli(
 ///
 /// ```dart
 /// import 'package:native_prebuilt/hooks.dart';
-/// import 'package:tdlib/src/hook/tdlib_project.dart';
 ///
 /// Future<void> main(List<String> args) {
-///   return nativePrebuiltBuild(args, project: tdlibProject);
+///   return nativePrebuiltBuild(args);
 /// }
 /// ```
 ///
@@ -91,14 +81,15 @@ Future<void> runNativePrebuiltCli(
 ///   [HookInput.userDefines] to skip prebuilt resolution when needed
 Future<void> nativePrebuiltBuild(
   List<String> args, {
-  required NativeProject project,
+  NativeProject? project,
 }) async {
+  final buildProject = project ?? detect(Directory.current) ?? _defaultProject;
   await build(args, (input, output) async {
     Logger.root
       ..level = Level.INFO
       ..onRecord.listen(
         (record) => stderr.writeln(
-          '[${project.name}] ${record.level.name}: ${record.message}',
+          '[${buildProject.name}] ${record.level.name}: ${record.message}',
         ),
       );
 
@@ -112,7 +103,7 @@ Future<void> nativePrebuiltBuild(
     final buildFromSource = shouldBuildFromSource(input);
 
     final builder = NativeProjectBuilder(
-      project: project,
+      project: buildProject,
       resolvers: buildFromSource ? <PrebuiltResolver>[] : null,
     );
 

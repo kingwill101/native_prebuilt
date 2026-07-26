@@ -3,7 +3,8 @@ import 'dart:io';
 import 'package:artisanal/args.dart';
 import 'package:path/path.dart' as p;
 
-import 'native_prebuilt_config.dart';
+import '../config/native_prebuilt_config.dart';
+import 'cli_config.dart';
 
 class WorkflowCommand extends Command<void> {
   WorkflowCommand() {
@@ -50,9 +51,13 @@ class WorkflowInitCommand extends Command<void> {
 
   @override
   Future<void> run() async {
-    final configPath = option('config') as String? ?? 'native_prebuilt.yaml';
+    final configFile = resolveConfigFile(option('config') as String?) ??
+        (throw UsageException(
+          'Could not find native_prebuilt.yaml. Pass --config explicitly.',
+          usage,
+        ));
     final gitlab = (option('gitlab') as bool?) ?? false;
-    final config = NativePrebuiltConfig.loadFile(configPath);
+    final config = await loadNativePrebuiltConfig(configFile);
     final output =
         option('output') as String? ?? (gitlab ? '.' : '.github/workflows');
     final force = (option('force') as bool?) ?? false;

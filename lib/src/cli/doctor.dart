@@ -1,6 +1,7 @@
 import 'package:artisanal/args.dart';
 
-import 'native_prebuilt_config.dart';
+import '../config/native_prebuilt_config.dart';
+import 'cli_config.dart';
 
 class DoctorCommand extends Command<void> {
   DoctorCommand() {
@@ -15,13 +16,23 @@ class DoctorCommand extends Command<void> {
 
   @override
   Future<void> run() async {
-    final configPath = option('config') as String?;
-    if (configPath == null) {
-      throw UsageException('doctor requires --config', usage);
-    }
-    final config = NativePrebuiltConfig.loadFile(configPath);
-    io.info('package: ${config.package}');
-    io.info('release: ${config.release}');
-    io.info('artifacts: ${config.artifacts.length}');
+    final configFile = resolveConfigFile(option('config') as String?) ??
+        (throw UsageException(
+          'Could not find native_prebuilt.yaml. Pass --config explicitly.',
+          usage,
+        ));
+    final config = await loadNativePrebuiltConfig(configFile);
+    io.info(renderDoctorSummary(config));
   }
+}
+
+String renderDoctorSummary(NativePrebuiltConfig config) {
+  final b = StringBuffer()
+    ..writeln('package: ${config.package}')
+    ..writeln('release: ${config.release.toReleaseSource()}')
+    ..writeln('artifacts: ${config.artifacts.length}');
+  for (final entry in config.artifacts.entries) {
+    b.writeln('  - ${entry.key}: archive=${entry.value.archive}, payload=${entry.value.payload.type}');
+  }
+  return b.toString().trimRight();
 }

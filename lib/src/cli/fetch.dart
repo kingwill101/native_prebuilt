@@ -8,7 +8,8 @@ import '../archive/archive_reader.dart';
 import '../binary/library_name.dart';
 import '../download/http_downloader.dart';
 import '../manifest/prebuilt_artifact.dart';
-import 'native_prebuilt_config.dart';
+import '../config/native_prebuilt_config.dart';
+import 'cli_config.dart';
 import 'shared.dart';
 
 class FetchCommand extends Command<void> {
@@ -30,36 +31,41 @@ class FetchCommand extends Command<void> {
 
   @override
   Future<void> run() async {
-    final configPath = option('config') as String?;
+    final configFile = resolveConfigFile(option('config') as String?) ??
+        (throw UsageException(
+          'Could not find native_prebuilt.yaml. Pass --config explicitly.',
+          usage,
+        ));
     final platform = option('platform') as String?;
     final outPath = option('out') as String? ?? '.prebuilt';
-    if (configPath == null || platform == null) {
-      throw UsageException('fetch requires --config and --platform', usage);
+    if (platform == null) {
+      throw UsageException('fetch requires --platform', usage);
     }
 
-    final config = NativePrebuiltConfig.loadFile(configPath);
+    final config = await loadNativePrebuiltConfig(configFile);
     final artifact = config.artifacts[platform];
     if (artifact == null) {
       throw UsageException('Unknown platform: $platform', usage);
     }
 
     final target = targetFromPlatformLabel(platform);
+    final payload = artifact.payload.toArtifactPayload(config.libraryStem);
     final canonicalName = canonicalLibraryName(
       target: target,
       libraryStem: config.libraryStem,
-      payload: artifact.payload,
+      payload: payload,
     );
 
     final downloader = HttpDownloader();
-    final release = config.release;
+    final release = config.release.toReleaseSource();
     final tmpDir = await Directory.systemTemp.createTemp(
       'native_prebuilt_fetch_',
     );
     try {
-      final archivePath = File(p.join(tmpDir.path, artifact.archiveName));
+      final archivePath = File(p.join(tmpDir.path, artifact.archive));
       await downloader.downloadReleaseArtifact(
         source: release,
-        archiveName: artifact.archiveName,
+        archiveName: artifact.archive,
         targetPath: archivePath,
       );
 
@@ -68,12 +74,12 @@ class FetchCommand extends Command<void> {
         outputDir: Directory(p.join(outPath, platform)),
         selection: ArchiveSelectionContext(
           canonicalName: canonicalName,
-          acceptVersionedNames: artifact.payload is DynamicLibraryPayload,
+          acceptVersionedNames: payload is DynamicLibraryPayload,
         ),
       );
       if (extracted == null) {
         throw StateError(
-          'No matching payload found in ${artifact.archiveName}',
+          'No matching payload found in ${artifact.archive}',
         );
       }
       io.info(extracted.path);

@@ -60,7 +60,7 @@ class BuildCommand extends Command<void> {
     if (target == null) {
       print('Unknown target: $targetLabel');
       print(
-        'Valid targets: linux-x64, linux-arm64, macos-arm64, android-arm64',
+        'Valid target labels use code_assets OS and Architecture names (for example: linux-x64, macos-arm64, android-ia32).',
       );
       exit(1);
     }
