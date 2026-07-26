@@ -268,10 +268,9 @@ void main() {
           p.normalize(runner.commands.first.workingDirectory!),
           p.normalize(p.join(context.directories.work.path, 'subdir')),
         );
-        expect(
-          runner.commands.first.environment,
-          {'ROOT': p.normalize('D:/vcpkg/root')},
-        );
+        expect(runner.commands.first.environment, {
+          'ROOT': p.normalize('D:/vcpkg/root'),
+        });
       },
     );
 
