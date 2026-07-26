@@ -1,7 +1,9 @@
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 
+import '../build/process_runner.dart';
 import 'resolved_source.dart';
 import 'source_specification.dart';
 
@@ -23,9 +25,7 @@ final class SourceResolutionContext {
   final Directory sourceCacheRoot;
 
   /// Compute a cache subdirectory for a given repository and revision.
-  Directory sourceCacheDirectory({
-    required String key,
-  }) {
+  Directory sourceCacheDirectory({required String key}) {
     // Sanitize the key for use as a directory name.
     final sanitized = key.replaceAll(RegExp(r'[/\\:]'), '_');
     return Directory('${sourceCacheRoot.path}/$sanitized');
@@ -59,10 +59,7 @@ final class LocalSourceProvider implements SourceProvider {
     final directory = spec.resolve(context.packageRoot);
     if (directory == null) return null;
 
-    return ResolvedSource(
-      directory: directory,
-      origin: SourceOrigin.local,
-    );
+    return ResolvedSource(directory: directory, origin: SourceOrigin.local);
   }
 }
 
@@ -71,9 +68,7 @@ final class LocalSourceProvider implements SourceProvider {
 /// Downloads the archive, verifies its SHA-256 hash, extracts it,
 /// and caches the result.
 final class ArchiveSourceProvider implements SourceProvider {
-  const ArchiveSourceProvider({
-    this.logger,
-  });
+  const ArchiveSourceProvider({this.logger});
 
   final Logger? logger;
 
@@ -93,7 +88,7 @@ final class ArchiveSourceProvider implements SourceProvider {
     }
 
     logger?.info('Downloading source archive: ${spec.label}');
-    await _downloadAndExtract(spec, cacheDir);
+    await _downloadAndExtract(spec, cacheDir, logger: logger);
 
     return ResolvedSource(
       directory: _applySubdirectory(cacheDir, spec.subdirectory),
@@ -102,28 +97,37 @@ final class ArchiveSourceProvider implements SourceProvider {
     );
   }
 
-  Future<void> _downloadAndExtract(ArchiveSource spec, Directory cacheDir) async {
+  Future<void> _downloadAndExtract(
+    ArchiveSource spec,
+    Directory cacheDir, {
+    Logger? logger,
+  }) async {
     // TODO: Use HttpDownloader with SHA-256 verification.
     // For now, delegate to curl + tar.
     cacheDir.createSync(recursive: true);
 
-    final tempDir = await Directory.systemTemp.createTemp('native_prebuilt_src_');
+    final tempDir = await Directory.systemTemp.createTemp(
+      'native_prebuilt_src_',
+    );
     try {
       final archivePath = '${tempDir.path}/archive';
 
       // Download.
-      final curlResult = await Process.run('curl', [
-        '-fsSL',
-        '-o', archivePath,
-        spec.uri.toString(),
-      ]);
+      final curlResult = await ProcessRunner(logger: logger).runStreaming(
+        'curl',
+        ['-fsSL', '-o', archivePath, spec.uri.toString()],
+        requireSuccess: false,
+      );
       if (curlResult.exitCode != 0) {
-        throw Exception('Failed to download ${spec.uri}: ${curlResult.stderr}');
+        throw Exception(
+          'Failed to download ${spec.uri}: ${curlResult.stderr.trim()}',
+        );
       }
 
       // Verify SHA-256.
-      final hashResult = await Process.run('sha256sum', [archivePath]);
-      final hash = (hashResult.stdout as String).split(' ').first;
+      final hash = sha256
+          .convert(File(archivePath).readAsBytesSync())
+          .toString();
       if (hash != spec.sha256) {
         throw Exception(
           'SHA-256 mismatch for ${spec.uri}: expected ${spec.sha256}, got $hash',
@@ -131,15 +135,15 @@ final class ArchiveSourceProvider implements SourceProvider {
       }
 
       // Extract.
-      final tarResult = await Process.run('tar', [
-        '-xzf',
-        archivePath,
-        '-C',
-        cacheDir.path,
-        '--strip-components=1',
-      ]);
+      final tarResult = await ProcessRunner(logger: logger).runStreaming(
+        'tar',
+        ['-xzf', archivePath, '-C', cacheDir.path, '--strip-components=1'],
+        requireSuccess: false,
+      );
       if (tarResult.exitCode != 0) {
-        throw Exception('Failed to extract archive: ${tarResult.stderr}');
+        throw Exception(
+          'Failed to extract archive: ${tarResult.stderr.trim()}',
+        );
       }
     } finally {
       tempDir.deleteSync(recursive: true);
@@ -157,10 +161,7 @@ final class ArchiveSourceProvider implements SourceProvider {
 /// Clones the repository at the specified revision with `--depth=1`
 /// and caches the result.
 final class GitSourceProvider implements SourceProvider {
-  const GitSourceProvider({
-    this.gitExecutable = 'git',
-    this.logger,
-  });
+  const GitSourceProvider({this.gitExecutable = 'git', this.logger});
 
   final String gitExecutable;
   final Logger? logger;
@@ -191,31 +192,44 @@ final class GitSourceProvider implements SourceProvider {
   }
 
   Future<void> _clone(GitSource spec, Directory cacheDir) async {
-    final env = {
-      'GIT_TERMINAL_PROMPT': '0',
-      'GIT_LFS_SKIP_SMUDGE': '1',
-    };
+    final env = {'GIT_TERMINAL_PROMPT': '0', 'GIT_LFS_SKIP_SMUDGE': '1'};
 
     cacheDir.createSync(recursive: true);
 
     await _runGit(['init', cacheDir.path], environment: env);
     await _runGit([
-      '-C', cacheDir.path,
-      'remote', 'add', 'origin', spec.repository.toString(),
+      '-C',
+      cacheDir.path,
+      'remote',
+      'add',
+      'origin',
+      spec.repository.toString(),
     ], environment: env);
     await _runGit([
-      '-C', cacheDir.path,
-      'fetch', '--depth=1', 'origin', spec.revision,
+      '-C',
+      cacheDir.path,
+      'fetch',
+      '--depth=1',
+      'origin',
+      spec.revision,
     ], environment: env);
     await _runGit([
-      '-C', cacheDir.path,
-      'checkout', '--detach', 'FETCH_HEAD',
+      '-C',
+      cacheDir.path,
+      'checkout',
+      '--detach',
+      'FETCH_HEAD',
     ], environment: env);
 
     if (spec.submodules) {
       await _runGit([
-        '-C', cacheDir.path,
-        'submodule', 'update', '--init', '--recursive', '--depth=1',
+        '-C',
+        cacheDir.path,
+        'submodule',
+        'update',
+        '--init',
+        '--recursive',
+        '--depth=1',
       ], environment: env);
     }
   }
@@ -224,15 +238,14 @@ final class GitSourceProvider implements SourceProvider {
     List<String> arguments, {
     Map<String, String>? environment,
   }) async {
-    final result = await Process.run(
+    final result = await ProcessRunner(logger: logger).runStreaming(
       gitExecutable,
       arguments,
       environment: environment,
+      requireSuccess: false,
     );
     if (result.exitCode != 0) {
-      throw Exception(
-        'git ${arguments.first} failed: ${result.stderr}',
-      );
+      throw Exception('git ${arguments.first} failed');
     }
   }
 

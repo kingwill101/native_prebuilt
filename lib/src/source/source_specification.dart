@@ -11,6 +11,32 @@ sealed class SourceSpecification {
 
   /// A short label for logging.
   String get label;
+
+  /// Serializes this source specification to JSON.
+  Map<String, dynamic> toJson();
+
+  /// Deserializes a source specification from JSON.
+  factory SourceSpecification.fromJson(Map<String, dynamic> json) {
+    return switch (json['type'] as String?) {
+      'local' => LocalSource(
+        paths: (json['paths'] as List? ?? const [])
+            .map((e) => e as String)
+            .toList(),
+      ),
+      'git' => GitSource(
+        repository: Uri.parse(json['repository'] as String),
+        revision: json['revision'] as String,
+        subdirectory: json['subdirectory'] as String?,
+        submodules: json['submodules'] as bool? ?? false,
+      ),
+      'archive' => ArchiveSource(
+        uri: Uri.parse(json['uri'] as String),
+        sha256: json['sha256'] as String,
+        subdirectory: json['subdirectory'] as String?,
+      ),
+      final type => throw FormatException('Unknown source type: $type'),
+    };
+  }
 }
 
 /// Source code already present in the workspace.
@@ -18,9 +44,7 @@ sealed class SourceSpecification {
 /// Use this for vendored or monorepo layouts where the source
 /// is checked out alongside the Dart package.
 final class LocalSource extends SourceSpecification {
-  const LocalSource({
-    required this.paths,
-  });
+  const LocalSource({required this.paths});
 
   /// Relative paths to search, in priority order.
   ///
@@ -30,10 +54,15 @@ final class LocalSource extends SourceSpecification {
   @override
   String get label => 'local';
 
+  @override
+  Map<String, dynamic> toJson() => {'type': 'local', 'paths': paths};
+
   /// Resolve the first existing path against [packageRoot].
   Directory? resolve(Directory packageRoot) {
     for (final path in paths) {
-      final candidate = Directory(p.join(packageRoot.path, path));
+      // Normalize the path to handle mixed separators (e.g., 'vendor/lib' on Windows)
+      final normalizedPath = p.normalize(path);
+      final candidate = Directory(p.join(packageRoot.path, normalizedPath));
       if (candidate.existsSync()) return candidate;
     }
     return null;
@@ -68,6 +97,15 @@ final class GitSource extends SourceSpecification {
 
   /// Cache key components for this source.
   String get cacheKey => '${repository}_$revision';
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'type': 'git',
+    'repository': repository.toString(),
+    'revision': revision,
+    if (subdirectory != null) 'subdirectory': subdirectory,
+    'submodules': submodules,
+  };
 }
 
 /// Source code downloaded as an immutable archive.
@@ -94,4 +132,12 @@ final class ArchiveSource extends SourceSpecification {
 
   @override
   String get label => 'archive ${p.basename(uri.path)}';
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'type': 'archive',
+    'uri': uri.toString(),
+    'sha256': sha256,
+    if (subdirectory != null) 'subdirectory': subdirectory,
+  };
 }

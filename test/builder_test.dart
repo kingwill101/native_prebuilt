@@ -4,7 +4,7 @@ import 'package:code_assets/code_assets.dart';
 import 'package:code_assets/src/code_assets/config.dart';
 import 'package:hooks/hooks.dart';
 import 'package:logging/logging.dart';
-import 'package:native_prebuilt/hooks.dart';
+import 'package:native_prebuilt/native_prebuilt.dart';
 import 'package:test/test.dart';
 
 import 'test_utils.dart';
@@ -13,7 +13,8 @@ void main() {
   test('resolves a prebuilt and registers a code asset', () async {
     final root = await tempPackageRoot('native_prebuilt_builder');
     try {
-      final prebuilt = File('${root.path}/libdemo.so')..writeAsBytesSync(makeElfBytes());
+      final prebuilt = File('${root.path}/libdemo.so')
+        ..writeAsBytesSync(makeElfBytes());
 
       final inputBuilder = BuildInputBuilder()
         ..setupShared(
@@ -47,15 +48,18 @@ void main() {
           artifacts: {},
         ),
         linkModeResolver: (_) => DynamicLoadingBundled(),
-        resolvers: [
-          _FakeResolver(prebuilt),
-        ],
+        resolvers: [_FakeResolver(prebuilt)],
       ).run(input: input, output: output, logger: Logger('test'));
 
       final built = output.build();
       expect(built.assets.code, hasLength(1));
       expect(File.fromUri(built.assets.code.single.file!).existsSync(), isTrue);
-      expect(File.fromUri(built.assets.code.single.file!).readAsBytesSync().sublist(0, 4), [0x7F, 0x45, 0x4C, 0x46]);
+      expect(
+        File.fromUri(
+          built.assets.code.single.file!,
+        ).readAsBytesSync().sublist(0, 4),
+        [0x7F, 0x45, 0x4C, 0x46],
+      );
     } finally {
       root.deleteSync(recursive: true);
     }
@@ -98,16 +102,19 @@ void main() {
         ),
         linkModeResolver: (_) => DynamicLoadingBundled(),
         sourceFallback: SourceFallback(
-          sources: [LocalSource(paths: ['.'])],
+          sources: [
+            LocalSource(paths: ['.']),
+          ],
           builder: CallbackSourceBuilder(
-            callback: ({
-              required source,
-              required input,
-              required output,
-              required logger,
-            }) async {
-              called = true;
-            },
+            callback:
+                ({
+                  required source,
+                  required input,
+                  required output,
+                  required logger,
+                }) async {
+                  called = true;
+                },
           ),
         ),
       ).run(input: input, output: output, logger: Logger('test'));
@@ -129,7 +136,7 @@ final class _FakeResolver implements PrebuiltResolver {
     return ResolvedPrebuiltFound(
       file: ResolvedFile(
         path: file.path,
-        hash: sha256Hash(file.readAsBytesSync()),
+        hash: await ArchiveReader.sha256Hash(file),
       ),
       source: PrebuiltSource.localCache,
     );

@@ -43,7 +43,9 @@ void main() {
             ..add(List<int>.filled(32, 0))
             ..close();
         default:
-          request.response..statusCode = 404..close();
+          request.response
+            ..statusCode = 404
+            ..close();
       }
     });
   });
@@ -53,7 +55,9 @@ void main() {
   });
 
   test('downloads a file', () async {
-    final file = File('${Directory.systemTemp.path}/native_prebuilt_download.bin');
+    final file = File(
+      '${Directory.systemTemp.path}/native_prebuilt_download.bin',
+    );
     if (file.existsSync()) file.deleteSync();
 
     await const HttpDownloader().download(
@@ -65,7 +69,9 @@ void main() {
   });
 
   test('follows redirects', () async {
-    final file = File('${Directory.systemTemp.path}/native_prebuilt_redirect.bin');
+    final file = File(
+      '${Directory.systemTemp.path}/native_prebuilt_redirect.bin',
+    );
     if (file.existsSync()) file.deleteSync();
 
     await const HttpDownloader().download(
@@ -82,10 +88,7 @@ void main() {
 
     await const HttpDownloader(
       policy: HttpDownloadPolicy(maxAttempts: 3),
-    ).download(
-      baseUri.resolve('retry.tar.gz'),
-      file,
-    );
+    ).download(baseUri.resolve('retry.tar.gz'), file);
 
     expect(file.readAsBytesSync(), [9, 8, 7]);
     expect(retryCount, 2);
@@ -104,7 +107,9 @@ void main() {
   });
 
   test('downloads release artifacts using baseUri', () async {
-    final file = File('${Directory.systemTemp.path}/native_prebuilt_release.bin');
+    final file = File(
+      '${Directory.systemTemp.path}/native_prebuilt_release.bin',
+    );
     if (file.existsSync()) file.deleteSync();
 
     final source = GitHubReleaseSource(
@@ -124,7 +129,9 @@ void main() {
   });
 
   test('downloads GitLab release artifacts using baseUri', () async {
-    final file = File('${Directory.systemTemp.path}/native_prebuilt_gitlab_release.bin');
+    final file = File(
+      '${Directory.systemTemp.path}/native_prebuilt_gitlab_release.bin',
+    );
     if (file.existsSync()) file.deleteSync();
 
     final source = GitLabReleaseSource(

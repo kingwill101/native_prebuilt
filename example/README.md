@@ -1,68 +1,61 @@
-# native_prebuilt example
+# native_prebuilt Examples
 
-This is a full end-to-end example of:
+This directory contains examples demonstrating different approaches to using native_prebuilt.
 
-- `hooks` build hooks
-- `native_prebuilt` release metadata + prebuilt resolution
-- fallback native compilation with `native_toolchain_c`
-- release-manifest generation via the `native_prebuilt` CLI
+## Examples
 
-## File layout
+### 1. `managed_build/` - Declarative Managed Build (Recommended)
+**Approach**: Uses `NativeProject` with `nativePrebuiltBuild` hook entry point.
 
-```text
-example/
-├── pubspec.yaml
-├── native_prebuilt.yaml
-├── hook/build.dart
-├── lib/src/hook/demo_prebuilts.g.dart
-└── src/native/demo.c
-```
+- **Declarative**: Project defined as a `NativeProject` data structure
+- **Managed**: Build orchestration handled by `NativeProjectBuilder`
+- **Recipe-based**: Uses `StepBuildRecipe` with `CmakeConfigureStep` + `CmakeBuildStep`
+- **Toolchain integration**: Works with `native_toolchain_c` and other toolchains
+- **Extensible**: Add custom steps/recipes easily
 
-## How it works
+**Files**:
+- `lib/src/hook/managed_build_project.dart` - Declarative project definition
+- `hook/build.dart` - Simple entry point using `nativePrebuiltBuild`
 
-1. `hook/build.dart` runs `PrebuiltCodeAssetBuilder`.
-2. It first tries:
-   - `hooks.user_defines`
-   - local `.prebuilt/`
-   - GitHub Release download
-3. If no prebuilt is available, it falls back to `native_toolchain_c` and builds `src/native/demo.c`.
-4. On release, you generate the manifest from `native_prebuilt.yaml` and publish the matching GitHub Release artifacts.
+### 2. `callback_source_builder/` - Legacy Callback + CBuilder
+**Approach**: Uses `PrebuiltCodeAssetBuilder` with `native_toolchain_c`'s `CBuilder` as source fallback.
 
-## Commands
+- **Hybrid**: Prebuilt resolution via native_prebuilt + source fallback via native_toolchain_c
+- **Callback pattern**: Uses legacy `SourceBuilder` function signature
+- **Good for**: Migration from older packages or when using CBuilder directly
 
-Generate/update the manifest:
+**Files**:
+- `hook/build.dart` - Uses `PrebuiltCodeAssetBuilder` with `CBuilder` as `sourceBuilder`
+- `lib/src/hook/callback_source_builder_prebuilts.dart` - Prebuilt manifest
 
-```bash
-cd example
-dart run native_prebuilt manifest update \
-  --config native_prebuilt.yaml \
-  --output lib/src/hook/demo_prebuilts.g.dart
-```
+## Comparison
 
-Verify it:
+| Aspect | Managed Build | Callback + CBuilder |
+|--------|---------------|---------------------|
+| Project definition | Declarative `NativeProject` | Inline in hook |
+| Build orchestration | Managed (`NativeProjectBuilder`) | Manual via `PrebuiltCodeAssetBuilder` |
+| Build recipes | `StepBuildRecipe` + steps | `CBuilder` handles build |
+| Toolchain | Configurable via recipes | Fixed to CBuilder's toolchain |
+| Extensibility | Add custom steps/recipes | Limited to CBuilder options |
+| Migration path | Recommended for new projects | For existing CBuilder users |
 
-```bash
-dart run native_prebuilt manifest verify \
-  --config native_prebuilt.yaml \
-  --output lib/src/hook/demo_prebuilts.g.dart
-```
-
-Fetch a prebuilt locally:
+## Running the Examples
 
 ```bash
-dart run native_prebuilt fetch \
-  --config native_prebuilt.yaml \
-  --platform linux-x64
+# For managed_build
+cd example/managed_build
+dart pub get
+dart run tool/native_prebuilt.dart plan --target linux-x64
+dart run tool/native_prebuilt.dart build --target linux-x64
+
+# For callback_source_builder
+cd example/callback_source_builder
+dart pub get
+# Build hook runs automatically during code generation
 ```
 
-Generate workflow templates:
+## Building for Other Platforms
 
-```bash
-dart run native_prebuilt workflow init
-```
-
-## Notes
-
-- The checked-in hashes are placeholders; this example still works because the fallback C build will run when prebuilt downloads are unavailable.
-- Replace the placeholder release metadata and hashes with the values for your real release before publishing.
-- The native source is intentionally tiny (`return 42;`) so the example stays readable.
+Both examples can be extended to support more platforms by adding entries to:
+- `NativeProject.build.recipes` (managed build)
+- `native_prebuilt.yaml` artifacts (callback source builder)

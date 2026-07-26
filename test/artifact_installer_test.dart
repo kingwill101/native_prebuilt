@@ -15,9 +15,7 @@ void main() {
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     baseUri = Uri.parse('http://127.0.0.1:${server.port}/');
 
-    archiveBytes = makeTarGz({
-      'libdemo.so': makeElfBytes('demo-binary'),
-    });
+    archiveBytes = makeTarGz({'libdemo.so': makeElfBytes('demo-binary')});
 
     server.listen((request) async {
       if (request.uri.path == '/artifact.tar.gz') {
@@ -28,7 +26,9 @@ void main() {
           ..add(archiveBytes)
           ..close();
       } else {
-        request.response..statusCode = 404..close();
+        request.response
+          ..statusCode = 404
+          ..close();
       }
     });
   });
@@ -38,7 +38,9 @@ void main() {
   });
 
   test('installs and caches a downloaded artifact', () async {
-    final temp = await Directory.systemTemp.createTemp('native_prebuilt_installer_');
+    final temp = await Directory.systemTemp.createTemp(
+      'native_prebuilt_installer_',
+    );
     try {
       final archiveHash = sha256Hash(archiveBytes);
       final payloadHash = sha256Hash(makeElfBytes('demo-binary'));
@@ -94,7 +96,9 @@ void main() {
   });
 
   test('returns null for unsupported target', () async {
-    final temp = await Directory.systemTemp.createTemp('native_prebuilt_installer_');
+    final temp = await Directory.systemTemp.createTemp(
+      'native_prebuilt_installer_',
+    );
     try {
       final manifest = PrebuiltManifest(
         schemaVersion: 1,
@@ -109,7 +113,10 @@ void main() {
 
       final result = await DefaultArtifactInstaller().install(
         manifest: manifest,
-        target: const NativeTarget(os: OS.linux, architecture: Architecture.x64),
+        target: const NativeTarget(
+          os: OS.linux,
+          architecture: Architecture.x64,
+        ),
         libraryStem: 'demo',
         payload: const DynamicLibraryPayload(libraryStem: 'demo'),
         cacheDirectory: Directory('${temp.path}/cache'),

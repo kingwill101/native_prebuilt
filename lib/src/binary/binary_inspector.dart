@@ -8,9 +8,7 @@ import '../platform/native_target.dart';
 /// Checks magic bytes / headers for ELF, Mach-O, PE/COFF, and static
 /// archives. Optionally validates architecture from binary headers.
 final class NativeBinaryInspector {
-  const NativeBinaryInspector({
-    this.validateArchitecture = true,
-  });
+  const NativeBinaryInspector({this.validateArchitecture = true});
 
   /// Whether to read architecture information from binary headers and
   /// compare it against the expected target.
@@ -39,9 +37,7 @@ final class NativeBinaryInspector {
     }
 
     if (header.isEmpty) {
-      throw BinaryFormatException(
-        'Empty file: ${file.path}',
-      );
+      throw BinaryFormatException('Empty file: ${file.path}');
     }
 
     final format = _detectFormat(canonicalName, header);

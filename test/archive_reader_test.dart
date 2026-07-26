@@ -28,7 +28,12 @@ void main() {
       );
 
       expect(extracted, isNotNull);
-      expect(extracted!.readAsBytesSync().sublist(0, 4), [0x7F, 0x45, 0x4C, 0x46]);
+      expect(extracted!.readAsBytesSync().sublist(0, 4), [
+        0x7F,
+        0x45,
+        0x4C,
+        0x46,
+      ]);
     } finally {
       dir.deleteSync(recursive: true);
     }
@@ -38,9 +43,7 @@ void main() {
     final dir = Directory.systemTemp.createTempSync('native_prebuilt_archive_');
     try {
       final archiveFile = File('${dir.path}/fixture.tar.gz');
-      archiveFile.writeAsBytesSync(
-        makeTarGz({'libdemo.so': makeElfBytes()}),
-      );
+      archiveFile.writeAsBytesSync(makeTarGz({'libdemo.so': makeElfBytes()}));
 
       final entries = const ArchiveReader().listEntries(archiveFile);
       expect(entries, hasLength(1));
@@ -55,9 +58,7 @@ void main() {
     final dir = Directory.systemTemp.createTempSync('native_prebuilt_archive_');
     try {
       final archiveFile = File('${dir.path}/fixture.tar.gz');
-      archiveFile.writeAsBytesSync(
-        makeTarGz({'../escape.so': makeElfBytes()}),
-      );
+      archiveFile.writeAsBytesSync(makeTarGz({'../escape.so': makeElfBytes()}));
 
       expect(
         () => const ArchiveReader().extractMatchingEntry(

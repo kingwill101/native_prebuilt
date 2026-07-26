@@ -103,7 +103,11 @@ final class HttpDownloader {
           final location = response.headers.value('location');
           if (location != null) {
             await response.drain<void>();
-            return _downloadOnce(Uri.parse(location), targetFile, headers: headers);
+            return _downloadOnce(
+              Uri.parse(location),
+              targetFile,
+              headers: headers,
+            );
           }
         }
         await response.drain<void>();
@@ -121,8 +125,7 @@ final class HttpDownloader {
       try {
         await for (final chunk in response) {
           received += chunk.length;
-          if (policy.maximumBytes != null &&
-              received > policy.maximumBytes!) {
+          if (policy.maximumBytes != null && received > policy.maximumBytes!) {
             throw HttpDownloadException(
               'Download exceeds maximum size of ${policy.maximumBytes} bytes',
               uri: url,

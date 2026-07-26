@@ -1,5 +1,6 @@
 /// Source fallback pipeline for building from source when prebuilts
 /// are not available.
+export 'hook_builder_source_builder.dart';
 export 'network_policy.dart';
 export 'resolved_source.dart';
 export 'source_builder.dart';

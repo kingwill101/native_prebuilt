@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
+import '../build/process_runner.dart';
+
 /// A preparation step applied to source code before building.
 ///
 /// Preparation runs after source acquisition but before compilation.
@@ -11,20 +13,14 @@ sealed class SourcePreparation {
   const SourcePreparation();
 
   /// Apply this preparation step to the source [directory].
-  Future<void> apply({
-    required Directory directory,
-    required Logger? logger,
-  });
+  Future<void> apply({required Directory directory, required Logger? logger});
 }
 
 /// Applies one or more patch files to the source directory.
 ///
 /// Patches are applied in order using the `patch` command.
 final class ApplyPatches extends SourcePreparation {
-  const ApplyPatches({
-    required this.paths,
-    this.reverse = false,
-  });
+  const ApplyPatches({required this.paths, this.reverse = false});
 
   /// Relative paths to patch files, resolved against the package root.
   final List<String> paths;
@@ -40,9 +36,7 @@ final class ApplyPatches extends SourcePreparation {
     for (final patchPath in paths) {
       final patchFile = File(patchPath);
       if (!patchFile.existsSync()) {
-        throw SourcePreparationException(
-          'Patch file not found: $patchPath',
-        );
+        throw SourcePreparationException('Patch file not found: $patchPath');
       }
 
       logger?.info('Applying patch: ${p.basename(patchPath)}');
@@ -54,10 +48,12 @@ final class ApplyPatches extends SourcePreparation {
         '--strip=1',
       ];
 
-      final result = await Process.run('patch', args);
+      final result = await ProcessRunner(
+        logger: logger,
+      ).runStreaming('patch', args, requireSuccess: false);
       if (result.exitCode != 0) {
         throw SourcePreparationException(
-          'Failed to apply patch ${p.basename(patchPath)}: ${result.stderr}',
+          'Failed to apply patch ${p.basename(patchPath)}: ${result.stderr.trim()}',
         );
       }
     }
@@ -83,16 +79,17 @@ final class RunCommand extends SourcePreparation {
   }) async {
     logger?.info('Running: $executable ${arguments.join(' ')}');
 
-    final result = await Process.run(
+    final result = await ProcessRunner(logger: logger).runStreaming(
       executable,
       arguments,
-      workingDirectory: directory.path,
+      workingDirectory: directory,
       environment: environment,
+      requireSuccess: false,
     );
 
     if (result.exitCode != 0) {
       throw SourcePreparationException(
-        'Command failed: $executable ${arguments.join(' ')}\n${result.stderr}',
+        'Command failed: $executable ${arguments.join(' ')}\n${result.stderr.trim()}',
       );
     }
   }

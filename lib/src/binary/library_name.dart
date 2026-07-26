@@ -8,27 +8,15 @@ import '../platform/native_target.dart';
 /// Example: `canonicalDynamicLibraryName(NativeTarget(...), 'mylib')`
 /// returns `libmylib.so` on Linux, `libmylib.dylib` on macOS,
 /// and `mylib.dll` on Windows.
-String canonicalDynamicLibraryName(
-  NativeTarget target,
-  String libraryStem,
-) {
-  return target.os.libraryFileName(
-    libraryStem,
-    DynamicLoadingBundled(),
-  );
+String canonicalDynamicLibraryName(NativeTarget target, String libraryStem) {
+  return target.os.libraryFileName(libraryStem, DynamicLoadingBundled());
 }
 
 /// Returns the canonical static library filename for a target and stem.
 ///
 /// On Apple platforms, follows the `lib<stem>.a` convention.
-String canonicalStaticLibraryName(
-  NativeTarget target,
-  String libraryStem,
-) {
-  return target.os.libraryFileName(
-    libraryStem,
-    StaticLinking(),
-  );
+String canonicalStaticLibraryName(NativeTarget target, String libraryStem) {
+  return target.os.libraryFileName(libraryStem, StaticLinking());
 }
 
 /// Returns the canonical library filename for a payload type.
@@ -38,10 +26,8 @@ String canonicalLibraryName({
   required ArtifactPayload payload,
 }) {
   return switch (payload) {
-    DynamicLibraryPayload() =>
-      canonicalDynamicLibraryName(target, libraryStem),
-    StaticLibraryPayload() =>
-      canonicalStaticLibraryName(target, libraryStem),
+    DynamicLibraryPayload() => canonicalDynamicLibraryName(target, libraryStem),
+    StaticLibraryPayload() => canonicalStaticLibraryName(target, libraryStem),
   };
 }
 
@@ -67,8 +53,7 @@ bool matchesLibraryName(
       0,
       canonicalName.length - '.dylib'.length,
     );
-    return basename.startsWith('$stem.') &&
-        basename.endsWith('.dylib');
+    return basename.startsWith('$stem.') && basename.endsWith('.dylib');
   }
 
   return false;
@@ -80,13 +65,11 @@ bool matchesLibraryName(
 int libraryMatchRank(String basename, String canonicalName) {
   if (basename == canonicalName) return 0;
 
-  if (canonicalName.endsWith('.so') &&
-      basename.startsWith('$canonicalName.')) {
+  if (canonicalName.endsWith('.so') && basename.startsWith('$canonicalName.')) {
     return 1;
   }
 
-  if (canonicalName.endsWith('.dylib') &&
-      basename.endsWith('.dylib')) {
+  if (canonicalName.endsWith('.dylib') && basename.endsWith('.dylib')) {
     final stem = canonicalName.substring(
       0,
       canonicalName.length - '.dylib'.length,

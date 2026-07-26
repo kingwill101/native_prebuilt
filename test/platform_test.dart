@@ -5,10 +5,7 @@ void main() {
   group('NativeTarget', () {
     test('labels', () {
       expect(
-        const NativeTarget(
-          os: OS.linux,
-          architecture: Architecture.x64,
-        ).label,
+        const NativeTarget(os: OS.linux, architecture: Architecture.x64).label,
         'linux-x64',
       );
       expect(
