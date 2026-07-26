@@ -83,7 +83,7 @@ final class ExportArtifactStep implements NativeBuildStep {
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
     return NativeStepFingerprint(
       id: id,
-      hash: fingerprintHash('export_${declaration.primaryPath}'),
+      hash: fingerprintHash(declaration.toJson().toString()),
     );
   }
 
@@ -154,6 +154,8 @@ final class ExportArtifactStep implements NativeBuildStep {
   }) async {
     final logger = context.logger;
 
+    _validateRelativePath(path, context);
+
     // Resolve source path against build output directory
     final srcPath = _resolveSourcePath(path, context);
     final srcFile = File(srcPath);
@@ -167,7 +169,7 @@ final class ExportArtifactStep implements NativeBuildStep {
     }
 
     // Stage the file to the output directory
-    final destPath = p.join(context.directories.output.path, path);
+    final destPath = _resolveDestinationPath(path, context);
     final destFile = File(destPath);
     destFile.parent.createSync(recursive: true);
     await srcFile.copy(destPath);
@@ -188,5 +190,28 @@ final class ExportArtifactStep implements NativeBuildStep {
       return relativePath;
     }
     return p.join(context.directories.work.path, relativePath);
+  }
+
+  String _resolveDestinationPath(
+    String relativePath,
+    NativeBuildContext context,
+  ) {
+    final resolved = p.normalize(p.join(context.directories.output.path, relativePath));
+    final outputRoot = p.normalize(context.directories.output.path);
+    if (!p.isWithin(outputRoot, resolved) && resolved != outputRoot) {
+      throw StateError('Artifact path escapes output directory: $relativePath');
+    }
+    return resolved;
+  }
+
+  void _validateRelativePath(String path, NativeBuildContext context) {
+    if (p.isAbsolute(path)) {
+      throw StateError('Artifact path must be relative to output directory: $path');
+    }
+    final resolved = p.normalize(p.join(context.directories.output.path, path));
+    final outputRoot = p.normalize(context.directories.output.path);
+    if (!p.isWithin(outputRoot, resolved) && resolved != outputRoot) {
+      throw StateError('Artifact path escapes output directory: $path');
+    }
   }
 }

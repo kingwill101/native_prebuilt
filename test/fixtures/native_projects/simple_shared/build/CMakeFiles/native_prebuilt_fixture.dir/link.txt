@@ -1,1 +1,0 @@
-/usr/bin/cc -fPIC -shared -Wl,--dependency-file=CMakeFiles/native_prebuilt_fixture.dir/link.d -Wl,-soname,libnative_prebuilt_fixture.so -o libnative_prebuilt_fixture.so CMakeFiles/native_prebuilt_fixture.dir/src/fixture.c.o

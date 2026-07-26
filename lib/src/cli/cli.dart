@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:artisanal/args.dart';
@@ -5,7 +6,6 @@ import 'package:code_assets/code_assets.dart';
 import 'package:hooks/hooks.dart';
 import 'package:logging/logging.dart';
 
-import '../build/native_build_recipe.dart';
 import '../build/native_project.dart';
 import '../build/steps/steps.dart';
 import '../builder/native_project_builder.dart';
@@ -24,6 +24,8 @@ import 'plan.dart';
 import 'shared.dart' show shouldBuildFromSource;
 import 'verify.dart';
 import 'workflow.dart';
+
+StreamSubscription<LogRecord>? _nativePrebuiltLogSubscription;
 
 /// Runs the `native_prebuilt` CLI.
 ///
@@ -85,29 +87,33 @@ Future<void> nativePrebuiltBuild(
 }) async {
   final buildProject = project ?? detect(Directory.current) ?? _defaultProject;
   await build(args, (input, output) async {
-    Logger.root
-      ..level = Level.INFO
-      ..onRecord.listen(
-        (record) => stderr.writeln(
-          '[${buildProject.name}] ${record.level.name}: ${record.message}',
-        ),
-      );
-
-    if (!input.config.buildCodeAssets) {
-      Logger.root.info(
-        'Skipping native_prebuilt: buildCodeAssets is disabled.',
-      );
-      return;
-    }
-
-    final buildFromSource = shouldBuildFromSource(input);
-
-    final builder = NativeProjectBuilder(
-      project: buildProject,
-      resolvers: buildFromSource ? <PrebuiltResolver>[] : null,
+    Logger.root.level = Level.INFO;
+    await _nativePrebuiltLogSubscription?.cancel();
+    _nativePrebuiltLogSubscription = Logger.root.onRecord.listen(
+      (record) => stderr.writeln(
+        '[${buildProject.name}] ${record.level.name}: ${record.message}',
+      ),
     );
+    try {
+      if (!input.config.buildCodeAssets) {
+        Logger.root.info(
+          'Skipping native_prebuilt: buildCodeAssets is disabled.',
+        );
+        return;
+      }
 
-    await builder.run(input: input, output: output, logger: Logger.root);
+      final buildFromSource = shouldBuildFromSource(input);
+
+      final builder = NativeProjectBuilder(
+        project: buildProject,
+        resolvers: buildFromSource ? <PrebuiltResolver>[] : null,
+      );
+
+      await builder.run(input: input, output: output, logger: Logger.root);
+    } finally {
+      await _nativePrebuiltLogSubscription?.cancel();
+      _nativePrebuiltLogSubscription = null;
+    }
   });
 }
 

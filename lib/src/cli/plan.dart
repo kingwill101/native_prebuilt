@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:artisanal/args.dart';
 
-import '../build/native_build_recipe.dart';
 import '../build/native_project.dart';
 import '../platform/native_target.dart';
 import 'shared.dart';
@@ -44,8 +43,8 @@ class PlanCommand extends Command<void> {
 
   void _printAvailableTargets() {
     print('Available targets:');
-    for (final entry in project.build.recipes) {
-      print('  - ${entry.pattern.os?.name ?? 'any'}');
+    for (final target in supportedTargetLabels(project)) {
+      print('  - $target');
     }
     print('');
     print(

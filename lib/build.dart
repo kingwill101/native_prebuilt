@@ -17,6 +17,7 @@ export 'src/build/native_build_context.dart';
 export 'src/build/native_build_recipe.dart';
 export 'src/build/native_build_result.dart';
 export 'src/build/native_project.dart';
+export 'src/builder/native_project_builder.dart';
 export 'src/build/native_project_executor.dart';
 export 'src/build/fingerprint.dart';
 export 'src/build/process_runner.dart';

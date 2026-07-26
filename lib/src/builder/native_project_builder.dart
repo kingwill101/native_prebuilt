@@ -246,10 +246,9 @@ final class NativeProjectBuilder {
     }
 
     // Create output directory for this target
-    final platformDir = '${target.os.name}-${target.architecture.name}';
-    if (target.iOSSdk != null) {
-      // e.g., ios-sim-arm64
-    }
+    final platformDir = target.iOSSdk != null
+        ? '${target.os.name}-${target.iOSSdk == IOSSdk.iPhoneSimulator ? 'sim-' : ''}${target.architecture.name}'
+        : '${target.os.name}-${target.architecture.name}';
     final outputDir = Directory(
       p.join(input.outputDirectory.toFilePath(), platformDir),
     );
@@ -268,32 +267,36 @@ final class NativeProjectBuilder {
       linkMode: linkMode,
     );
 
-    // Register built artifacts with the hook output
-    // Hook only stages primary + runtime deps (not symbols/import libs)
-    for (final artifact in buildResult.artifacts) {
-      final libraryName = canonicalLibraryName(
-        target: artifact.target,
-        libraryStem: project.asset.libraryStem,
-        payload: payload,
-      );
-      final bundledLibUri = input.outputDirectory.resolve(
-        '$platformDir/$libraryName',
-      );
+    if (buildResult.artifacts.isEmpty) {
+      throw StateError('Build produced no artifacts for ${target.label}.');
+    }
 
-      final srcFile = File.fromUri(artifact.primary.source.uri);
-      if (srcFile.existsSync()) {
-        await srcFile.copy(File.fromUri(bundledLibUri).path);
-      }
+    final artifact = buildResult.artifacts.first;
+    final libraryName = canonicalLibraryName(
+      target: artifact.target,
+      libraryStem: project.asset.libraryStem,
+      payload: payload,
+    );
+    final bundledLibUri = input.outputDirectory.resolve(
+      '$platformDir/$libraryName',
+    );
 
-      output.assets.code.add(
-        CodeAsset(
-          package: input.packageName,
-          name: project.asset.assetName,
-          linkMode: linkMode,
-          file: bundledLibUri,
-        ),
+    final srcFile = File.fromUri(artifact.primary.source.uri);
+    if (!srcFile.existsSync()) {
+      throw StateError(
+        'Built artifact ${artifact.id} is missing at ${srcFile.path}.',
       );
     }
+    await srcFile.copy(File.fromUri(bundledLibUri).path);
+
+    output.assets.code.add(
+      CodeAsset(
+        package: input.packageName,
+        name: project.asset.assetName,
+        linkMode: linkMode,
+        file: bundledLibUri,
+      ),
+    );
 
     _logInfo(logger, 'Source build completed for ${target.label}.');
   }

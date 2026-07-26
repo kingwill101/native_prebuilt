@@ -1,2 +1,0 @@
-/usr/bin/ar qc libnative_prebuilt_fixture_static.a CMakeFiles/native_prebuilt_fixture_static.dir/src/fixture.c.o
-/usr/bin/ranlib libnative_prebuilt_fixture_static.a

@@ -89,7 +89,10 @@ void main() {
       );
 
       final (context, source) = createTestContext();
-      expect(() => step.execute(context, source), throwsA(isA<Exception>()));
+      await expectLater(
+        step.execute(context, source),
+        throwsA(isA<Exception>()),
+      );
     });
   });
 
@@ -248,7 +251,10 @@ void main() {
       );
 
       final (context, source) = createTestContext();
-      expect(() => step.execute(context, source), throwsA(isA<Exception>()));
+      await expectLater(
+        step.execute(context, source),
+        throwsA(isA<Exception>()),
+      );
 
       // Only first command should have been executed
       expect(runner.commands, hasLength(1));
@@ -349,7 +355,10 @@ void main() {
       );
 
       final (context, source) = createTestContext(workDir: tempDir);
-      expect(() => step.execute(context, source), throwsA(isA<StateError>()));
+      await expectLater(
+        step.execute(context, source),
+        throwsA(isA<StateError>()),
+      );
     });
   });
 
@@ -427,7 +436,10 @@ void main() {
       );
 
       final (context, source) = createTestContext(workDir: tempDir);
-      expect(() => recipe.execute(context, source), throwsA(isA<Exception>()));
+      await expectLater(
+        recipe.execute(context, source),
+        throwsA(isA<Exception>()),
+      );
 
       expect(runner.commands, hasLength(1));
     });

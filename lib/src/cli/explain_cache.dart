@@ -29,18 +29,15 @@ class ExplainCacheCommand extends Command<void> {
   Future<void> run() async {
     final targetLabel = option('target') as String?;
     if (targetLabel == null) {
-      print('Error: --target is required.');
-      print(usage);
-      exit(1);
+      throw UsageException('Error: --target is required.', usage);
     }
 
     final target = parseTarget(targetLabel);
     if (target == null) {
-      print('Unknown target: $targetLabel');
-      exit(1);
+      throw UsageException('Unknown target: $targetLabel', usage);
     }
 
-    final cacheKey = computeCacheKey(target);
+    final cacheKey = computeCacheKey(project, target);
     final cache = BuildCache(
       projectName: project.name,
       targetLabel: target.label,
@@ -50,7 +47,7 @@ class ExplainCacheCommand extends Command<void> {
     print('Cache Explanation for ${project.name} on ${target.label}');
     print('=' * 50);
     print('');
-    print('Cache Key: $cacheKey');
+    print('Target Key: $cacheKey');
     print('');
     print('Cache Directory: ${cache.cacheDir.path}');
     print('');

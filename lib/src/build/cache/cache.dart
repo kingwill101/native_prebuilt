@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart' as path;
@@ -13,6 +14,15 @@ final class NativeBuildFingerprint {
 
   /// Hash representing the step's inputs and configuration
   final String hash;
+
+  Map<String, dynamic> toJson() => {'id': id, 'hash': hash};
+
+  factory NativeBuildFingerprint.fromJson(Map<String, dynamic> json) {
+    return NativeBuildFingerprint(
+      id: json['id'] as String,
+      hash: json['hash'] as String,
+    );
+  }
 }
 
 /// Manages the build cache directory structure.
@@ -49,7 +59,10 @@ final class BuildCache {
 
   /// Retrieves a cached artifact if available
   File? getCachedArtifact(String fingerprint, String filename) {
-    final dir = getArtifactDirectory(fingerprint);
+    final dir = Directory(path.join(cacheRoot.path, fingerprint));
+    if (!dir.existsSync()) {
+      return null;
+    }
     final filePath = path.join(dir.path, filename);
     return File(filePath).existsSync() ? File(filePath) : null;
   }
@@ -57,13 +70,46 @@ final class BuildCache {
 
 /// Tracks executed build steps and their fingerprints.
 final class BuildStepCache {
-  BuildStepCache({required this.buildCache});
+  BuildStepCache({required this.buildCache}) {
+    _load();
+  }
 
   /// The build cache instance
   final BuildCache buildCache;
 
   /// Tracks executed steps by ID
   final Map<String, NativeBuildFingerprint> executedSteps = {};
+
+  Directory get _fingerprintDirectory =>
+      Directory(path.join(buildCache.cacheRoot.path, 'step-fingerprints'));
+
+  File get _fingerprintFile =>
+      File(path.join(_fingerprintDirectory.path, 'step_fingerprints.json'));
+
+  void _load() {
+    if (!_fingerprintFile.existsSync()) {
+      return;
+    }
+    final decoded = jsonDecode(_fingerprintFile.readAsStringSync());
+    if (decoded is! Map<String, dynamic>) {
+      return;
+    }
+    for (final entry in decoded.entries) {
+      final value = entry.value;
+      if (value is Map<String, dynamic>) {
+        executedSteps[entry.key] = NativeBuildFingerprint.fromJson(value);
+      }
+    }
+  }
+
+  void _persist() {
+    _fingerprintDirectory.createSync(recursive: true);
+    _fingerprintFile.writeAsStringSync(
+      const JsonEncoder.withIndent('  ').convert(
+        executedSteps.map((key, value) => MapEntry(key, value.toJson())),
+      ),
+    );
+  }
 
   /// Checks if a step has been executed with matching fingerprint
   bool hasExecuted(String stepId, String fingerprint) {
@@ -74,5 +120,6 @@ final class BuildStepCache {
   /// Records a step execution with its fingerprint
   void recordExecution(String stepId, NativeBuildFingerprint fingerprint) {
     executedSteps[stepId] = fingerprint;
+    _persist();
   }
 }

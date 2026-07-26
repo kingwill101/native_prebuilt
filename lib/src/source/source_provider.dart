@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 
 import '../build/process_runner.dart';
@@ -87,7 +88,7 @@ final class ArchiveSourceProvider implements SourceProvider {
     }
 
     logger?.info('Downloading source archive: ${spec.label}');
-    await _downloadAndExtract(spec, cacheDir);
+    await _downloadAndExtract(spec, cacheDir, logger: logger);
 
     return ResolvedSource(
       directory: _applySubdirectory(cacheDir, spec.subdirectory),
@@ -98,8 +99,9 @@ final class ArchiveSourceProvider implements SourceProvider {
 
   Future<void> _downloadAndExtract(
     ArchiveSource spec,
-    Directory cacheDir,
-  ) async {
+    Directory cacheDir, {
+    Logger? logger,
+  }) async {
     // TODO: Use HttpDownloader with SHA-256 verification.
     // For now, delegate to curl + tar.
     cacheDir.createSync(recursive: true);
@@ -111,49 +113,43 @@ final class ArchiveSourceProvider implements SourceProvider {
       final archivePath = '${tempDir.path}/archive';
 
        // Download.
-       final curlResult = await ProcessRunner().runStreaming(
-         'curl',
-         [
-           '-fsSL',
-           '-o',
-           archivePath,
-           spec.uri.toString(),
-         ],
-       );
-       if (curlResult.exitCode != 0) {
-         throw Exception('Failed to download ${spec.uri}');
-       }
+       final curlResult = await ProcessRunner(logger: logger).runStreaming(
+        'curl',
+        [
+          '-fsSL',
+          '-o',
+          archivePath,
+          spec.uri.toString(),
+        ],
+        requireSuccess: false,
+      );
+      if (curlResult.exitCode != 0) {
+        throw Exception('Failed to download ${spec.uri}: ${curlResult.stderr.trim()}');
+      }
 
-       // Verify SHA-256.
-       final hashResult = await ProcessRunner().runStreaming(
-         'shasum',
-         ['-a', '256', archivePath],
-       );
-       final hashOutput = (hashResult.stdout).trim();
-      // Handle different sha256sum output formats:
-      // - Linux/macOS: 'hash  filename'
-      // - Windows (Git Bash): may have backslash prefix or different format
-      final hash = hashOutput.split(RegExp(r'\s+')).first.replaceAll(r'\', '');
+      // Verify SHA-256.
+      final hash = sha256.convert(File(archivePath).readAsBytesSync()).toString();
       if (hash != spec.sha256) {
         throw Exception(
           'SHA-256 mismatch for ${spec.uri}: expected ${spec.sha256}, got $hash',
         );
       }
 
-       // Extract.
-       final tarResult = await ProcessRunner().runStreaming(
-         'tar',
-         [
-           '-xzf',
-           archivePath,
-           '-C',
-           cacheDir.path,
-           '--strip-components=1',
-         ],
-       );
-       if (tarResult.exitCode != 0) {
-         throw Exception('Failed to extract archive');
-       }
+      // Extract.
+      final tarResult = await ProcessRunner(logger: logger).runStreaming(
+        'tar',
+        [
+          '-xzf',
+          archivePath,
+          '-C',
+          cacheDir.path,
+          '--strip-components=1',
+        ],
+        requireSuccess: false,
+      );
+      if (tarResult.exitCode != 0) {
+        throw Exception('Failed to extract archive: ${tarResult.stderr.trim()}');
+      }
     } finally {
       tempDir.deleteSync(recursive: true);
     }
@@ -247,10 +243,11 @@ final class GitSourceProvider implements SourceProvider {
     List<String> arguments, {
     Map<String, String>? environment,
   }) async {
-    final result = await ProcessRunner().runStreaming(
+    final result = await ProcessRunner(logger: logger).runStreaming(
       gitExecutable,
       arguments,
       environment: environment,
+      requireSuccess: false,
     );
     if (result.exitCode != 0) {
       throw Exception('git ${arguments.first} failed');

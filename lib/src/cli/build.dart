@@ -51,18 +51,16 @@ class BuildCommand extends Command<void> {
   Future<void> run() async {
     final targetLabel = option('target') as String?;
     if (targetLabel == null) {
-      print('Error: --target is required.');
-      print(usage);
-      exit(1);
+      throw UsageException('build requires --target', usage);
     }
 
     final target = parseTarget(targetLabel);
     if (target == null) {
-      print('Unknown target: $targetLabel');
-      print(
-        'Valid target labels use code_assets OS and Architecture names (for example: linux-x64, macos-arm64, android-ia32).',
+      final validTargets = supportedTargetLabels(project);
+      throw UsageException(
+        'Unknown target: $targetLabel\nValid targets: ${validTargets.join(', ')}',
+        usage,
       );
-      exit(1);
     }
 
     final outputPath = option('output') as String? ?? 'built-library';
@@ -71,7 +69,7 @@ class BuildCommand extends Command<void> {
 
     // Configure logging
     Logger.root.level = verbose ? Level.FINE : Level.INFO;
-    Logger.root.onRecord.listen((record) {
+    final subscription = Logger.root.onRecord.listen((record) {
       stderr.writeln('[${record.level.name}] ${record.message}');
     });
 
@@ -108,9 +106,12 @@ class BuildCommand extends Command<void> {
       for (final artifact in result.artifacts) {
         print('  ${artifact.primary.path} (${artifact.target.label})');
       }
+    } on UsageException {
+      rethrow;
     } catch (e) {
-      print('Build failed: $e');
-      exit(1);
+      throw UsageException('Build failed: $e', usage);
+    } finally {
+      await subscription.cancel();
     }
   }
 }

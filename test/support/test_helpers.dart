@@ -25,6 +25,7 @@ Future<void> copyDirectory(Directory source, Directory destination) async {
     final rel = p.relative(entity.path, from: source.path);
     final dest = p.join(destination.path, rel);
     if (entity is File) {
+      await Directory(p.dirname(dest)).create(recursive: true);
       await entity.copy(dest);
     } else if (entity is Directory) {
       await Directory(dest).create(recursive: true);

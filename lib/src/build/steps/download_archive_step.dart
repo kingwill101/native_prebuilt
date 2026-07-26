@@ -105,9 +105,50 @@ final class DownloadArchiveStep implements NativeBuildStep {
       }
     }
 
+    await _extractArchive(r, archivePath, outputDir);
+
     logger?.info('[download_archive] Archive downloaded to $archivePath');
 
     return const NativeStepResult();
+  }
+
+  Future<void> _extractArchive(
+    ProcessRunnerInterface runner,
+    String archivePath,
+    String outputDir,
+  ) async {
+    final lower = archivePath.toLowerCase();
+    if (lower.endsWith('.zip')) {
+      final result = await runner.runStreaming(
+        'unzip',
+        ['-q', archivePath, '-d', outputDir],
+        requireSuccess: false,
+      );
+      if (result.exitCode != 0) {
+        throw StateError('Failed to extract archive: ${result.stderr.trim()}');
+      }
+      return;
+    }
+
+    final tarArgs = <String>['-C', outputDir];
+    if (lower.endsWith('.tar.gz') || lower.endsWith('.tgz')) {
+      tarArgs.insertAll(0, ['-xzf', archivePath]);
+    } else if (lower.endsWith('.tar.bz2') || lower.endsWith('.tbz2')) {
+      tarArgs.insertAll(0, ['-xjf', archivePath]);
+    } else if (lower.endsWith('.tar.xz') || lower.endsWith('.txz')) {
+      tarArgs.insertAll(0, ['-xJf', archivePath]);
+    } else {
+      return;
+    }
+
+    final result = await runner.runStreaming(
+      'tar',
+      tarArgs,
+      requireSuccess: false,
+    );
+    if (result.exitCode != 0) {
+      throw StateError('Failed to extract archive: ${result.stderr.trim()}');
+    }
   }
 
   String _extensionFromUrl(Uri url) {

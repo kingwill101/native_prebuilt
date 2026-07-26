@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:artisanal/args.dart';
 
 import '../build/native_project.dart';
@@ -27,18 +25,15 @@ class CacheKeyCommand extends Command<void> {
   Future<void> run() async {
     final targetLabel = option('target') as String?;
     if (targetLabel == null) {
-      print('Error: --target is required.');
-      print(usage);
-      exit(1);
+      throw UsageException('Error: --target is required.', usage);
     }
 
     final target = parseTarget(targetLabel);
     if (target == null) {
-      print('Unknown target: $targetLabel');
-      exit(1);
+      throw UsageException('Unknown target: $targetLabel', usage);
     }
 
-    final cacheKey = computeCacheKey(target);
+    final cacheKey = computeCacheKey(project, target);
     print(cacheKey);
   }
 }

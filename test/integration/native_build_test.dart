@@ -66,8 +66,7 @@ void main() {
       skip: _cmakeAvailable ? null : 'CMake not available',
       () async {
         if (Platform.isWindows) {
-          print('Skipping symbol test on Windows');
-          return;
+          markTestSkipped('Symbol loading is not available on Windows');
         }
 
         await cmakeConfigure(workspace.source.path, buildDir.path);

@@ -42,6 +42,14 @@ final managedBuildProject = NativeProject(
               buildDirectory: 'build',
               targets: ['managed_build_example'],
             ),
+            const ExportArtifactStep(
+              id: 'export',
+              declaration: NativeArtifactDeclaration(
+                id: 'managed_build_example',
+                kind: NativeArtifactKind.dynamicLibrary,
+                primaryPath: 'build/libmanaged_build_example.so',
+              ),
+            ),
           ],
         ),
       ),
@@ -54,6 +62,14 @@ final managedBuildProject = NativeProject(
               buildDirectory: 'build',
               targets: ['managed_build_example'],
             ),
+            const ExportArtifactStep(
+              id: 'export',
+              declaration: NativeArtifactDeclaration(
+                id: 'managed_build_example',
+                kind: NativeArtifactKind.dynamicLibrary,
+                primaryPath: 'build/libmanaged_build_example.dylib',
+              ),
+            ),
           ],
         ),
       ),
@@ -65,6 +81,14 @@ final managedBuildProject = NativeProject(
             CmakeBuildStep(
               buildDirectory: 'build',
               targets: ['managed_build_example'],
+            ),
+            const ExportArtifactStep(
+              id: 'export',
+              declaration: NativeArtifactDeclaration(
+                id: 'managed_build_example',
+                kind: NativeArtifactKind.dynamicLibrary,
+                primaryPath: 'build/managed_build_example.dll',
+              ),
             ),
           ],
         ),

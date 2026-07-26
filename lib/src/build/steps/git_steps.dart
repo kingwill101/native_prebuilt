@@ -73,6 +73,7 @@ final class GitCheckoutStep implements NativeBuildStep {
     buffer.write('git_checkout');
     buffer.write(repository);
     buffer.write(revision);
+    buffer.write(submodules);
     if (targetDirectory != null) buffer.write(targetDirectory);
     return NativeStepFingerprint(
       id: id,
@@ -97,14 +98,30 @@ final class GitCheckoutStep implements NativeBuildStep {
     Directory(targetDir).createSync(recursive: true);
 
     await r.runStreaming('git', ['init', targetDir]);
-    await r.runStreaming('git', [
-      '-C',
-      targetDir,
-      'remote',
-      'add',
-      'origin',
-      repository,
-    ]);
+    final existingOrigin = await r.runStreaming(
+      'git',
+      ['-C', targetDir, 'remote', 'get-url', 'origin'],
+      requireSuccess: false,
+    );
+    if (existingOrigin.exitCode == 0) {
+      await r.runStreaming('git', [
+        '-C',
+        targetDir,
+        'remote',
+        'set-url',
+        'origin',
+        repository,
+      ]);
+    } else {
+      await r.runStreaming('git', [
+        '-C',
+        targetDir,
+        'remote',
+        'add',
+        'origin',
+        repository,
+      ]);
+    }
     await r.runStreaming('git', [
       '-C',
       targetDir,
@@ -116,21 +133,28 @@ final class GitCheckoutStep implements NativeBuildStep {
     await r.runStreaming('git', ['-C', targetDir, 'checkout', '--detach', 'FETCH_HEAD']);
 
     if (submodules) {
-      await _runGit([
-        'submodule',
-        'update',
-        '--init',
-        '--recursive',
-        '--depth=1',
-      ], workingDirectory: Directory(targetDir));
+      await _runGit(
+        r,
+        [
+          'submodule',
+          'update',
+          '--init',
+          '--recursive',
+          '--depth=1',
+        ],
+        workingDirectory: Directory(targetDir),
+      );
     }
 
     return const NativeStepResult();
   }
 
-  Future<void> _runGit(List<String> args, {Directory? workingDirectory}) async {
-    final r = ProcessRunner();
-    await r.runStreaming('git', args, workingDirectory: workingDirectory);
+  Future<void> _runGit(
+    ProcessRunnerInterface runner,
+    List<String> args, {
+    Directory? workingDirectory,
+  }) async {
+    await runner.runStreaming('git', args, workingDirectory: workingDirectory);
   }
 }
 

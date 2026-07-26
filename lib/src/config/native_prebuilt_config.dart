@@ -5,7 +5,6 @@ import 'package:json_annotation/json_annotation.dart';
 import 'package:yaml/yaml.dart';
 
 import '../build/native_project.dart';
-import '../build/native_build_recipe.dart';
 import '../manifest/prebuilt_artifact.dart';
 import '../manifest/release_source.dart';
 import 'build_step_config.dart';
@@ -35,9 +34,7 @@ final class NativePrebuiltConfig {
     this.targets,
   });
 
-  factory NativePrebuiltConfig.fromJson(
-    Map<String, dynamic> json,
-  ) =>
+  factory NativePrebuiltConfig.fromJson(Map<String, dynamic> json) =>
       _$NativePrebuiltConfigFromJson(json);
 
   Map<String, dynamic> toJson() => _$NativePrebuiltConfigToJson(this);
@@ -74,14 +71,11 @@ final class ReleaseConfig {
   ReleaseSource toReleaseSource() {
     return switch (provider.toLowerCase()) {
       'github' => GitHubReleaseSource(
-          owner: _splitRepository(repository).first,
-          repository: _splitRepository(repository).last,
-          tag: tag,
-        ),
-      'gitlab' => GitLabReleaseSource(
-          projectPath: repository,
-          tag: tag,
-        ),
+        owner: _splitRepository(repository).first,
+        repository: _splitRepository(repository).last,
+        tag: tag,
+      ),
+      'gitlab' => GitLabReleaseSource(projectPath: repository, tag: tag),
       _ => throw FormatException('Unsupported release.provider "$provider"'),
     };
   }
@@ -117,11 +111,11 @@ final class SourceConfig {
   SourceSpecification? toSourceSpecification() {
     return switch (type) {
       'git' => GitSource(
-          repository: Uri.parse(repository),
-          revision: revision ?? '',
-          subdirectory: subdirectory,
-          submodules: submodules,
-        ),
+        repository: Uri.parse(repository),
+        revision: revision ?? '',
+        subdirectory: subdirectory,
+        submodules: submodules,
+      ),
       _ => null,
     };
   }
@@ -169,9 +163,7 @@ final class BuildConfig {
           NativeTargetRecipe(
             pattern: recipe.target.toNativeTargetPattern(),
             recipe: StepBuildRecipe(
-              steps: [
-                for (final step in recipe.steps) step.toBuildStep(),
-              ],
+              steps: [for (final step in recipe.steps) step.toBuildStep()],
             ),
           ),
       ],
@@ -186,11 +178,7 @@ final class BuildConfig {
   fieldRename: FieldRename.snake,
 )
 final class TargetPatternConfig {
-  const TargetPatternConfig({
-    this.os,
-    this.architecture,
-    this.sdk,
-  });
+  const TargetPatternConfig({this.os, this.architecture, this.sdk});
 
   factory TargetPatternConfig.fromJson(Map<String, dynamic> json) =>
       _$TargetPatternConfigFromJson(json);
@@ -222,7 +210,9 @@ final class TargetPatternConfig {
 List<String> _splitRepository(String repository) {
   final parts = repository.split('/');
   if (parts.length != 2) {
-    throw FormatException('release.repository must be "owner/repo" (got "$repository")');
+    throw FormatException(
+      'release.repository must be "owner/repo" (got "$repository")',
+    );
   }
   return parts;
 }
@@ -235,10 +225,7 @@ List<String> _splitRepository(String repository) {
   fieldRename: FieldRename.snake,
 )
 final class TargetRecipeConfig {
-  const TargetRecipeConfig({
-    required this.target,
-    required this.steps,
-  });
+  const TargetRecipeConfig({required this.target, required this.steps});
 
   factory TargetRecipeConfig.fromJson(Map<String, dynamic> json) =>
       _$TargetRecipeConfigFromJson(json);
@@ -332,10 +319,7 @@ final class TargetConfig {
   fieldRename: FieldRename.snake,
 )
 final class ArtifactConfig {
-  ArtifactConfig({
-    required this.archive,
-    required this.payload,
-  });
+  ArtifactConfig({required this.archive, required this.payload});
 
   factory ArtifactConfig.fromJson(Map<String, dynamic> json) =>
       _$ArtifactConfigFromJson(json);
@@ -384,9 +368,7 @@ Future<NativePrebuiltConfig> loadNativePrebuiltConfig(File file) async {
   try {
     yaml = loadYaml(contents, sourceUrl: file.uri);
   } on YamlException catch (error) {
-    throw FormatException(
-      'Invalid YAML in ${file.path}: $error',
-    );
+    throw FormatException('Invalid YAML in ${file.path}: $error');
   }
   final normalized = normalizeYaml(yaml);
   if (normalized case final Map<String, dynamic> map) {
@@ -397,8 +379,7 @@ Future<NativePrebuiltConfig> loadNativePrebuiltConfig(File file) async {
       throw FormatException(
         [
           'Invalid ${file.path}:',
-          for (final error in validationErrors)
-            '  - ${error.toErrorString()}',
+          for (final error in validationErrors) '  - ${error.toErrorString()}',
         ].join('\n'),
       );
     }
@@ -414,32 +395,24 @@ Future<NativePrebuiltConfig> loadNativePrebuiltConfig(File file) async {
       );
     }
   }
-  throw FormatException(
-    'The root of ${file.path} must be a YAML mapping.',
-  );
+  throw FormatException('The root of ${file.path} must be a YAML mapping.');
 }
 
 /// Recursively converts [YamlMap] and [YamlList] to plain Dart [Map] and [List].
 Object? normalizeYaml(Object? value) {
   return switch (value) {
     YamlMap yamlMap => <String, dynamic>{
-        for (final entry in yamlMap.entries)
-          _requireStringKey(entry.key): normalizeYaml(entry.value),
-      },
+      for (final entry in yamlMap.entries)
+        _requireStringKey(entry.key): normalizeYaml(entry.value),
+    },
     Map map => <String, dynamic>{
-        for (final entry in map.entries)
-          _requireStringKey(entry.key): normalizeYaml(entry.value),
-      },
-    YamlList yamlList => [
-        for (final item in yamlList) normalizeYaml(item),
-      ],
-    List list => [
-        for (final item in list) normalizeYaml(item),
-      ],
+      for (final entry in map.entries)
+        _requireStringKey(entry.key): normalizeYaml(entry.value),
+    },
+    YamlList yamlList => [for (final item in yamlList) normalizeYaml(item)],
+    List list => [for (final item in list) normalizeYaml(item)],
     String() || num() || bool() || null => value,
-    _ => throw FormatException(
-        'Unsupported YAML value: ${value.runtimeType}',
-      ),
+    _ => throw FormatException('Unsupported YAML value: ${value.runtimeType}'),
   };
 }
 
@@ -469,17 +442,17 @@ Map<String, dynamic> _canonicalizeNativePrebuiltYaml(
     final provider = (canonicalRelease['provider'] as String?)?.toLowerCase();
     if (provider == 'github') {
       if (owner is String && owner.isNotEmpty) {
-        canonicalRelease['repository'] = repository == null || repository.isEmpty
+        canonicalRelease['repository'] =
+            repository == null || repository.isEmpty
             ? owner
             : repository.contains('/')
-                ? repository
-                : '$owner/$repository';
+            ? repository
+            : '$owner/$repository';
       }
     } else if (provider == 'gitlab') {
       if (project is String && project.isNotEmpty) {
-        canonicalRelease['repository'] = repository == null || repository.isEmpty
-            ? project
-            : repository;
+        canonicalRelease['repository'] =
+            repository == null || repository.isEmpty ? project : repository;
       }
     }
 

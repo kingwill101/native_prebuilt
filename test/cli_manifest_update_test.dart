@@ -145,7 +145,6 @@ void main() {
           },
         );
 
-        // Should fail with clear error message showing both paths checked
         try {
           await generateManifest(
             config: config,
@@ -156,11 +155,7 @@ void main() {
           );
           fail('Expected StateError to be thrown');
         } on StateError catch (e) {
-          // After fix, error should mention both paths
           expect(e.message, contains('android-arm64'));
-          // After fix, error should show both paths checked
-          // expect(e.message, contains('platformBuiltFile')); // after fix
-          // expect(e.message, contains('flatBuiltFile'));   // after fix
         }
       },
     );

@@ -15,19 +15,43 @@ import '../manifest/prebuilt_manifest.dart';
 import '../manifest/release_source.dart';
 import '../config/native_prebuilt_config.dart';
 
-/// Compute a cache key for a target.
+/// Compute a project-scoped cache key for a target.
 ///
-/// Uses SHA-256 for reproducible cache identity across runs.
-String computeCacheKey(NativeTarget target) {
-  final buffer = StringBuffer();
-  buffer.write('${target.os.name}-${target.architecture.name}');
-  if (target.iOSSdk != null) {
-    buffer.write('-${target.iOSSdk}');
-  }
+/// Uses SHA-256 over the resolved project definition and target identity so
+/// distinct projects/configurations do not share a cache directory.
+String computeCacheKey(NativeProject project, NativeTarget target) {
+  final buffer = StringBuffer()
+    ..write(project.toJson())
+    ..write('|')
+    ..write(target.label);
   return sha256
       .convert(buffer.toString().codeUnits)
       .toString()
       .substring(0, 16);
+}
+
+Iterable<NativeTarget> supportedTargets(NativeProject project) sync* {
+  for (final os in OS.values) {
+    final iosSdks = os == OS.iOS ? IOSSdk.values : const <IOSSdk?>[null];
+    for (final sdk in iosSdks) {
+      for (final architecture in Architecture.values) {
+        final target = NativeTarget(
+          os: os,
+          architecture: architecture,
+          iOSSdk: sdk,
+        );
+        if (project.build.recipeFor(target) != null) {
+          yield target;
+        }
+      }
+    }
+  }
+}
+
+List<String> supportedTargetLabels(NativeProject project) {
+  final labels = supportedTargets(project).map((t) => t.label).toSet().toList();
+  labels.sort();
+  return labels;
 }
 
 /// Expected library filename for a given [target] and library [stem].
@@ -47,23 +71,11 @@ String expectedLibraryName({
 
 /// Parse a target label into a NativeTarget.
 NativeTarget? parseTarget(String label) {
-  // Simple parser for common targets
-  final parts = label.split('-');
-  if (parts.length < 2) return null;
-
-  final osName = parts[0];
-  final archName = parts[1];
-
-  OS? os = OS.fromString(osName);
-
-  Architecture? arch = Architecture.fromString(archName);
-
-  IOSSdk? iosSdk;
-  if (os == OS.iOS && parts.length > 2 && parts[2] == 'sim') {
-    iosSdk = IOSSdk.iPhoneSimulator;
+  try {
+    return targetFromPlatformLabel(label);
+  } on FormatException {
+    return null;
   }
-
-  return NativeTarget(os: os, architecture: arch, iOSSdk: iosSdk);
 }
 
 /// Reads the `build_from_source` user-defined flag from [input].
@@ -141,7 +153,7 @@ Future<PrebuiltManifest> generateManifest({
         );
       } else {
         try {
-        await downloader.downloadReleaseArtifact(
+          await downloader.downloadReleaseArtifact(
             source: config.release.toReleaseSource().withTag(tag),
             archiveName: artifactConfig.archive,
             targetPath: archiveFile,
@@ -203,9 +215,9 @@ String renderManifest(
     ..writeln()
     ..writeln('const ${config.package}Prebuilts = PrebuiltManifest(')
     ..writeln('  schemaVersion: ${manifest.schemaVersion},')
-  ..writeln(
-    '  release: ${renderReleaseSource(config.release.toReleaseSource().withTag(tag))},',
-  )
+    ..writeln(
+      '  release: ${renderReleaseSource(config.release.toReleaseSource().withTag(tag))},',
+    )
     ..writeln('  artifacts: {');
 
   for (final entry in manifest.artifacts.entries) {
@@ -230,19 +242,16 @@ Future<void> packageBuiltLibrary({
   required File builtFile,
   required File archiveFile,
 }) async {
-  final result = await ProcessRunner().runStreaming(
-    'tar',
-    [
-      'czf',
-      archiveFile.path,
-      '-C',
-      builtFile.parent.path,
-      p.basename(builtFile.path),
-    ],
-  );
+  final result = await ProcessRunner().runStreaming('tar', [
+    'czf',
+    archiveFile.path,
+    '-C',
+    builtFile.parent.path,
+    p.basename(builtFile.path),
+  ], requireSuccess: false);
   if (result.exitCode != 0) {
     throw StateError(
-      'tar create failed for ${builtFile.path}',
+      'tar create failed for ${builtFile.path}: ${result.stderr.trim()}',
     );
   }
 }

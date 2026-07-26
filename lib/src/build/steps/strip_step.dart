@@ -76,7 +76,7 @@ final class StripStep implements NativeBuildStep {
     final r = runner ?? ProcessRunner(logger: logger);
     final input = p.isAbsolute(inputPath)
         ? inputPath
-        : p.join(source.directory.path, inputPath);
+        : p.join(context.directories.work.path, inputPath);
     final output = p.isAbsolute(outputPath)
         ? outputPath
         : p.join(context.directories.work.path, outputPath);

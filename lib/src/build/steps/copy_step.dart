@@ -79,7 +79,11 @@ final class CopyStep implements NativeBuildStep {
     logger?.info('[copy] Destination: $dest');
     final srcEntity = FileSystemEntity.typeSync(src);
     if (srcEntity == FileSystemEntityType.directory) {
-      await _copyDirectory(Directory(src), Directory(dest));
+      await _copyDirectory(
+        Directory(src),
+        Directory(dest),
+        recursive: recursive,
+      );
     } else if (srcEntity == FileSystemEntityType.file) {
       Directory(p.dirname(dest)).createSync(recursive: true);
       File(src).copySync(dest);
@@ -91,14 +95,22 @@ final class CopyStep implements NativeBuildStep {
     return const NativeStepResult();
   }
 
-  Future<void> _copyDirectory(Directory source, Directory destination) async {
+  Future<void> _copyDirectory(
+    Directory source,
+    Directory destination, {
+    required bool recursive,
+  }) async {
     destination.createSync(recursive: true);
-    await for (final entity in source.list(recursive: true)) {
+    await for (final entity in source.list(recursive: recursive)) {
       if (entity is File) {
         final relativePath = p.relative(entity.path, from: source.path);
         final targetFile = File(p.join(destination.path, relativePath));
         targetFile.parent.createSync(recursive: true);
         await entity.copy(targetFile.path);
+      } else if (entity is Directory && !recursive) {
+        Directory(
+          p.join(destination.path, p.basename(entity.path)),
+        ).createSync(recursive: true);
       }
     }
   }

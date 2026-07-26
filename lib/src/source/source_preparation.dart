@@ -48,15 +48,16 @@ final class ApplyPatches extends SourcePreparation {
         '--strip=1',
       ];
 
-       final result = await ProcessRunner().runStreaming(
-         'patch',
-         args,
-       );
-       if (result.exitCode != 0) {
-         throw SourcePreparationException(
-           'Failed to apply patch ${p.basename(patchPath)}',
-         );
-       }
+      final result = await ProcessRunner(logger: logger).runStreaming(
+        'patch',
+        args,
+        requireSuccess: false,
+      );
+      if (result.exitCode != 0) {
+        throw SourcePreparationException(
+          'Failed to apply patch ${p.basename(patchPath)}: ${result.stderr.trim()}',
+        );
+      }
     }
   }
 }
@@ -80,18 +81,19 @@ final class RunCommand extends SourcePreparation {
   }) async {
     logger?.info('Running: $executable ${arguments.join(' ')}');
 
-     final result = await ProcessRunner().runStreaming(
-       executable,
-       arguments,
-       workingDirectory: directory,
-       environment: environment,
-     );
+    final result = await ProcessRunner(logger: logger).runStreaming(
+      executable,
+      arguments,
+      workingDirectory: directory,
+      environment: environment,
+      requireSuccess: false,
+    );
 
-     if (result.exitCode != 0) {
-       throw SourcePreparationException(
-         'Command failed: $executable ${arguments.join(' ')}',
-       );
-     }
+    if (result.exitCode != 0) {
+      throw SourcePreparationException(
+        'Command failed: $executable ${arguments.join(' ')}\n${result.stderr.trim()}',
+      );
+    }
   }
 }
 

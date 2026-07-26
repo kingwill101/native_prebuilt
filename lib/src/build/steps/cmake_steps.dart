@@ -223,6 +223,11 @@ final class CmakeBuildStep implements NativeBuildStep {
     buffer.write('cmake_build');
     buffer.write(buildDirectory);
     buffer.write(targets.join(','));
+    if (environment != null) {
+      final envEntries = environment!.entries.toList()
+        ..sort((a, b) => a.key.compareTo(b.key));
+      buffer.write(envEntries.map((e) => '${e.key}=${e.value}').join('|'));
+    }
     return NativeStepFingerprint(
       id: id,
       hash: fingerprintHash(buffer.toString()),
@@ -239,7 +244,7 @@ final class CmakeBuildStep implements NativeBuildStep {
     final r = runner ?? ProcessRunner(logger: logger);
     final buildDir = p.isAbsolute(buildDirectory)
         ? buildDirectory
-        : p.join(context.directories.work.path, buildDirectory);
+        : p.join(source.directory.path, buildDirectory);
 
     final args = <String>['--build', buildDir];
     if (targets.isNotEmpty) {
@@ -265,12 +270,12 @@ final class CmakeBuildStep implements NativeBuildStep {
 
 /// Compute a hash of key source files for cache invalidation.
 ///
-/// Hashes CMakeLists.txt and all .c/.cpp/.h files in the source directory.
+/// Hashes CMakeLists.txt and all .c/.cpp/.h/.hpp files in the source directory.
 String _sourceFilesHash(Directory sourceDir) {
-  final buffer = StringBuffer();
+  final files = <File>[];
   final cmakeFile = File(p.join(sourceDir.path, 'CMakeLists.txt'));
   if (cmakeFile.existsSync()) {
-    buffer.write('CMakeLists.txt:${cmakeFile.lengthSync()}');
+    files.add(cmakeFile);
   }
 
   try {
@@ -278,12 +283,18 @@ String _sourceFilesHash(Directory sourceDir) {
       if (entity is File) {
         final ext = p.extension(entity.path);
         if (ext == '.c' || ext == '.cpp' || ext == '.h' || ext == '.hpp') {
-          final relative = p.relative(entity.path, from: sourceDir.path);
-          buffer.write('$relative:${entity.lengthSync()}');
+          files.add(entity);
         }
       }
     }
   } catch (_) {}
+
+  final buffer = StringBuffer();
+  final sortedFiles = files.toList()..sort((a, b) => a.path.compareTo(b.path));
+  for (final file in sortedFiles) {
+    final relative = p.relative(file.path, from: sourceDir.path);
+    buffer.write('$relative:${fingerprintHash(file.readAsStringSync())}|');
+  }
 
   return fingerprintHash(buffer.toString());
 }

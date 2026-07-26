@@ -8,7 +8,6 @@ import 'package:path/path.dart' as p;
 
 import 'native_build_context.dart';
 import 'native_build_result.dart';
-import 'native_build_recipe.dart';
 import 'native_project.dart';
 import '../cache/build_cache.dart';
 import '../source/resolved_source.dart';
@@ -77,7 +76,8 @@ final class NativeProjectExecutor {
       // When no explicit source or sourceFallback is given, fall back
       // to project.sources so that CLI callers (and any executor user)
       // can build from the project's declared sources automatically.
-      final effectiveFallback = sourceFallback ??
+      final effectiveFallback =
+          sourceFallback ??
           (project.sources.isNotEmpty
               ? SourceFallback(
                   sources: project.sources,
@@ -131,11 +131,27 @@ final class NativeProjectExecutor {
       directories: NativeBuildDirectories(
         source: resolvedSource.directory,
         output: outputDir,
-        cache: workDir ?? resolvedSource.directory,
-        work: workDir ?? resolvedSource.directory,
+        cache:
+            workDir ??
+            Directory(
+              p.join(
+                resolvedSource.directory.path,
+                '.dart_tool',
+                'native_prebuilt',
+              ),
+            ),
+        work:
+            workDir ??
+            Directory(
+              p.join(
+                resolvedSource.directory.path,
+                '.dart_tool',
+                'native_prebuilt',
+              ),
+            ),
       ),
       toolchains: const ToolchainRegistry(),
-      environment: {},
+      environment: Platform.environment,
       logger: logger,
     );
 
@@ -193,6 +209,11 @@ final class NativeProjectExecutor {
   ) async {
     for (final artifact in result.artifacts) {
       for (final entry in artifact.entries) {
+        if (p.isAbsolute(entry.path)) {
+          throw StateError(
+            'Artifact ${artifact.id} has absolute path for ${entry.role.name}: ${entry.path}',
+          );
+        }
         final destDir = _destinationDirectory(entry.role, context);
         final entryDir = p.dirname(entry.path);
         final destSubDir = entryDir == '.' || entryDir == ''
@@ -207,7 +228,7 @@ final class NativeProjectExecutor {
           await _copyDirectory(entry.source as Directory, Directory(destPath));
         }
 
-        logger?.fine(
+        context.logger?.fine(
           'Staged: ${entry.role.name} -> ${p.relative(destPath, from: context.directories.output.path)}',
         );
       }

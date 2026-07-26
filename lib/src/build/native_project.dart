@@ -5,6 +5,7 @@ import '../platform/native_target.dart';
 import '../source/source_specification.dart';
 import 'native_build_recipe.dart';
 
+export 'native_build_recipe.dart' show NativeBuildRecipe, StepBuildRecipe;
 export 'native_build_context.dart'
     show
         NativeBuildContext,
