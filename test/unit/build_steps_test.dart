@@ -212,7 +212,10 @@ void main() {
       await step.execute(context, source);
 
       expect(runner.commands, hasLength(1));
-      expect(runner.commands.first.workingDirectory, 'my/project');
+      expect(
+        runner.commands.first.workingDirectory,
+        p.join(context.directories.work.path, 'my/project'),
+      );
     });
 
     test('passes environment variables', () async {

@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
+
 import '../fingerprint.dart';
 import '../native_build_context.dart';
 import '../native_build_recipe.dart';
@@ -92,7 +94,11 @@ final class CommandStep implements NativeBuildStep {
     logger?.info('[$id] Starting command step');
     final r = runner ?? ProcessRunner(logger: logger);
     final workDir = workingDirectory != null
-        ? Directory(workingDirectory!)
+        ? Directory(
+            p.isAbsolute(workingDirectory!)
+                ? workingDirectory!
+                : p.join(context.directories.work.path, workingDirectory!),
+          )
         : context.directories.work;
 
     for (final cmd in commands) {
