@@ -160,17 +160,16 @@ final class ExportArtifactStep implements NativeBuildStep {
 
     _validateRelativePath(path, context);
 
-    // Resolve source path against build output directory
-    final srcPath = _resolveSourcePath(path, context);
-    final srcFile = File(srcPath);
-
-    if (!srcFile.existsSync()) {
+    final srcPath = _resolveFirstExistingSourcePath(path, context);
+    if (srcPath == null) {
       if (optional) {
         logger?.warning('[export_artifact] Optional artifact not found: $path');
         return null;
       }
-      throw StateError('Required artifact not found: $srcPath');
+      throw StateError('Required artifact not found: ${_resolveSourcePath(path, context)}');
     }
+
+    final srcFile = File(srcPath);
 
     // Stage the file to the output directory
     final destPath = _resolveDestinationPath(path, context);
@@ -194,6 +193,60 @@ final class ExportArtifactStep implements NativeBuildStep {
       return relativePath;
     }
     return p.join(context.directories.work.path, relativePath);
+  }
+
+  String? _resolveFirstExistingSourcePath(
+    String relativePath,
+    NativeBuildContext context,
+  ) {
+    for (final candidate in _sourcePathCandidates(relativePath, context)) {
+      if (File(candidate).existsSync()) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
+  List<String> _sourcePathCandidates(
+    String relativePath,
+    NativeBuildContext context,
+  ) {
+    final candidates = <String>{_resolveSourcePath(relativePath, context)};
+
+    if (declaration.kind == NativeArtifactKind.dynamicLibrary) {
+      final variants = <String>{
+        ..._sharedLibraryVariants(relativePath),
+        ..._sharedLibraryDirectoryVariants(relativePath),
+      };
+      for (final variant in variants) {
+        candidates.add(_resolveSourcePath(variant, context));
+      }
+    }
+
+    return candidates.toList();
+  }
+
+  Iterable<String> _sharedLibraryVariants(String relativePath) sync* {
+    if (relativePath.endsWith('.so')) {
+      yield relativePath.substring(0, relativePath.length - 3) + '.dylib';
+    } else if (relativePath.endsWith('.dylib')) {
+      yield relativePath.substring(0, relativePath.length - 7) + '.so';
+    }
+  }
+
+  Iterable<String> _sharedLibraryDirectoryVariants(String relativePath) sync* {
+    if (relativePath.contains('install/lib/')) {
+      final swapped = relativePath.replaceFirst('install/lib/', 'build/');
+      yield swapped;
+      yield* _sharedLibraryVariants(swapped);
+      return;
+    }
+
+    if (relativePath.startsWith('build/')) {
+      final swapped = relativePath.replaceFirst('build/', 'install/lib/');
+      yield swapped;
+      yield* _sharedLibraryVariants(swapped);
+    }
   }
 
   String _resolveDestinationPath(
