@@ -166,7 +166,9 @@ final class ExportArtifactStep implements NativeBuildStep {
         logger?.warning('[export_artifact] Optional artifact not found: $path');
         return null;
       }
-      throw StateError('Required artifact not found: ${_resolveSourcePath(path, context)}');
+      throw StateError(
+        'Required artifact not found: ${_resolveSourcePath(path, context)}',
+      );
     }
 
     final srcFile = File(srcPath);

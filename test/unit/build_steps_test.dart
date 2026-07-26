@@ -370,7 +370,9 @@ void main() {
     });
 
     test('finds fallback shared library paths', () async {
-      final artifactFile = File(p.join(tempDir.path, 'build', 'libtdjson.dylib'));
+      final artifactFile = File(
+        p.join(tempDir.path, 'build', 'libtdjson.dylib'),
+      );
       await artifactFile.parent.create(recursive: true);
       await artifactFile.writeAsBytes([0, 1, 2]);
 
@@ -388,7 +390,12 @@ void main() {
 
       expect(result.artifacts, hasLength(1));
       expect(result.artifacts.single.primary.source.path, artifactFile.path);
-      expect(File(p.join(context.directories.output.path, 'build', 'libtdjson.so')).existsSync(), isTrue);
+      expect(
+        File(
+          p.join(context.directories.output.path, 'build', 'libtdjson.so'),
+        ).existsSync(),
+        isTrue,
+      );
     });
 
     test('throws when artifact not found', () async {
