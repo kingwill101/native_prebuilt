@@ -1,0 +1,651 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "package": {
+      "type": "string",
+      "minLength": 1
+    },
+    "asset_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "library_stem": {
+      "type": "string",
+      "minLength": 1
+    },
+    "link_mode": {
+      "type": "string",
+      "enum": [
+        "dynamic_library",
+        "static_library"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "git"
+          ]
+        },
+        "repository": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "string"
+        },
+        "subdirectory": {
+          "type": "string"
+        },
+        "submodules": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "type",
+        "repository"
+      ],
+      "additionalProperties": false
+    },
+    "build": {
+      "type": "object",
+      "properties": {
+        "recipes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "target": {
+                "type": "object",
+                "properties": {
+                  "os": {
+                    "type": "string",
+                    "enum": [
+                      "android",
+                      "fuchsia",
+                      "ios",
+                      "linux",
+                      "macos",
+                      "windows"
+                    ]
+                  },
+                  "architecture": {
+                    "type": "string",
+                    "enum": [
+                      "arm",
+                      "arm64",
+                      "ia32",
+                      "riscv32",
+                      "riscv64",
+                      "x64"
+                    ]
+                  },
+                  "sdk": {
+                    "type": "string",
+                    "enum": [
+                      "iphoneos",
+                      "iphonesimulator"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              },
+              "steps": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "cmake_configure"
+                          ]
+                        },
+                        "source_directory": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "build_directory": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "generator": {
+                          "type": "string"
+                        },
+                        "toolchain_file": {
+                          "type": "string"
+                        },
+                        "definitions": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "needs": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "uniqueItems": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "type",
+                        "source_directory",
+                        "build_directory"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "cmake_build"
+                          ]
+                        },
+                        "build_directory": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "targets": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "uniqueItems": true
+                        },
+                        "parallel": {
+                          "type": "boolean"
+                        },
+                        "environment": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "needs": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "uniqueItems": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "type",
+                        "build_directory"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "export_artifact"
+                          ]
+                        },
+                        "artifact": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "dynamic_library",
+                            "static_library"
+                          ]
+                        },
+                        "primary": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "runtime_dependencies": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "import_library": {
+                          "type": "string"
+                        },
+                        "debug_symbols": {
+                          "type": "string"
+                        },
+                        "needs": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "uniqueItems": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "type",
+                        "artifact",
+                        "primary"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "command"
+                          ]
+                        },
+                        "commands": {
+                          "type": "array",
+                          "items": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "minItems": 1
+                        },
+                        "working_directory": {
+                          "type": "string"
+                        },
+                        "environment": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "needs": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "uniqueItems": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "type",
+                        "commands"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "download_archive"
+                          ]
+                        },
+                        "url": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "sha256": {
+                          "type": "string"
+                        },
+                        "output_directory": {
+                          "type": "string"
+                        },
+                        "needs": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "uniqueItems": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "type",
+                        "url"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "git_checkout"
+                          ]
+                        },
+                        "repository": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "revision": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "target_directory": {
+                          "type": "string"
+                        },
+                        "submodules": {
+                          "type": "boolean"
+                        },
+                        "needs": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "uniqueItems": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "type",
+                        "repository",
+                        "revision"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "git_apply_patch"
+                          ]
+                        },
+                        "patch_path": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "target_directory": {
+                          "type": "string"
+                        },
+                        "needs": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "uniqueItems": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "type",
+                        "patch_path"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "copy"
+                          ]
+                        },
+                        "source_path": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "destination_path": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "recursive": {
+                          "type": "boolean"
+                        },
+                        "needs": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "uniqueItems": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "type",
+                        "source_path",
+                        "destination_path"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "strip"
+                          ]
+                        },
+                        "input_path": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "output_path": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "strip_all": {
+                          "type": "boolean"
+                        },
+                        "needs": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "uniqueItems": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "type",
+                        "input_path",
+                        "output_path"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "minItems": 1
+              }
+            },
+            "required": [
+              "target",
+              "steps"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "dependencies": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "sha256": {
+                "type": "string"
+              },
+              "repository": {
+                "type": "string"
+              },
+              "revision": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": {}
+        }
+      },
+      "additionalProperties": false
+    },
+    "release": {
+      "type": "object",
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": [
+            "github",
+            "gitlab"
+          ]
+        },
+        "repository": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tag": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "provider",
+        "repository",
+        "tag"
+      ],
+      "additionalProperties": false
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "archive": {
+            "type": "string",
+            "minLength": 1
+          },
+          "payload": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "dynamic_library",
+                  "static_library"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "archive",
+          "payload"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "targets": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "abi": {
+            "type": "string"
+          },
+          "api": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "sdk": {
+            "type": "string"
+          },
+          "deployment_target": {
+            "type": "string"
+          },
+          "vcpkg_triplet": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "schema",
+    "package",
+    "asset_name",
+    "library_stem",
+    "release",
+    "artifacts"
+  ],
+  "additionalProperties": false
+}

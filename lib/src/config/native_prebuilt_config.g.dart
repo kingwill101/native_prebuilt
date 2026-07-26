@@ -86,6 +86,169 @@ Map<String, dynamic> _$NativePrebuiltConfigToJson(
   'targets': instance.targets?.map((k, e) => MapEntry(k, e.toJson())),
 };
 
+const _$NativePrebuiltConfigJsonSchema = {
+  r'$schema': 'https://json-schema.org/draft/2020-12/schema',
+  'type': 'object',
+  'properties': {
+    'schema': {'type': 'integer'},
+    'package': {'type': 'string'},
+    'asset_name': {'type': 'string'},
+    'library_stem': {'type': 'string'},
+    'link_mode': {'type': 'string'},
+    'source': {r'$ref': r'#/$defs/SourceConfig'},
+    'build': {r'$ref': r'#/$defs/BuildConfig'},
+    'release': {r'$ref': r'#/$defs/ReleaseConfig'},
+    'artifacts': {
+      'type': 'object',
+      'additionalProperties': {r'$ref': r'#/$defs/ArtifactConfig'},
+    },
+    'targets': {
+      'type': 'object',
+      'additionalProperties': {r'$ref': r'#/$defs/TargetConfig'},
+    },
+  },
+  'required': [
+    'schema',
+    'package',
+    'asset_name',
+    'library_stem',
+    'release',
+    'artifacts',
+  ],
+  r'$defs': {
+    'SourceConfig': {
+      'type': 'object',
+      'properties': {
+        'type': {'type': 'string'},
+        'repository': {'type': 'string'},
+        'revision': {'type': 'string'},
+        'subdirectory': {'type': 'string'},
+        'submodules': {'type': 'boolean', 'default': false},
+      },
+      'required': ['type', 'repository'],
+    },
+    'TargetPatternConfig': {
+      'type': 'object',
+      'properties': {
+        'os': {
+          'type': 'string',
+          'description':
+              'Target OS (e.g., "linux", "android", "ios", "macos", "windows").\nWhen null, matches any OS.',
+        },
+        'architecture': {
+          'type': 'string',
+          'description':
+              'Target architecture (e.g., "x64", "arm64").\nWhen null, matches any architecture.',
+        },
+        'sdk': {
+          'type': 'string',
+          'description':
+              'iOS SDK (e.g., "iphoneos", "iphonesimulator").\nWhen null, matches any iOS SDK.',
+        },
+      },
+    },
+    'BuildStepConfig': {
+      'type': 'object',
+      'properties': {
+        'id': {
+          'type': 'string',
+          'description': 'Unique identifier for this step within the recipe.',
+        },
+        'needs': {
+          'type': 'array',
+          'items': {'type': 'string'},
+          'description': 'Step IDs that must complete before this step runs.',
+          'default': [],
+        },
+      },
+      'required': ['id'],
+    },
+    'TargetRecipeConfig': {
+      'type': 'object',
+      'properties': {
+        'target': {
+          r'$ref': r'#/$defs/TargetPatternConfig',
+          'description': 'The target pattern this recipe handles.',
+        },
+        'steps': {
+          'type': 'array',
+          'items': {r'$ref': r'#/$defs/BuildStepConfig'},
+          'description': 'Build steps for this recipe.',
+        },
+      },
+      'required': ['target', 'steps'],
+    },
+    'DependencyConfig': {
+      'type': 'object',
+      'properties': {
+        'version': {'type': 'string'},
+        'url': {'type': 'string'},
+        'sha256': {'type': 'string'},
+        'repository': {'type': 'string'},
+        'revision': {'type': 'string'},
+      },
+    },
+    'BuildConfig': {
+      'type': 'object',
+      'properties': {
+        'recipes': {
+          'type': 'array',
+          'items': {r'$ref': r'#/$defs/TargetRecipeConfig'},
+          'description': 'Target-specific build recipes.',
+          'default': [],
+        },
+        'dependencies': {
+          'type': 'object',
+          'additionalProperties': {r'$ref': r'#/$defs/DependencyConfig'},
+          'description': 'Optional dependency declarations.',
+          'default': {},
+        },
+        'options': {
+          'type': 'object',
+          'additionalProperties': {'type': 'object'},
+          'description': 'Optional build options.',
+          'default': {},
+        },
+      },
+    },
+    'ReleaseConfig': {
+      'type': 'object',
+      'properties': {
+        'provider': {'type': 'string'},
+        'repository': {'type': 'string'},
+        'tag': {'type': 'string'},
+      },
+      'required': ['provider', 'repository', 'tag'],
+    },
+    'PayloadConfig': {
+      'type': 'object',
+      'properties': {
+        'type': {'type': 'string'},
+      },
+      'required': ['type'],
+    },
+    'ArtifactConfig': {
+      'type': 'object',
+      'properties': {
+        'archive': {'type': 'string'},
+        'payload': {r'$ref': r'#/$defs/PayloadConfig'},
+      },
+      'required': ['archive', 'payload'],
+    },
+    'TargetConfig': {
+      'type': 'object',
+      'properties': {
+        'enabled': {'type': 'boolean', 'default': true},
+        'abi': {'type': 'string'},
+        'api': {'type': 'integer'},
+        'sdk': {'type': 'string'},
+        'deployment_target': {'type': 'string'},
+        'vcpkg_triplet': {'type': 'string'},
+      },
+    },
+  },
+};
+
 ReleaseConfig _$ReleaseConfigFromJson(Map<String, dynamic> json) =>
     $checkedCreate('ReleaseConfig', json, ($checkedConvert) {
       $checkKeys(json, allowedKeys: const ['provider', 'repository', 'tag']);
@@ -103,6 +266,17 @@ Map<String, dynamic> _$ReleaseConfigToJson(ReleaseConfig instance) =>
       'repository': instance.repository,
       'tag': instance.tag,
     };
+
+const _$ReleaseConfigJsonSchema = {
+  r'$schema': 'https://json-schema.org/draft/2020-12/schema',
+  'type': 'object',
+  'properties': {
+    'provider': {'type': 'string'},
+    'repository': {'type': 'string'},
+    'tag': {'type': 'string'},
+  },
+  'required': ['provider', 'repository', 'tag'],
+};
 
 SourceConfig _$SourceConfigFromJson(Map<String, dynamic> json) =>
     $checkedCreate('SourceConfig', json, ($checkedConvert) {
@@ -134,6 +308,19 @@ Map<String, dynamic> _$SourceConfigToJson(SourceConfig instance) =>
       'subdirectory': instance.subdirectory,
       'submodules': instance.submodules,
     };
+
+const _$SourceConfigJsonSchema = {
+  r'$schema': 'https://json-schema.org/draft/2020-12/schema',
+  'type': 'object',
+  'properties': {
+    'type': {'type': 'string'},
+    'repository': {'type': 'string'},
+    'revision': {'type': 'string'},
+    'subdirectory': {'type': 'string'},
+    'submodules': {'type': 'boolean', 'default': false},
+  },
+  'required': ['type', 'repository'],
+};
 
 BuildConfig _$BuildConfigFromJson(Map<String, dynamic> json) => $checkedCreate(
   'BuildConfig',
@@ -179,6 +366,94 @@ Map<String, dynamic> _$BuildConfigToJson(
   'options': instance.options,
 };
 
+const _$BuildConfigJsonSchema = {
+  r'$schema': 'https://json-schema.org/draft/2020-12/schema',
+  'type': 'object',
+  'properties': {
+    'recipes': {
+      'type': 'array',
+      'items': {r'$ref': r'#/$defs/TargetRecipeConfig'},
+      'description': 'Target-specific build recipes.',
+      'default': [],
+    },
+    'dependencies': {
+      'type': 'object',
+      'additionalProperties': {r'$ref': r'#/$defs/DependencyConfig'},
+      'description': 'Optional dependency declarations.',
+      'default': {},
+    },
+    'options': {
+      'type': 'object',
+      'additionalProperties': {'type': 'object'},
+      'description': 'Optional build options.',
+      'default': {},
+    },
+  },
+  r'$defs': {
+    'TargetPatternConfig': {
+      'type': 'object',
+      'properties': {
+        'os': {
+          'type': 'string',
+          'description':
+              'Target OS (e.g., "linux", "android", "ios", "macos", "windows").\nWhen null, matches any OS.',
+        },
+        'architecture': {
+          'type': 'string',
+          'description':
+              'Target architecture (e.g., "x64", "arm64").\nWhen null, matches any architecture.',
+        },
+        'sdk': {
+          'type': 'string',
+          'description':
+              'iOS SDK (e.g., "iphoneos", "iphonesimulator").\nWhen null, matches any iOS SDK.',
+        },
+      },
+    },
+    'BuildStepConfig': {
+      'type': 'object',
+      'properties': {
+        'id': {
+          'type': 'string',
+          'description': 'Unique identifier for this step within the recipe.',
+        },
+        'needs': {
+          'type': 'array',
+          'items': {'type': 'string'},
+          'description': 'Step IDs that must complete before this step runs.',
+          'default': [],
+        },
+      },
+      'required': ['id'],
+    },
+    'TargetRecipeConfig': {
+      'type': 'object',
+      'properties': {
+        'target': {
+          r'$ref': r'#/$defs/TargetPatternConfig',
+          'description': 'The target pattern this recipe handles.',
+        },
+        'steps': {
+          'type': 'array',
+          'items': {r'$ref': r'#/$defs/BuildStepConfig'},
+          'description': 'Build steps for this recipe.',
+        },
+      },
+      'required': ['target', 'steps'],
+    },
+    'DependencyConfig': {
+      'type': 'object',
+      'properties': {
+        'version': {'type': 'string'},
+        'url': {'type': 'string'},
+        'sha256': {'type': 'string'},
+        'repository': {'type': 'string'},
+        'revision': {'type': 'string'},
+      },
+    },
+  },
+};
+
 TargetPatternConfig _$TargetPatternConfigFromJson(Map<String, dynamic> json) =>
     $checkedCreate('TargetPatternConfig', json, ($checkedConvert) {
       $checkKeys(json, allowedKeys: const ['os', 'architecture', 'sdk']);
@@ -196,6 +471,28 @@ Map<String, dynamic> _$TargetPatternConfigToJson(
   'os': instance.os,
   'architecture': instance.architecture,
   'sdk': instance.sdk,
+};
+
+const _$TargetPatternConfigJsonSchema = {
+  r'$schema': 'https://json-schema.org/draft/2020-12/schema',
+  'type': 'object',
+  'properties': {
+    'os': {
+      'type': 'string',
+      'description':
+          'Target OS (e.g., "linux", "android", "ios", "macos", "windows").\nWhen null, matches any OS.',
+    },
+    'architecture': {
+      'type': 'string',
+      'description':
+          'Target architecture (e.g., "x64", "arm64").\nWhen null, matches any architecture.',
+    },
+    'sdk': {
+      'type': 'string',
+      'description':
+          'iOS SDK (e.g., "iphoneos", "iphonesimulator").\nWhen null, matches any iOS SDK.',
+    },
+  },
 };
 
 TargetRecipeConfig _$TargetRecipeConfigFromJson(Map<String, dynamic> json) =>
@@ -221,6 +518,61 @@ Map<String, dynamic> _$TargetRecipeConfigToJson(TargetRecipeConfig instance) =>
       'target': instance.target.toJson(),
       'steps': instance.steps.map((e) => e.toJson()).toList(),
     };
+
+const _$TargetRecipeConfigJsonSchema = {
+  r'$schema': 'https://json-schema.org/draft/2020-12/schema',
+  'type': 'object',
+  'properties': {
+    'target': {
+      r'$ref': r'#/$defs/TargetPatternConfig',
+      'description': 'The target pattern this recipe handles.',
+    },
+    'steps': {
+      'type': 'array',
+      'items': {r'$ref': r'#/$defs/BuildStepConfig'},
+      'description': 'Build steps for this recipe.',
+    },
+  },
+  'required': ['target', 'steps'],
+  r'$defs': {
+    'TargetPatternConfig': {
+      'type': 'object',
+      'properties': {
+        'os': {
+          'type': 'string',
+          'description':
+              'Target OS (e.g., "linux", "android", "ios", "macos", "windows").\nWhen null, matches any OS.',
+        },
+        'architecture': {
+          'type': 'string',
+          'description':
+              'Target architecture (e.g., "x64", "arm64").\nWhen null, matches any architecture.',
+        },
+        'sdk': {
+          'type': 'string',
+          'description':
+              'iOS SDK (e.g., "iphoneos", "iphonesimulator").\nWhen null, matches any iOS SDK.',
+        },
+      },
+    },
+    'BuildStepConfig': {
+      'type': 'object',
+      'properties': {
+        'id': {
+          'type': 'string',
+          'description': 'Unique identifier for this step within the recipe.',
+        },
+        'needs': {
+          'type': 'array',
+          'items': {'type': 'string'},
+          'description': 'Step IDs that must complete before this step runs.',
+          'default': [],
+        },
+      },
+      'required': ['id'],
+    },
+  },
+};
 
 DependencyConfig _$DependencyConfigFromJson(Map<String, dynamic> json) =>
     $checkedCreate('DependencyConfig', json, ($checkedConvert) {
@@ -252,6 +604,18 @@ Map<String, dynamic> _$DependencyConfigToJson(DependencyConfig instance) =>
       'repository': instance.repository,
       'revision': instance.revision,
     };
+
+const _$DependencyConfigJsonSchema = {
+  r'$schema': 'https://json-schema.org/draft/2020-12/schema',
+  'type': 'object',
+  'properties': {
+    'version': {'type': 'string'},
+    'url': {'type': 'string'},
+    'sha256': {'type': 'string'},
+    'repository': {'type': 'string'},
+    'revision': {'type': 'string'},
+  },
+};
 
 TargetConfig _$TargetConfigFromJson(Map<String, dynamic> json) =>
     $checkedCreate(
@@ -298,6 +662,19 @@ Map<String, dynamic> _$TargetConfigToJson(TargetConfig instance) =>
       'vcpkg_triplet': instance.vcpkgTriplet,
     };
 
+const _$TargetConfigJsonSchema = {
+  r'$schema': 'https://json-schema.org/draft/2020-12/schema',
+  'type': 'object',
+  'properties': {
+    'enabled': {'type': 'boolean', 'default': true},
+    'abi': {'type': 'string'},
+    'api': {'type': 'integer'},
+    'sdk': {'type': 'string'},
+    'deployment_target': {'type': 'string'},
+    'vcpkg_triplet': {'type': 'string'},
+  },
+};
+
 ArtifactConfig _$ArtifactConfigFromJson(Map<String, dynamic> json) =>
     $checkedCreate('ArtifactConfig', json, ($checkedConvert) {
       $checkKeys(json, allowedKeys: const ['archive', 'payload']);
@@ -317,6 +694,25 @@ Map<String, dynamic> _$ArtifactConfigToJson(ArtifactConfig instance) =>
       'payload': instance.payload.toJson(),
     };
 
+const _$ArtifactConfigJsonSchema = {
+  r'$schema': 'https://json-schema.org/draft/2020-12/schema',
+  'type': 'object',
+  'properties': {
+    'archive': {'type': 'string'},
+    'payload': {r'$ref': r'#/$defs/PayloadConfig'},
+  },
+  'required': ['archive', 'payload'],
+  r'$defs': {
+    'PayloadConfig': {
+      'type': 'object',
+      'properties': {
+        'type': {'type': 'string'},
+      },
+      'required': ['type'],
+    },
+  },
+};
+
 PayloadConfig _$PayloadConfigFromJson(Map<String, dynamic> json) =>
     $checkedCreate('PayloadConfig', json, ($checkedConvert) {
       $checkKeys(json, allowedKeys: const ['type']);
@@ -328,3 +724,12 @@ PayloadConfig _$PayloadConfigFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$PayloadConfigToJson(PayloadConfig instance) =>
     <String, dynamic>{'type': instance.type};
+
+const _$PayloadConfigJsonSchema = {
+  r'$schema': 'https://json-schema.org/draft/2020-12/schema',
+  'type': 'object',
+  'properties': {
+    'type': {'type': 'string'},
+  },
+  'required': ['type'],
+};

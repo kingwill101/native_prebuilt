@@ -4,7 +4,7 @@ Reusable infrastructure for Dart packages that build, cache, and ship native lib
 
 ## Contents
 
-- [Two API paths](#two-api-paths)
+- [Three API paths](#three-api-paths)
 - [Comparison](#comparison)
 - [Install](#install)
 - [Source fallback pipeline](#source-fallback-pipeline)
@@ -14,7 +14,7 @@ Reusable infrastructure for Dart packages that build, cache, and ship native lib
 - [Caching](#caching)
 - [License](#license)
 
-## Two API paths
+## Three API paths
 
 ### 1. Hooks Builder integration (simple packages)
 
@@ -50,7 +50,7 @@ void main(List<String> args) async {
 
 ### 2. Managed build recipes (complex packages)
 
-For multi-stage builds with caching and cross-compilation:
+For multi-stage builds with caching and cross-compilation, you can write the `NativeProject` in Dart by hand:
 
 ```dart
 final project = NativeProject(
@@ -74,6 +74,10 @@ final project = NativeProject(
 // hook/build.dart
 await runNativeProjectCli(args, project: project);
 ```
+
+### 3. Declarative manifest (recommended for most release builds)
+
+You can define the complete project in `native_prebuilt.yaml` instead of writing `NativeProject` code manually. The CLI reads that manifest, validates it, and generates the build graph from it.
 
 ## Comparison
 
@@ -123,18 +127,42 @@ build_directory: "{{ work }}/build"
 CMAKE_TOOLCHAIN_FILE: "{{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake"
 ```
 
-| Step | Purpose |
-|------|---------|
-| `CmakeConfigureStep` | Run `cmake -B` with defines |
-| `CmakeBuildStep` | Run `cmake --build` with targets |
-| `CommandStep` | Run arbitrary commands |
-| `DownloadArchiveStep` | Download and extract archives |
-| `GitCheckoutStep` | Clone/update git repositories |
-| `GitApplyPatchStep` | Apply patch files |
-| `StripStep` | Strip debug symbols |
-| `FindArtifactStep` | Find built artifacts |
-| `CopyStep` | Copy files/directories |
-| `ExportArtifactStep` | Export final artifact to output |
+Every step has these common YAML keys:
+
+- `type` (required)
+- `id` (required)
+- `needs` (optional list of step ids)
+
+| type | Required keys | Optional keys |
+|------|---------------|---------------|
+| `cmake_configure` | `source_directory`, `build_directory` | `needs`, `generator`, `toolchain_file`, `definitions` |
+| `cmake_build` | `build_directory` | `needs`, `targets`, `parallel`, `environment` |
+| `command` | `commands` | `needs`, `working_directory`, `environment` |
+| `download_archive` | `url` | `needs`, `sha256`, `output_directory` |
+| `git_checkout` | `repository`, `revision` | `needs`, `target_directory`, `submodules` |
+| `git_apply_patch` | `patch_path` | `needs`, `target_directory` |
+| `copy` | `source_path`, `destination_path` | `needs`, `recursive` |
+| `strip` | `input_path`, `output_path` | `needs`, `strip_all` |
+| `export_artifact` | `artifact`, `primary` | `needs`, `kind` |
+
+## JSON schema
+
+Export the checked-in schema copy with:
+
+```bash
+dart run native_prebuilt schema export
+```
+
+This writes `schema/native_prebuilt.schema.json`. Point editors at that file,
+for example in VS Code:
+
+```json
+{
+  "yaml.schemas": {
+    "./schema/native_prebuilt.schema.json": "native_prebuilt.yaml"
+  }
+}
+```
 
 ## CLI commands
 
@@ -147,6 +175,7 @@ CMAKE_TOOLCHAIN_FILE: "{{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake"
 | `verify --target <platform>` | Verify built artifact |
 | `manifest update` | Generate/refresh Dart manifest |
 | `manifest verify` | Verify manifest hashes |
+| `schema export` | Write the JSON schema copy used by editors |
 | `fetch` | Download prebuilt artifacts |
 | `doctor` | Check build environment |
 | `workflow init` | Generate GitHub/GitLab CI workflows |

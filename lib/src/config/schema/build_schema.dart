@@ -259,29 +259,36 @@ final targetConfigSchema = S.object(
 );
 
 /// Schema for the entire native_prebuilt.yaml configuration.
-final nativePrebuiltSchema = S.object(
-  required: [
-    'schema',
-    'package',
-    'asset_name',
-    'library_stem',
-    'release',
-    'artifacts',
-  ],
-  properties: {
-    'schema': S.integer(minimum: 1),
-    'package': S.string(minLength: 1),
-    'asset_name': S.string(minLength: 1),
-    'library_stem': S.string(minLength: 1),
-    'link_mode': S.string(enumValues: ['dynamic_library', 'static_library']),
-    'source': sourceConfigSchema,
-    'build': buildConfigSchema,
-    'release': releaseConfigSchema,
-    'artifacts': S.object(additionalProperties: artifactConfigSchema),
-    'targets': S.object(additionalProperties: targetConfigSchema),
-  },
-  additionalProperties: false,
-);
+final nativePrebuiltSchema = S.fromMap({
+  r'$schema': 'https://json-schema.org/draft/2020-12/schema',
+  ...S
+      .object(
+        required: [
+          'schema',
+          'package',
+          'asset_name',
+          'library_stem',
+          'release',
+          'artifacts',
+        ],
+        properties: {
+          'schema': S.integer(minimum: 1),
+          'package': S.string(minLength: 1),
+          'asset_name': S.string(minLength: 1),
+          'library_stem': S.string(minLength: 1),
+          'link_mode': S.string(
+            enumValues: ['dynamic_library', 'static_library'],
+          ),
+          'source': sourceConfigSchema,
+          'build': buildConfigSchema,
+          'release': releaseConfigSchema,
+          'artifacts': S.object(additionalProperties: artifactConfigSchema),
+          'targets': S.object(additionalProperties: targetConfigSchema),
+        },
+        additionalProperties: false,
+      )
+      .value,
+});
 
 /// Validates a normalized YAML map against [nativePrebuiltSchema].
 Future<List<ValidationError>> validateNativePrebuiltSchema(

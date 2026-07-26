@@ -19,6 +19,7 @@ part 'native_prebuilt_config.g.dart';
   disallowUnrecognizedKeys: true,
   explicitToJson: true,
   fieldRename: FieldRename.snake,
+  createJsonSchema: true,
 )
 final class NativePrebuiltConfig {
   NativePrebuiltConfig({
@@ -55,6 +56,7 @@ final class NativePrebuiltConfig {
   checked: true,
   disallowUnrecognizedKeys: true,
   fieldRename: FieldRename.snake,
+  createJsonSchema: true,
 )
 final class ReleaseConfig {
   ReleaseConfig({
@@ -93,6 +95,7 @@ final class ReleaseConfig {
   checked: true,
   disallowUnrecognizedKeys: true,
   fieldRename: FieldRename.snake,
+  createJsonSchema: true,
 )
 final class SourceConfig {
   SourceConfig({
@@ -132,6 +135,7 @@ final class SourceConfig {
   disallowUnrecognizedKeys: true,
   explicitToJson: true,
   fieldRename: FieldRename.snake,
+  createJsonSchema: true,
 )
 final class BuildConfig {
   BuildConfig({
@@ -177,6 +181,7 @@ final class BuildConfig {
   checked: true,
   disallowUnrecognizedKeys: true,
   fieldRename: FieldRename.snake,
+  createJsonSchema: true,
 )
 final class TargetPatternConfig {
   const TargetPatternConfig({this.os, this.architecture, this.sdk});
@@ -224,6 +229,7 @@ List<String> _splitRepository(String repository) {
   disallowUnrecognizedKeys: true,
   explicitToJson: true,
   fieldRename: FieldRename.snake,
+  createJsonSchema: true,
 )
 final class TargetRecipeConfig {
   const TargetRecipeConfig({required this.target, required this.steps});
@@ -263,6 +269,7 @@ IOSSdk? _parseIOSSdk(String? sdk) {
   checked: true,
   disallowUnrecognizedKeys: true,
   fieldRename: FieldRename.snake,
+  createJsonSchema: true,
 )
 final class DependencyConfig {
   DependencyConfig({
@@ -289,6 +296,7 @@ final class DependencyConfig {
   checked: true,
   disallowUnrecognizedKeys: true,
   fieldRename: FieldRename.snake,
+  createJsonSchema: true,
 )
 final class TargetConfig {
   TargetConfig({
@@ -313,11 +321,26 @@ final class TargetConfig {
   final String? vcpkgTriplet;
 }
 
+/// Generated JSON schema maps exposed for editor/tooling integration.
+List<Map<String, Object?>> get nativePrebuiltGeneratedJsonSchemas => [
+  _$NativePrebuiltConfigJsonSchema,
+  _$ReleaseConfigJsonSchema,
+  _$SourceConfigJsonSchema,
+  _$BuildConfigJsonSchema,
+  _$TargetPatternConfigJsonSchema,
+  _$TargetRecipeConfigJsonSchema,
+  _$DependencyConfigJsonSchema,
+  _$TargetConfigJsonSchema,
+  _$ArtifactConfigJsonSchema,
+  _$PayloadConfigJsonSchema,
+];
+
 @JsonSerializable(
   checked: true,
   disallowUnrecognizedKeys: true,
   explicitToJson: true,
   fieldRename: FieldRename.snake,
+  createJsonSchema: true,
 )
 final class ArtifactConfig {
   ArtifactConfig({required this.archive, required this.payload});
@@ -335,6 +358,7 @@ final class ArtifactConfig {
   checked: true,
   disallowUnrecognizedKeys: true,
   fieldRename: FieldRename.snake,
+  createJsonSchema: true,
 )
 final class PayloadConfig {
   PayloadConfig({required this.type});

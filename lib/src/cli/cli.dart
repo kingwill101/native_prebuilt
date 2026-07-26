@@ -21,6 +21,7 @@ import 'explain_cache.dart';
 import 'fetch.dart';
 import 'manifest.dart';
 import 'plan.dart';
+import 'schema.dart';
 import 'shared.dart' show shouldBuildFromSource;
 import 'verify.dart';
 import 'workflow.dart';
@@ -51,6 +52,7 @@ Future<void> runNativePrebuiltCli(
         )
         ..addCommand(ManifestCommand())
         ..addCommand(FetchCommand())
+        ..addCommand(SchemaCommand())
         ..addCommand(DoctorCommand())
         ..addCommand(WorkflowCommand())
         ..addCommand(PlanCommand(project: buildProject))

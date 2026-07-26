@@ -12,10 +12,7 @@ final Liquid _workflowLiquid = Liquid.withDelimiters(
   varEnd: ']]',
 );
 
-String _renderWorkflowTemplate(
-  String template,
-  Map<String, dynamic> data,
-) {
+String _renderWorkflowTemplate(String template, Map<String, dynamic> data) {
   return _workflowLiquid.renderString(template, data);
 }
 
@@ -117,8 +114,6 @@ const _workflowPlatformOrder = <String>[
   'ios',
 ];
 
-
-
 const _githubPrebuiltWorkflowTemplate = r'''
 name: Prebuilt
 
@@ -214,26 +209,26 @@ String _githubPrebuiltWorkflow(
       .join('\n      - ');
   final downloads = orderedPlatforms
       .map(
-        (platform) => '''      - uses: actions/download-artifact@v4
+        (platform) =>
+            '''      - uses: actions/download-artifact@v4
         with:
           name: ${platform}-built-library
           path: downloaded/${platform}/''',
       )
       .join('\n');
   final copyLines = orderedPlatforms
-      .map((platform) => '          cp -R downloaded/${platform}/. built-library/')
+      .map(
+        (platform) => '          cp -R downloaded/${platform}/. built-library/',
+      )
       .join('\n');
 
-  return _renderWorkflowTemplate(
-    _githubPrebuiltWorkflowTemplate,
-    {
-      'package_name': packageName,
-      'build_jobs': buildJobs,
-      'update_manifest_needs': needs,
-      'download_artifact_steps': downloads,
-      'copy_built_library_lines': copyLines,
-    },
-  );
+  return _renderWorkflowTemplate(_githubPrebuiltWorkflowTemplate, {
+    'package_name': packageName,
+    'build_jobs': buildJobs,
+    'update_manifest_needs': needs,
+    'download_artifact_steps': downloads,
+    'copy_built_library_lines': copyLines,
+  });
 }
 
 String _githubBuildJob(String platform) {
@@ -376,8 +371,6 @@ String _gitlabBuildTemplate(String platform) {
   return template.replaceFirst(RegExp(r'\n  rules:\n    - if: .*\n'), '\n');
 }
 
-
-
 const _gitlabRootPipelineTemplate = r'''
 default:
   image: dart:stable
@@ -415,13 +408,10 @@ String _gitlabRootPipeline(String packageName, Iterable<String> platforms) {
             "  - local: '.gitlab/ci/native-prebuilt-build-$platform.yml'",
       )
       .join('\n');
-  return _renderWorkflowTemplate(
-    _gitlabRootPipelineTemplate,
-    {
-      'package_name': packageName,
-      'includes': includes,
-    },
-  );
+  return _renderWorkflowTemplate(_gitlabRootPipelineTemplate, {
+    'package_name': packageName,
+    'includes': includes,
+  });
 }
 
 const _gitlabUpdateManifestTemplate = r'''
@@ -450,10 +440,9 @@ String _gitlabUpdateManifest(Iterable<String> platforms) {
       artifacts: true''',
       )
       .join('\\n');
-  return _renderWorkflowTemplate(
-    _gitlabUpdateManifestTemplate,
-    {'needs': needs},
-  );
+  return _renderWorkflowTemplate(_gitlabUpdateManifestTemplate, {
+    'needs': needs,
+  });
 }
 
 const nativePrebuiltBuildWorkflow = r'''
