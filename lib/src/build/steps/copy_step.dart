@@ -51,6 +51,9 @@ final class CopyStep implements NativeBuildStep {
   }
 
   @override
+  Map<String, dynamic> toJson() => toMap();
+
+  @override
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
     return NativeStepFingerprint(
       id: id,

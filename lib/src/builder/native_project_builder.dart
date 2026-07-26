@@ -15,7 +15,6 @@ import '../manifest/release_source.dart';
 import '../platform/target_resolver.dart';
 import '../resolution/prebuilt_resolver.dart';
 import '../resolution/resolution_result.dart';
-import '../source/resolved_source.dart';
 import '../source/source_builder.dart';
 import '../source/source_fallback.dart';
 

@@ -65,6 +65,9 @@ final class GitCheckoutStep implements NativeBuildStep {
   }
 
   @override
+  Map<String, dynamic> toJson() => toMap();
+
+  @override
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
     final buffer = StringBuffer();
     buffer.write('git_checkout');
@@ -167,6 +170,9 @@ final class GitApplyPatchStep implements NativeBuildStep {
       if (targetDirectory != null) 'target_directory': targetDirectory,
     };
   }
+
+  @override
+  Map<String, dynamic> toJson() => toMap();
 
   @override
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {

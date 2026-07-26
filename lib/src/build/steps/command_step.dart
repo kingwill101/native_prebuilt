@@ -65,6 +65,9 @@ final class CommandStep implements NativeBuildStep {
   }
 
   @override
+  Map<String, dynamic> toJson() => toMap();
+
+  @override
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
     final buffer = StringBuffer();
     buffer.write(id);

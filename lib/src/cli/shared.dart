@@ -13,7 +13,7 @@ import '../download/http_downloader.dart';
 import '../manifest/prebuilt_artifact.dart';
 import '../manifest/prebuilt_manifest.dart';
 import '../manifest/release_source.dart';
-import 'native_prebuilt_config.dart';
+import '../config/native_prebuilt_config.dart';
 
 /// Compute a cache key for a target.
 ///
@@ -84,6 +84,7 @@ Future<PrebuiltManifest> generateManifest({
   required bool allowMissing,
   Directory? builtLibraryDir,
   Directory? releaseAssetsDir,
+  bool toleratePartialBuiltLibrary = false,
 }) async {
   final downloader = HttpDownloader();
   final archiveReader = ArchiveReader();
@@ -101,14 +102,17 @@ Future<PrebuiltManifest> generateManifest({
       final platform = entry.key;
       final artifactConfig = entry.value;
       final target = targetFromPlatformLabel(platform);
+      final payload = artifactConfig.payload.toArtifactPayload(
+        config.libraryStem,
+      );
       final canonicalName = canonicalLibraryName(
         target: target,
         libraryStem: config.libraryStem,
-        payload: artifactConfig.payload,
+        payload: payload,
       );
 
       final archiveFile = File(
-        p.join((releaseAssetsDir ?? tempDir).path, artifactConfig.archiveName),
+        p.join((releaseAssetsDir ?? tempDir).path, artifactConfig.archive),
       );
       if (builtLibraryDir != null) {
         final platformBuiltFile = File(
@@ -122,7 +126,7 @@ Future<PrebuiltManifest> generateManifest({
             : flatBuiltFile;
 
         if (!builtFile.existsSync()) {
-          if (allowMissing) continue;
+          if (allowMissing || toleratePartialBuiltLibrary) continue;
 
           throw StateError(
             'Missing built library for $platform. Checked:\n'
@@ -137,9 +141,9 @@ Future<PrebuiltManifest> generateManifest({
         );
       } else {
         try {
-          await downloader.downloadReleaseArtifact(
-            source: config.release.withTag(tag),
-            archiveName: artifactConfig.archiveName,
+        await downloader.downloadReleaseArtifact(
+            source: config.release.toReleaseSource().withTag(tag),
+            archiveName: artifactConfig.archive,
             targetPath: archiveFile,
           );
         } catch (e) {
@@ -157,7 +161,7 @@ Future<PrebuiltManifest> generateManifest({
         outputDir: extractedDir,
         selection: ArchiveSelectionContext(
           canonicalName: canonicalName,
-          acceptVersionedNames: artifactConfig.payload is DynamicLibraryPayload,
+          acceptVersionedNames: payload is DynamicLibraryPayload,
         ),
       );
       if (extracted == null) {
@@ -167,16 +171,16 @@ Future<PrebuiltManifest> generateManifest({
       payloadHashes[platform] = await ArchiveReader.sha256Hash(extracted);
 
       artifacts[platform] = PrebuiltArtifact(
-        archiveName: artifactConfig.archiveName,
+        archiveName: artifactConfig.archive,
         archiveSha256: archiveHash,
         payloadSha256: payloadHashes[platform]!,
-        payload: artifactConfig.payload,
+        payload: payload,
       );
     }
 
     return PrebuiltManifest(
       schemaVersion: config.schema,
-      release: config.release.withTag(tag),
+      release: config.release.toReleaseSource().withTag(tag),
       artifacts: artifacts,
     );
   } finally {
@@ -199,7 +203,9 @@ String renderManifest(
     ..writeln()
     ..writeln('const ${config.package}Prebuilts = PrebuiltManifest(')
     ..writeln('  schemaVersion: ${manifest.schemaVersion},')
-    ..writeln('  release: ${renderReleaseSource(config.release.withTag(tag))},')
+  ..writeln(
+    '  release: ${renderReleaseSource(config.release.toReleaseSource().withTag(tag))},',
+  )
     ..writeln('  artifacts: {');
 
   for (final entry in manifest.artifacts.entries) {

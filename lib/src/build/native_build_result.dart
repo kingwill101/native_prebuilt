@@ -13,4 +13,20 @@ final class NativeBuildResult {
 
   /// Optional metadata about the build (e.g., build duration, toolchain versions).
   final Map<String, Object?> metadata;
+
+  Map<String, dynamic> toJson() => {
+        'artifacts': artifacts.map((artifact) => artifact.toJson()).toList(),
+        'metadata': metadata,
+      };
+
+  factory NativeBuildResult.fromJson(Map<String, dynamic> json) {
+    return NativeBuildResult(
+      artifacts: (json['artifacts'] as List<dynamic>? ?? const [])
+          .map((artifact) => BuiltNativeArtifact.fromJson(
+                artifact as Map<String, dynamic>,
+              ))
+          .toList(),
+      metadata: json['metadata'] as Map<String, Object?>? ?? const {},
+    );
+  }
 }

@@ -33,8 +33,10 @@ export 'src/source/source_preparation.dart';
 export 'src/source/source_provider.dart';
 export 'src/source/source_specification.dart';
 export 'src/source/source_builder.dart';
+export 'src/config/build_step_config.dart';
 
 export 'src/cli/shared.dart' show shouldBuildFromSource;
+export 'src/cli/cli_config.dart' show detect, resolveConfigFile;
 
 // Export the new build abstraction layer
 export 'package:native_prebuilt/build.dart';

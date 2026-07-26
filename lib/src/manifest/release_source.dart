@@ -13,6 +13,31 @@ sealed class ReleaseSource {
 
   /// Returns a copy of this release source with a different tag.
   ReleaseSource withTag(String tag);
+
+  /// Serializes this release source to JSON.
+  Map<String, dynamic> toJson();
+
+  /// Deserializes a release source from JSON.
+  factory ReleaseSource.fromJson(Map<String, dynamic> json) {
+    return switch (json['type'] as String?) {
+      'github' => GitHubReleaseSource(
+          owner: json['owner'] as String,
+          repository: json['repository'] as String,
+          tag: json['tag'] as String,
+          baseUri: json['base_uri'] == null
+              ? null
+              : Uri.parse(json['base_uri'] as String),
+        ),
+      'gitlab' => GitLabReleaseSource(
+          projectPath: json['project_path'] as String,
+          tag: json['tag'] as String,
+          baseUri: json['base_uri'] == null
+              ? null
+              : Uri.parse(json['base_uri'] as String),
+        ),
+      final type => throw FormatException('Unknown release source type: $type'),
+    };
+  }
 }
 
 /// Artifacts are hosted as GitHub Release assets.
@@ -63,6 +88,15 @@ final class GitHubReleaseSource extends ReleaseSource {
 
   @override
   String toString() => 'GitHubReleaseSource($owner/$repository@$tag)';
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'github',
+        'owner': owner,
+        'repository': repository,
+        'tag': tag,
+        if (baseUri != null) 'base_uri': baseUri.toString(),
+      };
 }
 
 /// Artifacts are hosted as GitLab release assets.
@@ -102,4 +136,12 @@ final class GitLabReleaseSource extends ReleaseSource {
 
   @override
   String toString() => 'GitLabReleaseSource($projectPath@$tag)';
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'gitlab',
+        'project_path': projectPath,
+        'tag': tag,
+        if (baseUri != null) 'base_uri': baseUri.toString(),
+      };
 }

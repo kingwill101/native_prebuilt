@@ -74,6 +74,9 @@ final class CmakeConfigureStep implements NativeBuildStep {
   }
 
   @override
+  Map<String, dynamic> toJson() => toMap();
+
+  @override
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
     final buffer = StringBuffer();
     buffer.write('cmake_configure');
@@ -210,6 +213,9 @@ final class CmakeBuildStep implements NativeBuildStep {
       if (environment != null) 'environment': environment,
     };
   }
+
+  @override
+  Map<String, dynamic> toJson() => toMap();
 
   @override
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {

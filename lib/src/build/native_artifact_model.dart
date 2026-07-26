@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:code_assets/code_assets.dart';
+
 import '../platform/native_target.dart';
 
 /// Role of an artifact entry within a native artifact bundle.
@@ -70,6 +72,31 @@ final class NativeArtifactEntry {
 
   /// Whether this entry is optional (e.g., debug symbols that may not exist).
   final bool optional;
+
+  Map<String, dynamic> toJson() => {
+        'source_path': source.path,
+        'source_kind': source is Directory ? 'directory' : 'file',
+        'path': path,
+        'role': role.name,
+        'optional': optional,
+      };
+
+  factory NativeArtifactEntry.fromJson(Map<String, dynamic> json) {
+    final sourcePath = json['source_path'] as String;
+    final sourceKind = json['source_kind'] as String? ?? 'file';
+    final source = sourceKind == 'directory'
+        ? Directory(sourcePath)
+        : File(sourcePath);
+    return NativeArtifactEntry(
+      source: source,
+      path: json['path'] as String,
+      role: NativeArtifactRole.values.firstWhere(
+        (r) => r.name == json['role'],
+        orElse: () => NativeArtifactRole.primary,
+      ),
+      optional: json['optional'] as bool? ?? false,
+    );
+  }
 
   /// Creates a primary entry from a file.
   factory NativeArtifactEntry.primary({
@@ -189,6 +216,52 @@ final class BuiltNativeArtifact {
     yield* companions;
   }
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'target': {
+          'os': target.os.name,
+          'architecture': target.architecture.name,
+          if (target.iOSSdk != null)
+            'iOSSdk': target.iOSSdk == IOSSdk.iPhoneSimulator
+                ? 'iPhoneSimulator'
+                : 'iPhoneOS',
+        },
+        'kind': kind.name,
+        'primary': primary.toJson(),
+        'companions': companions.map((c) => c.toJson()).toList(),
+        'metadata': metadata,
+      };
+
+  factory BuiltNativeArtifact.fromJson(Map<String, dynamic> json) {
+    final target = json['target'] as Map<String, dynamic>;
+    final ios = switch (target['iOSSdk'] as String?) {
+      'iPhoneSimulator' => IOSSdk.iPhoneSimulator,
+      'iPhoneOS' => IOSSdk.iPhoneOS,
+      _ => null,
+    };
+    return BuiltNativeArtifact(
+      id: json['id'] as String,
+      target: NativeTarget(
+        os: OS.values.firstWhere((o) => o.name == target['os']),
+        architecture: Architecture.values.firstWhere(
+          (a) => a.name == target['architecture'],
+        ),
+        iOSSdk: ios,
+      ),
+      kind: NativeArtifactKind.values.firstWhere(
+        (k) => k.name == json['kind'],
+        orElse: () => NativeArtifactKind.dynamicLibrary,
+      ),
+      primary: NativeArtifactEntry.fromJson(
+        json['primary'] as Map<String, dynamic>,
+      ),
+      companions: (json['companions'] as List<dynamic>? ?? const [])
+          .map((c) => NativeArtifactEntry.fromJson(c as Map<String, dynamic>))
+          .toList(),
+      metadata: (json['metadata'] as Map<String, dynamic>? ?? const {}),
+    );
+  }
+
   /// Creates a dynamic library artifact with optional companions.
   factory BuiltNativeArtifact.dynamicLibrary({
     required String id,
@@ -267,6 +340,28 @@ final class NativeArtifactDeclaration {
 
   /// Companion entries (runtime deps, import libs, debug symbols, etc.).
   final List<NativeArtifactCompanion> companions;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'kind': kind.name,
+        'primary_path': primaryPath,
+        if (companions.isNotEmpty)
+          'companions': companions.map((c) => c.toJson()).toList(),
+      };
+
+  factory NativeArtifactDeclaration.fromJson(Map<String, dynamic> json) {
+    return NativeArtifactDeclaration(
+      id: json['id'] as String,
+      kind: NativeArtifactKind.values.firstWhere(
+        (k) => k.name == json['kind'],
+        orElse: () => NativeArtifactKind.dynamicLibrary,
+      ),
+      primaryPath: json['primary_path'] as String,
+      companions: (json['companions'] as List<dynamic>? ?? const [])
+          .map((c) => NativeArtifactCompanion.fromJson(c as Map<String, dynamic>))
+          .toList(),
+    );
+  }
 }
 
 /// A companion entry in an artifact declaration.
@@ -285,4 +380,21 @@ final class NativeArtifactCompanion {
 
   /// Whether this companion is optional (e.g., debug symbols).
   final bool optional;
+
+  Map<String, dynamic> toJson() => {
+        'path': path,
+        'role': role.name,
+        'optional': optional,
+      };
+
+  factory NativeArtifactCompanion.fromJson(Map<String, dynamic> json) {
+    return NativeArtifactCompanion(
+      path: json['path'] as String,
+      role: NativeArtifactRole.values.firstWhere(
+        (r) => r.name == json['role'],
+        orElse: () => NativeArtifactRole.primary,
+      ),
+      optional: json['optional'] as bool? ?? false,
+    );
+  }
 }

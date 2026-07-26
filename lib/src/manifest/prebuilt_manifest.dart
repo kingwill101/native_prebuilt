@@ -56,4 +56,24 @@ final class PrebuiltManifest {
   /// Returns the artifact for [platformLabel], or `null` if not available.
   PrebuiltArtifact? operator [](String platformLabel) =>
       artifacts[platformLabel];
+
+  Map<String, dynamic> toJson() => {
+        'schema_version': schemaVersion,
+        'release': release.toJson(),
+        'artifacts': {
+          for (final entry in artifacts.entries)
+            entry.key: entry.value.toJson(),
+        },
+      };
+
+  factory PrebuiltManifest.fromJson(Map<String, dynamic> json) {
+    return PrebuiltManifest(
+      schemaVersion: json['schema_version'] as int,
+      release: ReleaseSource.fromJson(json['release'] as Map<String, dynamic>),
+      artifacts: {
+        for (final entry in (json['artifacts'] as Map<String, dynamic>).entries)
+          entry.key: PrebuiltArtifact.fromJson(entry.value as Map<String, dynamic>),
+      },
+    );
+  }
 }

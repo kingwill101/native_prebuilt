@@ -23,6 +23,9 @@ abstract interface class NativeBuildRecipe {
     NativeBuildContext context,
     ResolvedSource source,
   );
+
+  /// Serialize this recipe to JSON.
+  Map<String, dynamic> toJson();
 }
 
 /// Composable build recipe that executes a sequence of steps.
@@ -110,6 +113,20 @@ final class StepBuildRecipe implements NativeBuildRecipe {
     }
 
     return NativeBuildResult(artifacts: artifacts);
+  }
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'step_build_recipe',
+        'steps': steps.map((step) => step.toJson()).toList(),
+      };
+
+  factory StepBuildRecipe.fromJson(Map<String, dynamic> json) {
+    return StepBuildRecipe(
+      steps: (json['steps'] as List<dynamic>? ?? const [])
+          .map((step) => NativeBuildStep.fromJson(step as Map<String, dynamic>))
+          .toList(),
+    );
   }
 
   /// Serialize a [BuiltNativeArtifact] to a JSON-serializable map.
@@ -232,6 +249,25 @@ abstract interface class NativeBuildStep {
     NativeBuildContext context,
     ResolvedSource source,
   );
+
+  /// Serialize this step to JSON.
+  Map<String, dynamic> toJson();
+
+  /// Deserialize a step from JSON.
+  factory NativeBuildStep.fromJson(Map<String, dynamic> json) {
+    return switch (json['type'] as String?) {
+      'cmake_configure' => CmakeConfigureStep.fromMap(json),
+      'cmake_build' => CmakeBuildStep.fromMap(json),
+      'export_artifact' => ExportArtifactStep.fromMap(json),
+      'command' => CommandStep.fromMap(json),
+      'download_archive' => DownloadArchiveStep.fromMap(json),
+      'git_checkout' => GitCheckoutStep.fromMap(json),
+      'git_apply_patch' => GitApplyPatchStep.fromMap(json),
+      'copy' => CopyStep.fromMap(json),
+      'strip' => StripStep.fromMap(json),
+      final type => throw FormatException('Unknown build step type: $type'),
+    };
+  }
 }
 
 /// Result of executing a single build step.
@@ -244,6 +280,20 @@ final class NativeStepResult {
 
   /// Artifacts produced by this step.
   final List<BuiltNativeArtifact> artifacts;
+
+  Map<String, dynamic> toJson() => {
+        'artifacts': artifacts.map((artifact) => artifact.toJson()).toList(),
+      };
+
+  factory NativeStepResult.fromJson(Map<String, dynamic> json) {
+    return NativeStepResult(
+      artifacts: (json['artifacts'] as List<dynamic>? ?? const [])
+          .map((artifact) => BuiltNativeArtifact.fromJson(
+                artifact as Map<String, dynamic>,
+              ))
+          .toList(),
+    );
+  }
 }
 
 /// Fingerprint for a build step, used for caching.
@@ -255,6 +305,15 @@ final class NativeStepFingerprint {
 
   /// A hash representing the step's inputs and configuration.
   final String hash;
+
+  Map<String, dynamic> toJson() => {'id': id, 'hash': hash};
+
+  factory NativeStepFingerprint.fromJson(Map<String, dynamic> json) {
+    return NativeStepFingerprint(
+      id: json['id'] as String,
+      hash: json['hash'] as String,
+    );
+  }
 }
 
 /// Context passed to individual build steps.

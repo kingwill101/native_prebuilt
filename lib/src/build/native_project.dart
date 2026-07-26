@@ -52,6 +52,29 @@ final class NativeAssetSpec {
       linkMode: StaticLinking(),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'asset_name': assetName,
+        'library_stem': libraryStem,
+        'link_mode': switch (linkMode) {
+          DynamicLoadingBundled() => 'dynamic_library',
+          StaticLinking() => 'static_library',
+          _ => 'dynamic_library',
+        },
+      };
+
+  factory NativeAssetSpec.fromJson(Map<String, dynamic> json) {
+    return switch (json['link_mode'] as String? ?? 'dynamic_library') {
+      'static_library' => NativeAssetSpec.staticLibrary(
+          assetName: json['asset_name'] as String,
+          libraryStem: json['library_stem'] as String,
+        ),
+      _ => NativeAssetSpec.dynamicLibrary(
+          assetName: json['asset_name'] as String,
+          libraryStem: json['library_stem'] as String,
+        ),
+    };
+  }
 }
 
 /// Policy for preferring prebuilt artifacts vs building from source.
@@ -76,13 +99,13 @@ final class _ForceSourceBuild implements PrebuiltPolicy {
 /// A pattern that matches native build targets.
 ///
 /// Used to look up recipes for specific platform/architecture combinations.
-/// The [os] is required; [architecture] and [iOSSdk] are optional matchers.
-/// When null, they match any value.
+/// All fields are optional; when null, they match any value.
 final class NativeTargetPattern {
-  const NativeTargetPattern({required this.os, this.architecture, this.iOSSdk});
+  const NativeTargetPattern({this.os, this.architecture, this.iOSSdk});
 
-  /// The target OS (required).
-  final OS os;
+  /// The target OS (e.g., linux, android, ios).
+  /// When null, matches any OS.
+  final OS? os;
 
   /// If non-null, only matches targets with this architecture.
   final Architecture? architecture;
@@ -92,11 +115,34 @@ final class NativeTargetPattern {
 
   /// Whether this pattern matches the given [target].
   bool matches(NativeTarget target) {
-    if (target.os != os) return false;
+    if (os != null && target.os != os) return false;
     if (architecture != null && target.architecture != architecture)
       return false;
     if (iOSSdk != null && target.iOSSdk != iOSSdk) return false;
     return true;
+  }
+
+  Map<String, dynamic> toJson() => {
+        if (os != null) 'os': os!.name,
+        if (architecture != null) 'architecture': architecture!.name,
+        if (iOSSdk != null) 'sdk': iOSSdk == IOSSdk.iPhoneSimulator
+            ? 'iphonesimulator'
+            : 'iphoneos',
+      };
+
+  factory NativeTargetPattern.fromJson(Map<String, dynamic> json) {
+    final sdk = switch (json['sdk'] as String?) {
+      'iphonesimulator' => IOSSdk.iPhoneSimulator,
+      'iphoneos' => IOSSdk.iPhoneOS,
+      _ => null,
+    };
+    return NativeTargetPattern(
+      os: json['os'] == null ? null : OS.fromString(json['os'] as String),
+      architecture: json['architecture'] == null
+          ? null
+          : Architecture.fromString(json['architecture'] as String),
+      iOSSdk: sdk,
+    );
   }
 }
 
@@ -109,6 +155,22 @@ final class NativeTargetRecipe {
 
   /// The build recipe to execute.
   final NativeBuildRecipe recipe;
+
+  Map<String, dynamic> toJson() => {
+        'pattern': pattern.toJson(),
+        'recipe': recipe.toJson(),
+      };
+
+  factory NativeTargetRecipe.fromJson(Map<String, dynamic> json) {
+    return NativeTargetRecipe(
+      pattern: NativeTargetPattern.fromJson(
+        json['pattern'] as Map<String, dynamic>,
+      ),
+      recipe: StepBuildRecipe.fromJson(
+        json['recipe'] as Map<String, dynamic>,
+      ),
+    );
+  }
 }
 
 /// Definition of how to build a native project for different platforms.
@@ -126,6 +188,20 @@ final class NativeBuildDefinition {
       }
     }
     return null;
+  }
+
+  Map<String, dynamic> toJson() => {
+        'recipes': recipes.map((recipe) => recipe.toJson()).toList(),
+      };
+
+  factory NativeBuildDefinition.fromJson(Map<String, dynamic> json) {
+    return NativeBuildDefinition(
+      recipes: (json['recipes'] as List<dynamic>? ?? const [])
+          .map((recipe) => NativeTargetRecipe.fromJson(
+                recipe as Map<String, dynamic>,
+              ))
+          .toList(),
+    );
   }
 }
 
@@ -199,6 +275,41 @@ final class NativeProject {
       sources: sources ?? this.sources,
       build: build ?? this.build,
       prebuiltPolicy: prebuiltPolicy ?? this.prebuiltPolicy,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'asset': asset.toJson(),
+        'prebuilts': prebuilts.toJson(),
+        'sources': sources.map((source) => source.toJson()).toList(),
+        'build': build.toJson(),
+        'prebuilt_policy': switch (prebuiltPolicy) {
+          _PreferPrebuilt() => 'prefer_prebuilt',
+          _ForceSourceBuild() => 'force_source_build',
+          _ => 'prefer_prebuilt',
+        },
+      };
+
+  factory NativeProject.fromJson(Map<String, dynamic> json) {
+    return NativeProject(
+      name: json['name'] as String,
+      asset: NativeAssetSpec.fromJson(json['asset'] as Map<String, dynamic>),
+      prebuilts: PrebuiltManifest.fromJson(
+        json['prebuilts'] as Map<String, dynamic>,
+      ),
+      sources: (json['sources'] as List<dynamic>? ?? const [])
+          .map((source) => SourceSpecification.fromJson(
+                source as Map<String, dynamic>,
+              ))
+          .toList(),
+      build: NativeBuildDefinition.fromJson(
+        json['build'] as Map<String, dynamic>,
+      ),
+      prebuiltPolicy: switch (json['prebuilt_policy'] as String?) {
+        'force_source_build' => PrebuiltPolicy.forceSourceBuild,
+        _ => PrebuiltPolicy.preferPrebuilt,
+      },
     );
   }
 }
