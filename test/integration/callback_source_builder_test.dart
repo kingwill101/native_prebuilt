@@ -10,7 +10,6 @@ import 'dart:ffi';
 import 'dart:io';
 
 import 'package:code_assets/code_assets.dart';
-import 'package:code_assets/src/code_assets/config.dart';
 import 'package:ffi/ffi.dart';
 import 'package:hooks/hooks.dart';
 import 'package:logging/logging.dart';
@@ -56,11 +55,15 @@ void main() {
             )
             ..setupBuildInput()
             ..config.setupBuild(linkingEnabled: false)
-            ..config.addBuildAssetTypes(['code_assets/code'])
-            ..config.setupCode(
-              targetArchitecture: Architecture.current,
-              targetOS: OS.current,
-              linkModePreference: LinkModePreference.dynamic,
+            ..addExtension(
+              CodeAssetExtension(
+                targetArchitecture: Architecture.current,
+                targetOS: OS.current,
+                linkModePreference: LinkModePreference.dynamic,
+                macOS: OS.current == OS.macOS
+                    ? MacOSCodeConfig(targetVersion: 13)
+                    : null,
+              ),
             );
 
           final input = inputBuilder.build();
@@ -185,11 +188,15 @@ void main() {
             )
             ..setupBuildInput()
             ..config.setupBuild(linkingEnabled: false)
-            ..config.addBuildAssetTypes(['code_assets/code'])
-            ..config.setupCode(
-              targetArchitecture: Architecture.current,
-              targetOS: OS.current,
-              linkModePreference: LinkModePreference.dynamic,
+            ..addExtension(
+              CodeAssetExtension(
+                targetArchitecture: Architecture.current,
+                targetOS: OS.current,
+                linkModePreference: LinkModePreference.dynamic,
+                macOS: OS.current == OS.macOS
+                    ? MacOSCodeConfig(targetVersion: 13)
+                    : null,
+              ),
             );
 
           final input = inputBuilder.build();
