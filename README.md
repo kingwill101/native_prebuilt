@@ -96,7 +96,7 @@ You can define the complete project in `native_prebuilt.yaml` instead of writing
 
 ```yaml
 dependencies:
-  native_prebuilt: ^0.0.13
+  native_prebuilt: ^0.1.0
 ```
 
 ## Source fallback pipeline

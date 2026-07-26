@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0
+
+- Add checked-in JSON schema export support for editor validation.
+- Document the YAML build-step manifest and API paths.
+- Publish the schema copy alongside the CLI.
+
 ## 0.0.13
 
 - Generate platform-filtered GitHub `prebuilt.yml` from manifest artifact labels.
