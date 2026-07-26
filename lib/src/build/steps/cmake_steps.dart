@@ -141,10 +141,12 @@ final class CmakeConfigureStep implements NativeBuildStep {
       args.addAll(['-G', generator!]);
     }
     if (toolchainFile != null) {
-      args.addAll(['-DCMAKE_TOOLCHAIN_FILE=$toolchainFile']);
+      args.addAll([
+        '-DCMAKE_TOOLCHAIN_FILE=${_expandEnv(toolchainFile!, context.environment)}',
+      ]);
     }
     for (final entry in defines.entries) {
-      args.add('-D${entry.key}=${entry.value}');
+      args.add('-D${entry.key}=${_expandEnv(entry.value, context.environment)}');
     }
 
     logger?.info('[cmake_configure] Running: cmake ${args.join(' ')}');
@@ -271,6 +273,23 @@ final class CmakeBuildStep implements NativeBuildStep {
 /// Compute a hash of key source files for cache invalidation.
 ///
 /// Hashes CMakeLists.txt and all .c/.cpp/.h/.hpp files in the source directory.
+String _expandEnv(String value, Map<String, String> environment) {
+  final envVarPattern = RegExp(r'^(?:\$\{([A-Za-z_][A-Za-z0-9_]*)\}|\$([A-Za-z_][A-Za-z0-9_]*)|([A-Za-z_][A-Za-z0-9_]*))(.*)$');
+  final match = envVarPattern.firstMatch(value);
+  if (match == null) return value;
+
+  final varName = match.group(1) ?? match.group(2) ?? match.group(3)!;
+  final remainder = match.group(4) ?? '';
+  final replacement = environment[varName];
+  if (replacement == null || replacement.isEmpty) return value;
+
+  if (remainder.isEmpty) return replacement;
+  if (remainder.startsWith('/') || remainder.startsWith('\\')) {
+    return '$replacement$remainder';
+  }
+  return replacement;
+}
+
 String _sourceFilesHash(Directory sourceDir) {
   final files = <File>[];
   final cmakeFile = File(p.join(sourceDir.path, 'CMakeLists.txt'));

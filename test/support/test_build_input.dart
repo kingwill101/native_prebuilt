@@ -15,6 +15,7 @@ import 'package:path/path.dart' as p;
   Directory? workDir,
   OS? targetOS,
   Architecture? targetArchitecture,
+  Map<String, String>? environment,
 }) {
   workDir ??= Directory.systemTemp.createTempSync('test_context_');
   targetOS ??= _currentOS;
@@ -42,7 +43,7 @@ import 'package:path/path.dart' as p;
       work: workDir,
     ),
     toolchains: const ToolchainRegistry(),
-    environment: {},
+    environment: environment ?? {},
   );
 
   final source = ResolvedSource(directory: workDir, origin: SourceOrigin.local);

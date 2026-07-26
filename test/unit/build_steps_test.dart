@@ -238,6 +238,28 @@ void main() {
       });
     });
 
+    test('expands environment variables in cmake arguments', () async {
+      final step = CmakeConfigureStep(
+        sourceDirectory: '.',
+        buildDirectory: 'build',
+        toolchainFile: 'VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake',
+        runner: runner,
+      );
+
+      final (context, source) = createTestContext(
+        environment: {'VCPKG_ROOT': 'D:/a/tdlib/tdlib/vcpkg'},
+      );
+      await step.execute(context, source);
+
+      expect(runner.commands, hasLength(1));
+      expect(
+        runner.commands.first.arguments,
+        contains(
+          '-DCMAKE_TOOLCHAIN_FILE=D:/a/tdlib/tdlib/vcpkg/scripts/buildsystems/vcpkg.cmake',
+        ),
+      );
+    });
+
     test('stops on first failure', () async {
       runner.enqueueResults([
         const ProcessResult(exitCode: 1, stdout: '', stderr: 'Failed'),
