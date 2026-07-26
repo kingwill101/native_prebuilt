@@ -98,7 +98,7 @@ artifacts:
       expect(
         (steps[3] as CommandStep).commands,
         [
-          ['make', 'OpenSSL-iOS'],
+          ['/usr/bin/make', 'OpenSSL-iOS'],
         ],
       );
       expect(
