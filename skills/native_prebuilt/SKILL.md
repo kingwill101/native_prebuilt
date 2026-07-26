@@ -2,7 +2,7 @@
 
 Use this skill when you need to work with native libraries in Dart packages - whether generating manifests, building from source, or setting up prebuilt resolution.
 
-## Two API Paths
+## Three API Paths
 
 ### 1. Hooks Builder integration (simple packages)
 
@@ -38,7 +38,7 @@ void main(List<String> args) async {
 
 ### 2. Managed build recipes (complex packages)
 
-For multi-stage builds with caching and cross-compilation:
+For multi-stage builds with caching and cross-compilation, you can write the `NativeProject` in Dart by hand:
 
 ```dart
 final project = NativeProject(
@@ -63,11 +63,16 @@ final project = NativeProject(
 await runNativeProjectCli(args, project: project);
 ```
 
+### 3. Declarative manifest (recommended for release builds)
+
+You can define the complete project in `native_prebuilt.yaml` instead of writing `NativeProject` code manually. The CLI loads that manifest, validates it, and generates the build graph from it.
+
 ## CLI Commands
 
 ### Manifest Management
 - `dart run native_prebuilt manifest update` - Generate/refresh manifest from `native_prebuilt.yaml`
 - `dart run native_prebuilt manifest verify` - Verify manifest hashes match built artifacts
+- `dart run native_prebuilt schema export` - Write `schema/native_prebuilt.schema.json` for editor validation
 
 ### Build Pipeline
 - `dart run native_prebuilt plan --target <platform>` - Show build plan for a target
@@ -79,21 +84,28 @@ await runNativeProjectCli(args, project: project);
 ### Workflow Generation
 - `dart run native_prebuilt workflow init` - Generate GitHub workflow files
 - `dart run native_prebuilt workflow init --gitlab` - Generate GitLab CI files
+- `dart run native_prebuilt workflow init --gitlab --platform linux,windows` - Filter GitLab outputs by platform
 
 ## Build Steps
 
-| Step | Purpose |
+Common YAML keys:
+- `type` (required)
+- `id` (required)
+- `needs` (optional)
+
+| type | Purpose |
 |------|---------|
-| `CmakeConfigureStep` | Run cmake -B with defines |
-| `CmakeBuildStep` | Run cmake --build with targets |
-| `CommandStep` | Run arbitrary commands |
-| `DownloadArchiveStep` | Download and extract archives |
-| `GitCheckoutStep` | Clone/update git repositories |
-| `GitApplyPatchStep` | Apply patch files |
-| `StripStep` | Strip debug symbols |
-| `FindArtifactStep` | Find built artifacts |
-| `CopyStep` | Copy files/directories |
-| `ExportArtifactStep` | Export final artifact to output |
+| `cmake_configure` | Run CMake configure/generate |
+| `cmake_build` | Run CMake build with targets |
+| `command` | Run arbitrary commands |
+| `download_archive` | Download and extract archives |
+| `git_checkout` | Clone or update git repositories |
+| `git_apply_patch` | Apply patch files |
+| `copy` | Copy files or directories |
+| `strip` | Strip debug symbols |
+| `export_artifact` | Export the final artifact |
+
+Use `schema/native_prebuilt.schema.json` for editor validation.
 
 ## Platform Toolchains
 
