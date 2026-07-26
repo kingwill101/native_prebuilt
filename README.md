@@ -137,7 +137,9 @@ CMAKE_TOOLCHAIN_FILE: "{{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake"
 | `manifest verify` | Verify manifest hashes |
 | `fetch` | Download prebuilt artifacts |
 | `doctor` | Check build environment |
-| `workflow init` | Generate CI workflows |
+| `workflow init` | Generate GitHub/GitLab CI workflows |
+
+`workflow init` writes 5 GitHub workflow files, or 8 GitLab files by default. Use `--gitlab --platform ...` to filter GitLab outputs to selected platforms.
 
 ## Platform toolchains
 
