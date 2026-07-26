@@ -1,10 +1,23 @@
 import 'dart:io';
 
 import 'package:artisanal/args.dart';
+import 'package:liquify/liquify.dart';
 import 'package:path/path.dart' as p;
 
 import '../config/native_prebuilt_config.dart';
 import 'cli_config.dart';
+
+final Liquid _workflowLiquid = Liquid.withDelimiters(
+  varStart: '[[',
+  varEnd: ']]',
+);
+
+String _renderWorkflowTemplate(
+  String template,
+  Map<String, dynamic> data,
+) {
+  return _workflowLiquid.renderString(template, data);
+}
 
 class WorkflowCommand extends Command<void> {
   WorkflowCommand() {
@@ -104,6 +117,81 @@ const _workflowPlatformOrder = <String>[
   'ios',
 ];
 
+
+
+const _githubPrebuiltWorkflowTemplate = r'''
+name: Prebuilt
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - '[[ package_name ]]-v*'
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to stamp into the generated manifest
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  PUB_CACHE: ${{ github.workspace }}/.pub-cache
+  CONFIG: native_prebuilt.yaml
+  MANIFEST_OUTPUT: lib/src/hook/[[ package_name ]]_prebuilts.g.dart
+
+jobs:
+[[ build_jobs ]]
+  update-manifest:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+    needs:
+[[ update_manifest_needs ]]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+[[ download_artifact_steps ]]
+      - name: Merge built libraries
+        run: |
+          rm -rf built-library release-assets
+          mkdir -p built-library release-assets
+[[ copy_built_library_lines ]]
+      - run: dart pub get
+      - name: Generate manifest and release assets
+        run: |
+          TAG="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}"
+          dart run native_prebuilt manifest update --config "$CONFIG" --output "$MANIFEST_OUTPUT" --built-library-dir built-library --release-assets-dir release-assets --tag "$TAG"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: release-assets/
+          if-no-files-found: error
+
+  release:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+    needs:
+      - update-manifest
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-assets
+          path: release-assets/
+      - name: Publish GitHub release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
+          fail_on_unmatched_files: true
+          files: release-assets/*
+''';
+
 String _githubPrebuiltWorkflow(
   String packageName,
   Iterable<String>? artifactLabels,
@@ -120,111 +208,32 @@ String _githubPrebuiltWorkflow(
       .where(platforms.contains)
       .toList(growable: false);
 
-  final b = StringBuffer()
-    ..writeln('name: Prebuilt')
-    ..writeln()
-    ..writeln('on:')
-    ..writeln('  push:')
-    ..writeln('    branches:')
-    ..writeln('      - main')
-    ..writeln('    tags:')
-    ..writeln("      - '${packageName}-v*'")
-    ..writeln('  pull_request:')
-    ..writeln('  workflow_dispatch:')
-    ..writeln('    inputs:')
-    ..writeln('      tag:')
-    ..writeln('        description: Tag to stamp into the generated manifest')
-    ..writeln('        required: false')
-    ..writeln('        type: string')
-    ..writeln()
-    ..writeln('permissions:')
-    ..writeln('  contents: read')
-    ..writeln()
-    ..writeln('env:')
-    ..writeln('  PUB_CACHE: \${{ github.workspace }}/.pub-cache')
-    ..writeln('  CONFIG: native_prebuilt.yaml')
-    ..writeln('  MANIFEST_OUTPUT: lib/src/hook/${packageName}_prebuilts.g.dart')
-    ..writeln()
-    ..writeln('jobs:');
-
-  for (final platform in orderedPlatforms) {
-    b.writeln(_githubBuildJob(platform));
-  }
-
-  final needs = orderedPlatforms.map((p) => 'build-$p').join('\n      - ');
+  final buildJobs = orderedPlatforms.map(_githubBuildJob).join('\n');
+  final needs = orderedPlatforms
+      .map((platform) => 'build-$platform')
+      .join('\n      - ');
   final downloads = orderedPlatforms
       .map(
-        (p) =>
-            """      - uses: actions/download-artifact@v4
+        (platform) => '''      - uses: actions/download-artifact@v4
         with:
-          name: ${p}-built-library
-          path: downloaded/$p/""",
+          name: ${platform}-built-library
+          path: downloaded/${platform}/''',
       )
       .join('\n');
   final copyLines = orderedPlatforms
-      .map((p) => '          cp -R downloaded/$p/. built-library/')
+      .map((platform) => '          cp -R downloaded/${platform}/. built-library/')
       .join('\n');
 
-  b
-    ..writeln('  update-manifest:')
-    ..writeln(
-      '    if: github.event_name == \'workflow_dispatch\' || startsWith(github.ref, \'refs/tags/\')',
-    )
-    ..writeln('    needs:')
-    ..writeln('      - $needs')
-    ..writeln('    runs-on: ubuntu-latest')
-    ..writeln('    steps:')
-    ..writeln('      - uses: actions/checkout@v4')
-    ..writeln('      - uses: dart-lang/setup-dart@v1')
-    ..writeln(downloads)
-    ..writeln('      - name: Merge built libraries')
-    ..writeln('        run: |')
-    ..writeln('          rm -rf built-library release-assets')
-    ..writeln('          mkdir -p built-library release-assets')
-    ..writeln(copyLines)
-    ..writeln('      - run: dart pub get')
-    ..writeln('      - name: Generate manifest and release assets')
-    ..writeln('        run: |')
-    ..writeln(
-      '          TAG=\"\${{ github.event_name == \'workflow_dispatch\' && github.event.inputs.tag || github.ref_name }}\"',
-    )
-    ..writeln('          dart run native_prebuilt manifest update \\')
-    ..writeln('            --config \"\$CONFIG\" \\')
-    ..writeln('            --output \"\$MANIFEST_OUTPUT\" \\')
-    ..writeln('            --built-library-dir built-library \\')
-    ..writeln('            --release-assets-dir release-assets \\')
-    ..writeln('            --tag \"\$TAG\"')
-    ..writeln('      - uses: actions/upload-artifact@v4')
-    ..writeln('        with:')
-    ..writeln('          name: release-assets')
-    ..writeln('          path: release-assets/')
-    ..writeln('          if-no-files-found: error')
-    ..writeln()
-    ..writeln('  release:')
-    ..writeln(
-      '    if: github.event_name == \'workflow_dispatch\' || startsWith(github.ref, \'refs/tags/\')',
-    )
-    ..writeln('    needs:')
-    ..writeln('      - update-manifest')
-    ..writeln('    runs-on: ubuntu-latest')
-    ..writeln('    permissions:')
-    ..writeln('      contents: write')
-    ..writeln('    steps:')
-    ..writeln('      - uses: actions/checkout@v4')
-    ..writeln('      - uses: actions/download-artifact@v4')
-    ..writeln('        with:')
-    ..writeln('          name: release-assets')
-    ..writeln('          path: release-assets/')
-    ..writeln('      - name: Publish GitHub release assets')
-    ..writeln('        uses: softprops/action-gh-release@v2')
-    ..writeln('        with:')
-    ..writeln(
-      '          tag_name: \${{ github.event_name == \'workflow_dispatch\' && github.event.inputs.tag || github.ref_name }}',
-    )
-    ..writeln('          fail_on_unmatched_files: true')
-    ..writeln('          files: release-assets/*');
-
-  return b.toString();
+  return _renderWorkflowTemplate(
+    _githubPrebuiltWorkflowTemplate,
+    {
+      'package_name': packageName,
+      'build_jobs': buildJobs,
+      'update_manifest_needs': needs,
+      'download_artifact_steps': downloads,
+      'copy_built_library_lines': copyLines,
+    },
+  );
 }
 
 String _githubBuildJob(String platform) {
@@ -367,14 +376,9 @@ String _gitlabBuildTemplate(String platform) {
   return template.replaceFirst(RegExp(r'\n  rules:\n    - if: .*\n'), '\n');
 }
 
-String _gitlabRootPipeline(String packageName, Iterable<String> platforms) {
-  final includes = platforms
-      .map(
-        (platform) =>
-            "  - local: '.gitlab/ci/native-prebuilt-build-$platform.yml'",
-      )
-      .join('\n');
-  return '''
+
+
+const _gitlabRootPipelineTemplate = r'''
 default:
   image: dart:stable
 
@@ -384,25 +388,58 @@ stages:
   - release
 
 variables:
-  PUB_CACHE: "\$CI_PROJECT_DIR/.pub-cache"
+  PUB_CACHE: "$CI_PROJECT_DIR/.pub-cache"
   BUILD_COMMAND: "dart test"
   CONFIG: "native_prebuilt.yaml"
-  MANIFEST_OUTPUT: "lib/src/hook/${packageName}_prebuilts.g.dart"
+  MANIFEST_OUTPUT: "lib/src/hook/[[ package_name ]]_prebuilts.g.dart"
   BUILT_LIBRARY_DIR: "built-library"
   RELEASE_ASSETS_DIR: "release-assets"
-  RELEASE_PACKAGE_NAME: "${packageName}"
-  TAG: "\$CI_COMMIT_TAG"
+  RELEASE_PACKAGE_NAME: "[[ package_name ]]"
+  TAG: "$CI_COMMIT_TAG"
+  ENABLE_ALL_PLATFORMS: "true"
 
 cache:
   paths:
     - .pub-cache/
 
 include:
-$includes
+[[ includes ]]
   - local: '.gitlab/ci/native-prebuilt-release.yml'
   - local: '.gitlab/ci/native-prebuilt-update-manifest.yml'
 ''';
+
+String _gitlabRootPipeline(String packageName, Iterable<String> platforms) {
+  final includes = platforms
+      .map(
+        (platform) =>
+            "  - local: '.gitlab/ci/native-prebuilt-build-$platform.yml'",
+      )
+      .join('\n');
+  return _renderWorkflowTemplate(
+    _gitlabRootPipelineTemplate,
+    {
+      'package_name': packageName,
+      'includes': includes,
+    },
+  );
 }
+
+const _gitlabUpdateManifestTemplate = r'''
+native_prebuilt:update_manifest:
+  stage: update
+  needs:
+[[ needs ]]
+  rules:
+    - if: '$CI_COMMIT_TAG'
+  script:
+    - dart pub get
+    - dart run native_prebuilt manifest update --config "$CONFIG" --output "$MANIFEST_OUTPUT" --built-library-dir "$BUILT_LIBRARY_DIR" --release-assets-dir "$RELEASE_ASSETS_DIR" --tag "$TAG"
+  artifacts:
+    when: always
+    paths:
+      - "$MANIFEST_OUTPUT"
+      - "$RELEASE_ASSETS_DIR/"
+''';
 
 String _gitlabUpdateManifest(Iterable<String> platforms) {
   final needs = platforms
@@ -412,23 +449,11 @@ String _gitlabUpdateManifest(Iterable<String> platforms) {
     - job: native_prebuilt:build:$platform
       artifacts: true''',
       )
-      .join('\n');
-  return '''
-native_prebuilt:update_manifest:
-  stage: update
-  needs:
-$needs
-  rules:
-    - if: '\$CI_COMMIT_TAG'
-  script:
-    - dart pub get
-    - dart run native_prebuilt manifest update --config "\$CONFIG" --output "\$MANIFEST_OUTPUT" --built-library-dir "\$BUILT_LIBRARY_DIR" --release-assets-dir "\$RELEASE_ASSETS_DIR" --tag "\$TAG"
-  artifacts:
-    when: always
-    paths:
-      - "\$MANIFEST_OUTPUT"
-      - "\$RELEASE_ASSETS_DIR/"
-''';
+      .join('\\n');
+  return _renderWorkflowTemplate(
+    _gitlabUpdateManifestTemplate,
+    {'needs': needs},
+  );
 }
 
 const nativePrebuiltBuildWorkflow = r'''
