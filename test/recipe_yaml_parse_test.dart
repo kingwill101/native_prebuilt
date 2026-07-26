@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:native_prebuilt/native_prebuilt.dart';
-import 'package:native_prebuilt/src/cli/cli_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -69,11 +68,11 @@ artifacts:
         expect(steps[0], isA<CmakeConfigureStep>(), reason: target.label);
         expect(steps[1], isA<CmakeBuildStep>(), reason: target.label);
         expect(steps[2], isA<ExportArtifactStep>(), reason: target.label);
-        expect(
-          steps.map((s) => s.id).toList(),
-          ['cmake_configure', 'cmake_build', 'export_tdjson'],
-          reason: target.label,
-        );
+        expect(steps.map((s) => s.id).toList(), [
+          'cmake_configure',
+          'cmake_build',
+          'export_tdjson',
+        ], reason: target.label);
       }
     });
 
@@ -95,23 +94,17 @@ artifacts:
       expect(steps[5], isA<CmakeBuildStep>());
       expect(steps[6], isA<CommandStep>());
       expect(steps[7], isA<ExportArtifactStep>());
-      expect(
-        (steps[3] as CommandStep).commands,
+      expect((steps[3] as CommandStep).commands, [
+        ['/usr/bin/make', 'OpenSSL-iOS'],
+      ]);
+      expect((steps[6] as CommandStep).commands, [
         [
-          ['/usr/bin/make', 'OpenSSL-iOS'],
+          'install_name_tool',
+          '-id',
+          '@rpath/libtdjson.dylib',
+          'install/lib/libtdjson.dylib',
         ],
-      );
-      expect(
-        (steps[6] as CommandStep).commands,
-        [
-          [
-            'install_name_tool',
-            '-id',
-            '@rpath/libtdjson.dylib',
-            'install/lib/libtdjson.dylib',
-          ],
-        ],
-      );
+      ]);
     });
 
     test('falls back to generic CMake when no build section present', () {
