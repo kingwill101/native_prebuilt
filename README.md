@@ -109,6 +109,9 @@ Resolution order:
 3. Shared cache / release download
 4. Source build using recipe or callback
 
+`native_prebuilt build` only executes declarative YAML recipes. If a package uses a
+custom hook builder, use its hook entrypoint instead of the CLI build command.
+
 ## Build steps
 
 Recipe values are Liquid templates rendered with:
@@ -169,7 +172,7 @@ for example in VS Code:
 | Command | Description |
 |---------|-------------|
 | `plan --target <platform>` | Show build plan and recipe steps |
-| `build --target <platform> --output <dir>` | Build native library |
+| `build --target <platform> --output <dir>` | Build native library from declarative recipes |
 | `cache-key --target <platform>` | Show cache key |
 | `explain-cache --target <platform>` | Explain cache state |
 | `verify --target <platform>` | Verify built artifact |

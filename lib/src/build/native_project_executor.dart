@@ -65,9 +65,12 @@ final class NativeProjectExecutor {
     // 1. Resolve recipe
     final recipe = project.build.recipeFor(target);
     if (recipe == null) {
-      throw StateError(
-        'No build recipe for ${project.name} on ${target.label}.',
-      );
+      final message = project.build.recipes.isEmpty
+          ? 'No declarative build recipe for ${project.name} on ${target.label}. '
+                'This package may rely on a custom hook builder, which the CLI '
+                'cannot infer.'
+          : 'No build recipe for ${project.name} on ${target.label}.';
+      throw StateError(message);
     }
 
     // 2. Resolve source if not provided

@@ -103,8 +103,8 @@ NativeProject? detect([Directory? workingDirectory]) {
     );
   }
 
-  // Build recipes: prefer YAML-defined recipes, fall back to generic CMake.
-  final build = _parseBuildDefinition(doc, libraryStem);
+  // Build recipes: use YAML-defined declarative recipes only.
+  final build = _parseBuildDefinition(doc);
 
   return NativeProject(
     name: packageName,
@@ -193,130 +193,26 @@ SourceSpecification _parseGitSource(Map yaml) {
 /// Parses the optional `build` section of `native_prebuilt.yaml` into
 /// a [NativeBuildDefinition].
 ///
-/// Supports schema v2 YAML format where the build section has
-/// `recipes` with `target` patterns and `steps` lists.
-/// Falls back to a generic CMake build definition when no recipes
-/// are present.
-NativeBuildDefinition _parseBuildDefinition(
-  Map<dynamic, dynamic> doc,
-  String libraryStem,
-) {
+/// If no build recipes are declared, returns an empty definition so the CLI
+/// can report that no declarative build recipe exists instead of guessing a
+/// build system. Packages with custom builders should use their hook entrypoint
+/// rather than `native_prebuilt build`.
+NativeBuildDefinition _parseBuildDefinition(Map<dynamic, dynamic> doc) {
   final buildSection = doc['build'] as Map?;
   if (buildSection == null) {
-    return _genericCmakeBuildDefinition(libraryStem);
+    return const NativeBuildDefinition(recipes: []);
   }
 
-  // Try to parse using the typed config model.
   try {
     final normalized = normalizeYaml(buildSection);
     if (normalized is! Map<String, dynamic>) {
-      return _genericCmakeBuildDefinition(libraryStem);
+      return const NativeBuildDefinition(recipes: []);
     }
     final buildConfig = BuildConfig.fromJson(normalized);
-    if (buildConfig.recipes.isNotEmpty) {
-      return buildConfig.toBuildDefinition();
-    }
+    return buildConfig.toBuildDefinition();
   } on FormatException {
-    // Fall through to generic CMake if parsing fails
+    return const NativeBuildDefinition(recipes: []);
   } on CheckedFromJsonException {
-    // Fall through to generic CMake if parsing fails
+    return const NativeBuildDefinition(recipes: []);
   }
-
-  return _genericCmakeBuildDefinition(libraryStem);
-}
-
-// -- Legacy generic recipe (fallback) ------------------------------------
-
-/// Builds generic CMake recipes for all supported platforms
-/// using [libraryStem] for the output artifact name.
-NativeBuildDefinition _genericCmakeBuildDefinition(String libraryStem) {
-  final linux = 'build/lib$libraryStem.so';
-  final macos = 'build/lib$libraryStem.dylib';
-  final windows = 'build/$libraryStem.dll';
-
-  return NativeBuildDefinition(
-    recipes: [
-      NativeTargetRecipe(
-        pattern: const NativeTargetPattern(os: OS.linux),
-        recipe: _cmakeRecipe(linux),
-      ),
-      NativeTargetRecipe(
-        pattern: const NativeTargetPattern(os: OS.macOS),
-        recipe: _cmakeRecipe(macos),
-      ),
-      NativeTargetRecipe(
-        pattern: const NativeTargetPattern(os: OS.windows),
-        recipe: StepBuildRecipe(
-          steps: [
-            CmakeConfigureStep(
-              sourceDirectory: '.',
-              buildDirectory: 'build',
-              generator: 'Ninja',
-              defines: {'CMAKE_BUILD_TYPE': 'Release'},
-            ),
-            CmakeBuildStep(buildDirectory: 'build'),
-            ExportArtifactStep(
-              id: 'export_library',
-              declaration: NativeArtifactDeclaration(
-                id: 'library',
-                kind: NativeArtifactKind.dynamicLibrary,
-                primaryPath: windows,
-              ),
-            ),
-          ],
-        ),
-      ),
-      NativeTargetRecipe(
-        pattern: const NativeTargetPattern(os: OS.android),
-        recipe: _cmakeRecipe(linux),
-      ),
-      NativeTargetRecipe(
-        pattern: const NativeTargetPattern(os: OS.iOS),
-        recipe: StepBuildRecipe(
-          steps: [
-            CmakeConfigureStep(
-              sourceDirectory: '.',
-              buildDirectory: 'build',
-              toolchainFile: 'CMake/iOS.cmake',
-              defines: {
-                'CMAKE_BUILD_TYPE': 'Release',
-                'IOS_PLATFORM': 'OS',
-                'IOS_DEPLOYMENT_TARGET': '17',
-              },
-            ),
-            CmakeBuildStep(buildDirectory: 'build'),
-            ExportArtifactStep(
-              id: 'export_library',
-              declaration: NativeArtifactDeclaration(
-                id: 'library',
-                kind: NativeArtifactKind.dynamicLibrary,
-                primaryPath: macos,
-              ),
-            ),
-          ],
-        ),
-      ),
-    ],
-  );
-}
-
-StepBuildRecipe _cmakeRecipe(String primaryPath) {
-  return StepBuildRecipe(
-    steps: [
-      CmakeConfigureStep(
-        sourceDirectory: '.',
-        buildDirectory: 'build',
-        defines: {'CMAKE_BUILD_TYPE': 'Release'},
-      ),
-      CmakeBuildStep(buildDirectory: 'build'),
-      ExportArtifactStep(
-        id: 'export_library',
-        declaration: NativeArtifactDeclaration(
-          id: 'library',
-          kind: NativeArtifactKind.dynamicLibrary,
-          primaryPath: primaryPath,
-        ),
-      ),
-    ],
-  );
 }

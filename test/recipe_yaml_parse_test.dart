@@ -108,7 +108,7 @@ artifacts:
       ]);
     });
 
-    test('falls back to generic CMake when no build section present', () {
+    test('returns no build recipes when no build section is present', () {
       final dir = Directory.systemTemp.createTempSync('npb_test_');
       try {
         File('${dir.path}/native_prebuilt.yaml').writeAsStringSync('''
@@ -128,7 +128,7 @@ artifacts:
 ''');
         final project = detect(dir);
         expect(project, isNotNull);
-        expect(project!.build.recipes, isNotEmpty);
+        expect(project!.build.recipes, isEmpty);
       } finally {
         dir.deleteSync(recursive: true);
       }
@@ -305,7 +305,7 @@ artifacts:
       }
     });
 
-    test('falls back to generic CMake for unknown step type', () {
+    test('returns no build recipes for unknown step types', () {
       final dir = Directory.systemTemp.createTempSync('npb_test_');
       try {
         File('${dir.path}/native_prebuilt.yaml').writeAsStringSync('''
@@ -333,8 +333,7 @@ build:
 ''');
         final project = detect(dir);
         expect(project, isNotNull);
-        // Falls back to generic CMake when build parsing fails
-        expect(project!.build.recipes, isNotEmpty);
+        expect(project!.build.recipes, isEmpty);
       } finally {
         dir.deleteSync(recursive: true);
       }
