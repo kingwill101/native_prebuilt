@@ -32,8 +32,8 @@ StreamSubscription<LogRecord>? _nativePrebuiltLogSubscription;
 ///
 /// If [project] is provided, it is used for the build-related commands
 /// (plan, build, cache-key, explain-cache, verify). Otherwise the CLI
-/// auto-discovers the nearest `native_prebuilt.yaml` and falls back to
-/// [_defaultProject] if none is found.
+/// auto-discovers the nearest `native_prebuilt.yaml` and uses the built-in
+/// default project if none is found.
 ///
 /// Runs the native project CLI for package-local builds.
 /// This provides build commands for packages that define a [NativeProject].
@@ -41,9 +41,6 @@ Future<void> runNativePrebuiltCli(
   List<String> args, {
   NativeProject? project,
 }) async {
-  // If no project is explicitly passed, try to auto-discover it
-  // from native_prebuilt.yaml in the current working directory.
-  // Fall back to the hardcoded example project if not found.
   final buildProject = project ?? detect(Directory.current) ?? _defaultProject;
   final runner =
       CommandRunner<void>(
@@ -56,7 +53,12 @@ Future<void> runNativePrebuiltCli(
         ..addCommand(DoctorCommand())
         ..addCommand(WorkflowCommand())
         ..addCommand(PlanCommand(project: buildProject))
-        ..addCommand(BuildCommand(project: buildProject))
+        ..addCommand(
+          BuildCommand(
+            project: buildProject,
+            autoDiscoverProject: project == null,
+          ),
+        )
         ..addCommand(CacheKeyCommand(project: buildProject))
         ..addCommand(ExplainCacheCommand(project: buildProject))
         ..addCommand(VerifyCommand(project: buildProject));

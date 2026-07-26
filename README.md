@@ -96,7 +96,7 @@ You can define the complete project in `native_prebuilt.yaml` instead of writing
 
 ```yaml
 dependencies:
-  native_prebuilt: ^0.0.13
+  native_prebuilt: ^0.2.0
 ```
 
 ## Source fallback pipeline
@@ -109,8 +109,9 @@ Resolution order:
 3. Shared cache / release download
 4. Source build using recipe or callback
 
-`native_prebuilt build` only executes declarative YAML recipes. If a package uses a
-custom hook builder, use its hook entrypoint instead of the CLI build command.
+`native_prebuilt build` executes declarative YAML recipes, and falls back to
+`hook/build.dart` when no recipe is declared. If the manifest has an artifact
+entry for the target, that entry is used to standardize the staged payload name.
 
 ## Build steps
 

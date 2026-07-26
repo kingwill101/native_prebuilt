@@ -153,6 +153,29 @@ artifacts:
     }
   });
 
+  test('errors when no manifest or hook/build exists', () async {
+    final dir = await Directory.systemTemp.createTemp('native_prebuilt_cli_');
+    final previous = Directory.current;
+    try {
+      Directory.current = dir;
+      File('${dir.path}/pubspec.yaml').writeAsStringSync('name: demo_pkg\n');
+
+      expect(
+        () => runNativePrebuiltCli(['build', '--target', 'linux-x64']),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            contains('No native_prebuilt.yaml or hook/build.dart found'),
+          ),
+        ),
+      );
+    } finally {
+      Directory.current = previous;
+      dir.deleteSync(recursive: true);
+    }
+  });
+
   test('workflow templates include expected files', () {
     final templates = workflowTemplates(packageName: 'native_prebuilt_demo');
     expect(templates.keys, contains('prebuilt.yml'));

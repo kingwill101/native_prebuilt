@@ -12,13 +12,13 @@
 
 ## Publish
 
-- [ ] `git tag v0.0.1`
+- [ ] `git tag v0.2.0`
 - [ ] `git push origin main --tags`
 - [ ] `dart pub publish`
 
 ## After publish
 
-- [ ] Update the e2e repo dependency to `native_prebuilt: ^0.0.1`
+- [ ] Update the e2e repo dependency to `native_prebuilt: ^0.2.0`
 - [ ] `dart pub get` in the e2e repo
 - [ ] Run the e2e hook build / smoke tests
 - [ ] Create the first GitHub release in the private e2e repo

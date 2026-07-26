@@ -65,7 +65,7 @@ await runNativeProjectCli(args, project: project);
 
 ### 3. Declarative manifest (recommended for release builds)
 
-You can define the complete project in `native_prebuilt.yaml` instead of writing `NativeProject` code manually. The CLI loads that manifest, validates it, and generates the build graph from it. `native_prebuilt build` only runs declarative recipes; packages with custom hook builders should use their hook entrypoint instead.
+You can define the complete project in `native_prebuilt.yaml` instead of writing `NativeProject` code manually. The CLI loads that manifest, validates it, and generates the build graph from it. `native_prebuilt build` runs declarative recipes and falls back to `hook/build.dart` when no recipe is declared; when the manifest has a matching target artifact, its payload definition standardizes the staged output.
 
 ## CLI Commands
 

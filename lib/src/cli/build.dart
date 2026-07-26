@@ -7,13 +7,18 @@ import 'package:path/path.dart' as p;
 import '../build/native_project.dart';
 import '../build/native_project_executor.dart';
 import '../source/source_fallback.dart';
+import 'cli_config.dart';
 import 'shared.dart';
 
 /// Thin CLI adapter that delegates to [NativeProjectExecutor].
 ///
 /// Parses CLI arguments and invokes the shared build entry point.
 class BuildCommand extends Command<void> {
-  BuildCommand({required this.project, this.sourceFallback}) {
+  BuildCommand({
+    required this.project,
+    this.sourceFallback,
+    this.autoDiscoverProject = false,
+  }) {
     argParser.addOption(
       'target',
       abbr: 't',
@@ -39,6 +44,7 @@ class BuildCommand extends Command<void> {
 
   final NativeProject project;
   final SourceFallback? sourceFallback;
+  final bool autoDiscoverProject;
 
   @override
   String get name => 'build';
@@ -49,6 +55,10 @@ class BuildCommand extends Command<void> {
 
   @override
   Future<void> run() async {
+    final buildProject = autoDiscoverProject
+        ? discoverBuildProject(Directory.current)
+        : project;
+
     final targetLabel = option('target') as String?;
     if (targetLabel == null) {
       throw UsageException('build requires --target', usage);
@@ -56,7 +66,7 @@ class BuildCommand extends Command<void> {
 
     final target = parseTarget(targetLabel);
     if (target == null) {
-      final validTargets = supportedTargetLabels(project);
+      final validTargets = supportedTargetLabels(buildProject);
       throw UsageException(
         'Unknown target: $targetLabel\nValid targets: ${validTargets.join(', ')}',
         usage,
@@ -84,8 +94,8 @@ class BuildCommand extends Command<void> {
 
     // Override prebuilt policy if --from-source is set
     final effectiveProject = forceSource
-        ? project.copyWith(prebuiltPolicy: PrebuiltPolicy.forceSourceBuild)
-        : project;
+        ? buildProject.copyWith(prebuiltPolicy: PrebuiltPolicy.forceSourceBuild)
+        : buildProject;
 
     // Create the shared executor and delegate
     final executor = NativeProjectExecutor(
@@ -98,7 +108,7 @@ class BuildCommand extends Command<void> {
       final result = await executor.build(
         target: target,
         outputDir: outputDir,
-        linkMode: project.asset.linkMode,
+        linkMode: buildProject.asset.linkMode,
       );
 
       print('Build completed successfully.');

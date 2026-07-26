@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0
+
+- Add hook/build.dart fallback for packages without declarative recipes.
+- Standardize hook fallback output using the manifest artifact payload when available.
+- Improve CLI errors when neither native_prebuilt.yaml nor hook/build.dart exist.
+
 ## 0.0.13
 
 - Generate platform-filtered GitHub `prebuilt.yml` from manifest artifact labels.

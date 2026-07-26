@@ -197,6 +197,84 @@ SourceSpecification _parseGitSource(Map yaml) {
 /// can report that no declarative build recipe exists instead of guessing a
 /// build system. Packages with custom builders should use their hook entrypoint
 /// rather than `native_prebuilt build`.
+/// Discovers a build project for the CLI.
+///
+/// Prefers a declarative `native_prebuilt.yaml`. If none exists, falls back
+/// to a `hook/build.dart` project using the package name from `pubspec.yaml`.
+/// Throws a descriptive error when neither exists.
+NativeProject discoverBuildProject([Directory? workingDirectory]) {
+  final dir = (workingDirectory ?? Directory.current).absolute;
+  final configFile = resolveConfigFile(null, dir);
+  if (configFile != null) {
+    final project = detect(dir);
+    if (project == null) {
+      throw StateError(
+        'Found native_prebuilt.yaml at ${configFile.path}, but it could not be parsed. '
+        'Fix the manifest or remove it to use hook/build.dart fallback.',
+      );
+    }
+    return project;
+  }
+
+  final hookBuildFile = resolveHookBuildFile(dir);
+  if (hookBuildFile != null) {
+    final packageName = readPackageName(dir) ?? p.basename(dir.path);
+    return NativeProject(
+      name: packageName,
+      asset: NativeAssetSpec(
+        assetName: 'src/$packageName.dart',
+        libraryStem: packageName,
+        linkMode: DynamicLoadingBundled(),
+      ),
+      prebuilts: const PrebuiltManifest(
+        schemaVersion: 1,
+        release: GitHubReleaseSource(owner: '', repository: '', tag: ''),
+        artifacts: {},
+      ),
+      sources: const [],
+      build: const NativeBuildDefinition(recipes: []),
+      prebuiltPolicy: PrebuiltPolicy.forceSourceBuild,
+    );
+  }
+
+  throw StateError(
+    'No native_prebuilt.yaml or hook/build.dart found in ${dir.path}. '
+    'Add a manifest for declarative builds or a hook/build.dart for hook-based builds.',
+  );
+}
+
+File? resolveHookBuildFile([Directory? workingDirectory]) {
+  var dir = (workingDirectory ?? Directory.current).absolute;
+  while (true) {
+    final candidate = File(p.join(dir.path, 'hook', 'build.dart'));
+    if (candidate.existsSync()) {
+      return candidate;
+    }
+
+    final parent = dir.parent;
+    if (parent.path == dir.path) return null;
+    dir = parent;
+  }
+}
+
+String? readPackageName([Directory? workingDirectory]) {
+  var dir = (workingDirectory ?? Directory.current).absolute;
+  while (true) {
+    final pubspec = File(p.join(dir.path, 'pubspec.yaml'));
+    if (pubspec.existsSync()) {
+      final yaml = loadYaml(pubspec.readAsStringSync());
+      if (yaml is YamlMap) {
+        final name = yaml['name'];
+        if (name is String && name.isNotEmpty) return name;
+      }
+    }
+
+    final parent = dir.parent;
+    if (parent.path == dir.path) return null;
+    dir = parent;
+  }
+}
+
 NativeBuildDefinition _parseBuildDefinition(Map<dynamic, dynamic> doc) {
   final buildSection = doc['build'] as Map?;
   if (buildSection == null) {
