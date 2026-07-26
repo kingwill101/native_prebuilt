@@ -75,12 +75,12 @@ final class CmakeConfigureStepConfig extends BuildStepConfig {
 
   @override
   NativeBuildStep toBuildStep() => CmakeConfigureStep(
-        sourceDirectory: sourceDirectory,
-        buildDirectory: buildDirectory,
-        defines: definitions,
-        generator: generator,
-        toolchainFile: toolchainFile,
-      );
+    sourceDirectory: sourceDirectory,
+    buildDirectory: buildDirectory,
+    defines: definitions,
+    generator: generator,
+    toolchainFile: toolchainFile,
+  );
 
   final String sourceDirectory;
   final String buildDirectory;
@@ -115,10 +115,10 @@ final class CmakeBuildStepConfig extends BuildStepConfig {
 
   @override
   NativeBuildStep toBuildStep() => CmakeBuildStep(
-        buildDirectory: buildDirectory,
-        targets: targets,
-        parallel: parallel,
-        environment: environment,
+    buildDirectory: buildDirectory,
+    targets: targets,
+    parallel: parallel,
+    environment: environment,
   );
 
   final String buildDirectory;

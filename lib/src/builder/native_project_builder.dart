@@ -371,5 +371,3 @@ final class NativeProjectBuilder {
     }
   }
 }
-
-

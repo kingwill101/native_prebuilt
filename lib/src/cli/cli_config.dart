@@ -12,8 +12,6 @@ import '../manifest/prebuilt_manifest.dart';
 import '../manifest/release_source.dart';
 import '../source/source_specification.dart';
 
-
-
 /// Resolves the nearest `native_prebuilt.yaml` starting at [workingDirectory]
 /// and walking up parent directories.
 ///
@@ -51,7 +49,6 @@ NativeProject? detect([Directory? workingDirectory]) {
 
   final schema = doc['schema'];
   if (schema is! int || schema < 1) return null;
-
 
   final packageName = doc['package'] as String? ?? 'native_prebuilt';
   final assetName = doc['asset_name'] as String? ?? '';
@@ -147,11 +144,7 @@ ReleaseSource _parseReleaseSource(Map yaml) {
       tag: tag,
     );
   }
-  return GitHubReleaseSource(
-    owner: repository,
-    repository: '',
-    tag: tag,
-  );
+  return GitHubReleaseSource(owner: repository, repository: '', tag: tag);
 }
 
 SourceSpecification? _parseSourceSpec(Map yaml) {
@@ -186,7 +179,9 @@ SourceSpecification? _parseSourceSpec(Map yaml) {
 
 SourceSpecification _parseGitSource(Map yaml) {
   return GitSource(
-    repository: Uri.parse(yaml['url'] as String? ?? yaml['repository'] as String? ?? ''),
+    repository: Uri.parse(
+      yaml['url'] as String? ?? yaml['repository'] as String? ?? '',
+    ),
     revision: yaml['ref'] as String? ?? yaml['revision'] as String? ?? '',
     subdirectory: yaml['subdirectory'] as String?,
     submodules: yaml['submodules'] as bool? ?? false,
@@ -251,23 +246,25 @@ NativeBuildDefinition _genericCmakeBuildDefinition(String libraryStem) {
       ),
       NativeTargetRecipe(
         pattern: const NativeTargetPattern(os: OS.windows),
-        recipe: StepBuildRecipe(steps: [
-          CmakeConfigureStep(
-            sourceDirectory: '.',
-            buildDirectory: 'build',
-            generator: 'Ninja',
-            defines: {'CMAKE_BUILD_TYPE': 'Release'},
-          ),
-          CmakeBuildStep(buildDirectory: 'build'),
-          ExportArtifactStep(
-            id: 'export_library',
-            declaration: NativeArtifactDeclaration(
-              id: 'library',
-              kind: NativeArtifactKind.dynamicLibrary,
-              primaryPath: windows,
+        recipe: StepBuildRecipe(
+          steps: [
+            CmakeConfigureStep(
+              sourceDirectory: '.',
+              buildDirectory: 'build',
+              generator: 'Ninja',
+              defines: {'CMAKE_BUILD_TYPE': 'Release'},
             ),
-          ),
-        ]),
+            CmakeBuildStep(buildDirectory: 'build'),
+            ExportArtifactStep(
+              id: 'export_library',
+              declaration: NativeArtifactDeclaration(
+                id: 'library',
+                kind: NativeArtifactKind.dynamicLibrary,
+                primaryPath: windows,
+              ),
+            ),
+          ],
+        ),
       ),
       NativeTargetRecipe(
         pattern: const NativeTargetPattern(os: OS.android),
@@ -275,47 +272,51 @@ NativeBuildDefinition _genericCmakeBuildDefinition(String libraryStem) {
       ),
       NativeTargetRecipe(
         pattern: const NativeTargetPattern(os: OS.iOS),
-        recipe: StepBuildRecipe(steps: [
-          CmakeConfigureStep(
-            sourceDirectory: '.',
-            buildDirectory: 'build',
-            toolchainFile: 'CMake/iOS.cmake',
-            defines: {
-              'CMAKE_BUILD_TYPE': 'Release',
-              'IOS_PLATFORM': 'OS',
-              'IOS_DEPLOYMENT_TARGET': '17',
-            },
-          ),
-          CmakeBuildStep(buildDirectory: 'build'),
-          ExportArtifactStep(
-            id: 'export_library',
-            declaration: NativeArtifactDeclaration(
-              id: 'library',
-              kind: NativeArtifactKind.dynamicLibrary,
-              primaryPath: macos,
+        recipe: StepBuildRecipe(
+          steps: [
+            CmakeConfigureStep(
+              sourceDirectory: '.',
+              buildDirectory: 'build',
+              toolchainFile: 'CMake/iOS.cmake',
+              defines: {
+                'CMAKE_BUILD_TYPE': 'Release',
+                'IOS_PLATFORM': 'OS',
+                'IOS_DEPLOYMENT_TARGET': '17',
+              },
             ),
-          ),
-        ]),
+            CmakeBuildStep(buildDirectory: 'build'),
+            ExportArtifactStep(
+              id: 'export_library',
+              declaration: NativeArtifactDeclaration(
+                id: 'library',
+                kind: NativeArtifactKind.dynamicLibrary,
+                primaryPath: macos,
+              ),
+            ),
+          ],
+        ),
       ),
     ],
   );
 }
 
 StepBuildRecipe _cmakeRecipe(String primaryPath) {
-  return StepBuildRecipe(steps: [
-    CmakeConfigureStep(
-      sourceDirectory: '.',
-      buildDirectory: 'build',
-      defines: {'CMAKE_BUILD_TYPE': 'Release'},
-    ),
-    CmakeBuildStep(buildDirectory: 'build'),
-    ExportArtifactStep(
-      id: 'export_library',
-      declaration: NativeArtifactDeclaration(
-        id: 'library',
-        kind: NativeArtifactKind.dynamicLibrary,
-        primaryPath: primaryPath,
+  return StepBuildRecipe(
+    steps: [
+      CmakeConfigureStep(
+        sourceDirectory: '.',
+        buildDirectory: 'build',
+        defines: {'CMAKE_BUILD_TYPE': 'Release'},
       ),
-    ),
-  ]);
+      CmakeBuildStep(buildDirectory: 'build'),
+      ExportArtifactStep(
+        id: 'export_library',
+        declaration: NativeArtifactDeclaration(
+          id: 'library',
+          kind: NativeArtifactKind.dynamicLibrary,
+          primaryPath: primaryPath,
+        ),
+      ),
+    ],
+  );
 }

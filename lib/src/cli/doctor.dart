@@ -16,7 +16,8 @@ class DoctorCommand extends Command<void> {
 
   @override
   Future<void> run() async {
-    final configFile = resolveConfigFile(option('config') as String?) ??
+    final configFile =
+        resolveConfigFile(option('config') as String?) ??
         (throw UsageException(
           'Could not find native_prebuilt.yaml. Pass --config explicitly.',
           usage,
@@ -32,7 +33,9 @@ String renderDoctorSummary(NativePrebuiltConfig config) {
     ..writeln('release: ${config.release.toReleaseSource()}')
     ..writeln('artifacts: ${config.artifacts.length}');
   for (final entry in config.artifacts.entries) {
-    b.writeln('  - ${entry.key}: archive=${entry.value.archive}, payload=${entry.value.payload.type}');
+    b.writeln(
+      '  - ${entry.key}: archive=${entry.value.archive}, payload=${entry.value.payload.type}',
+    );
   }
   return b.toString().trimRight();
 }

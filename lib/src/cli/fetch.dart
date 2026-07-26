@@ -31,7 +31,8 @@ class FetchCommand extends Command<void> {
 
   @override
   Future<void> run() async {
-    final configFile = resolveConfigFile(option('config') as String?) ??
+    final configFile =
+        resolveConfigFile(option('config') as String?) ??
         (throw UsageException(
           'Could not find native_prebuilt.yaml. Pass --config explicitly.',
           usage,
@@ -78,9 +79,7 @@ class FetchCommand extends Command<void> {
         ),
       );
       if (extracted == null) {
-        throw StateError(
-          'No matching payload found in ${artifact.archive}',
-        );
+        throw StateError('No matching payload found in ${artifact.archive}');
       }
       io.info(extracted.path);
     } finally {

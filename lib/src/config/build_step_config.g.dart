@@ -67,40 +67,46 @@ Map<String, dynamic> _$CmakeConfigureStepConfigToJson(
 
 CmakeBuildStepConfig _$CmakeBuildStepConfigFromJson(
   Map<String, dynamic> json,
-) => $checkedCreate('CmakeBuildStepConfig', json, ($checkedConvert) {
-  $checkKeys(
-    json,
-    allowedKeys: const [
-      'id',
-      'needs',
-      'build_directory',
-      'targets',
-      'parallel',
-      'environment',
-    ],
-  );
-  final val = CmakeBuildStepConfig(
-    id: $checkedConvert('id', (v) => v as String),
-    buildDirectory: $checkedConvert('build_directory', (v) => v as String),
-    targets: $checkedConvert(
-      'targets',
-      (v) =>
-          (v as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
-    ),
-    parallel: $checkedConvert('parallel', (v) => v as bool? ?? true),
-    environment: $checkedConvert(
-      'environment',
-      (v) =>
-          (v as Map<String, dynamic>?)?.map((k, e) => MapEntry(k, e as String)),
-    ),
-    needs: $checkedConvert(
-      'needs',
-      (v) =>
-          (v as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
-    ),
-  );
-  return val;
-}, fieldKeyMap: const {'buildDirectory': 'build_directory'});
+) => $checkedCreate(
+  'CmakeBuildStepConfig',
+  json,
+  ($checkedConvert) {
+    $checkKeys(
+      json,
+      allowedKeys: const [
+        'id',
+        'needs',
+        'build_directory',
+        'targets',
+        'parallel',
+        'environment',
+      ],
+    );
+    final val = CmakeBuildStepConfig(
+      id: $checkedConvert('id', (v) => v as String),
+      buildDirectory: $checkedConvert('build_directory', (v) => v as String),
+      targets: $checkedConvert(
+        'targets',
+        (v) =>
+            (v as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
+      ),
+      parallel: $checkedConvert('parallel', (v) => v as bool? ?? true),
+      environment: $checkedConvert(
+        'environment',
+        (v) => (v as Map<String, dynamic>?)?.map(
+          (k, e) => MapEntry(k, e as String),
+        ),
+      ),
+      needs: $checkedConvert(
+        'needs',
+        (v) =>
+            (v as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
+      ),
+    );
+    return val;
+  },
+  fieldKeyMap: const {'buildDirectory': 'build_directory'},
+);
 
 Map<String, dynamic> _$CmakeBuildStepConfigToJson(
   CmakeBuildStepConfig instance,
@@ -146,39 +152,48 @@ Map<String, dynamic> _$ExportArtifactStepConfigToJson(
 
 CommandStepConfig _$CommandStepConfigFromJson(
   Map<String, dynamic> json,
-) => $checkedCreate('CommandStepConfig', json, ($checkedConvert) {
-  $checkKeys(
-    json,
-    allowedKeys: const [
-      'id',
-      'needs',
-      'commands',
-      'working_directory',
-      'environment',
-    ],
-  );
-  final val = CommandStepConfig(
-    id: $checkedConvert('id', (v) => v as String),
-    commands: $checkedConvert(
-      'commands',
-      (v) => (v as List<dynamic>)
-          .map((e) => (e as List<dynamic>).map((e) => e as String).toList())
-          .toList(),
-    ),
-    workingDirectory: $checkedConvert('working_directory', (v) => v as String?),
-    environment: $checkedConvert(
-      'environment',
-      (v) =>
-          (v as Map<String, dynamic>?)?.map((k, e) => MapEntry(k, e as String)),
-    ),
-    needs: $checkedConvert(
-      'needs',
-      (v) =>
-          (v as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
-    ),
-  );
-  return val;
-}, fieldKeyMap: const {'workingDirectory': 'working_directory'});
+) => $checkedCreate(
+  'CommandStepConfig',
+  json,
+  ($checkedConvert) {
+    $checkKeys(
+      json,
+      allowedKeys: const [
+        'id',
+        'needs',
+        'commands',
+        'working_directory',
+        'environment',
+      ],
+    );
+    final val = CommandStepConfig(
+      id: $checkedConvert('id', (v) => v as String),
+      commands: $checkedConvert(
+        'commands',
+        (v) => (v as List<dynamic>)
+            .map((e) => (e as List<dynamic>).map((e) => e as String).toList())
+            .toList(),
+      ),
+      workingDirectory: $checkedConvert(
+        'working_directory',
+        (v) => v as String?,
+      ),
+      environment: $checkedConvert(
+        'environment',
+        (v) => (v as Map<String, dynamic>?)?.map(
+          (k, e) => MapEntry(k, e as String),
+        ),
+      ),
+      needs: $checkedConvert(
+        'needs',
+        (v) =>
+            (v as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
+      ),
+    );
+    return val;
+  },
+  fieldKeyMap: const {'workingDirectory': 'working_directory'},
+);
 
 Map<String, dynamic> _$CommandStepConfigToJson(CommandStepConfig instance) =>
     <String, dynamic>{
@@ -191,24 +206,29 @@ Map<String, dynamic> _$CommandStepConfigToJson(CommandStepConfig instance) =>
 
 DownloadArchiveStepConfig _$DownloadArchiveStepConfigFromJson(
   Map<String, dynamic> json,
-) => $checkedCreate('DownloadArchiveStepConfig', json, ($checkedConvert) {
-  $checkKeys(
-    json,
-    allowedKeys: const ['id', 'needs', 'url', 'sha256', 'output_directory'],
-  );
-  final val = DownloadArchiveStepConfig(
-    id: $checkedConvert('id', (v) => v as String),
-    url: $checkedConvert('url', (v) => v as String),
-    sha256: $checkedConvert('sha256', (v) => v as String?),
-    outputDirectory: $checkedConvert('output_directory', (v) => v as String?),
-    needs: $checkedConvert(
-      'needs',
-      (v) =>
-          (v as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
-    ),
-  );
-  return val;
-}, fieldKeyMap: const {'outputDirectory': 'output_directory'});
+) => $checkedCreate(
+  'DownloadArchiveStepConfig',
+  json,
+  ($checkedConvert) {
+    $checkKeys(
+      json,
+      allowedKeys: const ['id', 'needs', 'url', 'sha256', 'output_directory'],
+    );
+    final val = DownloadArchiveStepConfig(
+      id: $checkedConvert('id', (v) => v as String),
+      url: $checkedConvert('url', (v) => v as String),
+      sha256: $checkedConvert('sha256', (v) => v as String?),
+      outputDirectory: $checkedConvert('output_directory', (v) => v as String?),
+      needs: $checkedConvert(
+        'needs',
+        (v) =>
+            (v as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
+      ),
+    );
+    return val;
+  },
+  fieldKeyMap: const {'outputDirectory': 'output_directory'},
+);
 
 Map<String, dynamic> _$DownloadArchiveStepConfigToJson(
   DownloadArchiveStepConfig instance,
@@ -222,32 +242,37 @@ Map<String, dynamic> _$DownloadArchiveStepConfigToJson(
 
 GitCheckoutStepConfig _$GitCheckoutStepConfigFromJson(
   Map<String, dynamic> json,
-) => $checkedCreate('GitCheckoutStepConfig', json, ($checkedConvert) {
-  $checkKeys(
-    json,
-    allowedKeys: const [
-      'id',
-      'needs',
-      'repository',
-      'revision',
-      'target_directory',
-      'submodules',
-    ],
-  );
-  final val = GitCheckoutStepConfig(
-    id: $checkedConvert('id', (v) => v as String),
-    repository: $checkedConvert('repository', (v) => v as String),
-    revision: $checkedConvert('revision', (v) => v as String),
-    targetDirectory: $checkedConvert('target_directory', (v) => v as String?),
-    submodules: $checkedConvert('submodules', (v) => v as bool? ?? false),
-    needs: $checkedConvert(
-      'needs',
-      (v) =>
-          (v as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
-    ),
-  );
-  return val;
-}, fieldKeyMap: const {'targetDirectory': 'target_directory'});
+) => $checkedCreate(
+  'GitCheckoutStepConfig',
+  json,
+  ($checkedConvert) {
+    $checkKeys(
+      json,
+      allowedKeys: const [
+        'id',
+        'needs',
+        'repository',
+        'revision',
+        'target_directory',
+        'submodules',
+      ],
+    );
+    final val = GitCheckoutStepConfig(
+      id: $checkedConvert('id', (v) => v as String),
+      repository: $checkedConvert('repository', (v) => v as String),
+      revision: $checkedConvert('revision', (v) => v as String),
+      targetDirectory: $checkedConvert('target_directory', (v) => v as String?),
+      submodules: $checkedConvert('submodules', (v) => v as bool? ?? false),
+      needs: $checkedConvert(
+        'needs',
+        (v) =>
+            (v as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
+      ),
+    );
+    return val;
+  },
+  fieldKeyMap: const {'targetDirectory': 'target_directory'},
+);
 
 Map<String, dynamic> _$GitCheckoutStepConfigToJson(
   GitCheckoutStepConfig instance,

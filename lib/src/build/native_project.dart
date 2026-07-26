@@ -55,25 +55,25 @@ final class NativeAssetSpec {
   }
 
   Map<String, dynamic> toJson() => {
-        'asset_name': assetName,
-        'library_stem': libraryStem,
-        'link_mode': switch (linkMode) {
-          DynamicLoadingBundled() => 'dynamic_library',
-          StaticLinking() => 'static_library',
-          _ => 'dynamic_library',
-        },
-      };
+    'asset_name': assetName,
+    'library_stem': libraryStem,
+    'link_mode': switch (linkMode) {
+      DynamicLoadingBundled() => 'dynamic_library',
+      StaticLinking() => 'static_library',
+      _ => 'dynamic_library',
+    },
+  };
 
   factory NativeAssetSpec.fromJson(Map<String, dynamic> json) {
     return switch (json['link_mode'] as String? ?? 'dynamic_library') {
       'static_library' => NativeAssetSpec.staticLibrary(
-          assetName: json['asset_name'] as String,
-          libraryStem: json['library_stem'] as String,
-        ),
+        assetName: json['asset_name'] as String,
+        libraryStem: json['library_stem'] as String,
+      ),
       _ => NativeAssetSpec.dynamicLibrary(
-          assetName: json['asset_name'] as String,
-          libraryStem: json['library_stem'] as String,
-        ),
+        assetName: json['asset_name'] as String,
+        libraryStem: json['library_stem'] as String,
+      ),
     };
   }
 }
@@ -124,12 +124,11 @@ final class NativeTargetPattern {
   }
 
   Map<String, dynamic> toJson() => {
-        if (os != null) 'os': os!.name,
-        if (architecture != null) 'architecture': architecture!.name,
-        if (iOSSdk != null) 'sdk': iOSSdk == IOSSdk.iPhoneSimulator
-            ? 'iphonesimulator'
-            : 'iphoneos',
-      };
+    if (os != null) 'os': os!.name,
+    if (architecture != null) 'architecture': architecture!.name,
+    if (iOSSdk != null)
+      'sdk': iOSSdk == IOSSdk.iPhoneSimulator ? 'iphonesimulator' : 'iphoneos',
+  };
 
   factory NativeTargetPattern.fromJson(Map<String, dynamic> json) {
     final sdk = switch (json['sdk'] as String?) {
@@ -158,18 +157,16 @@ final class NativeTargetRecipe {
   final NativeBuildRecipe recipe;
 
   Map<String, dynamic> toJson() => {
-        'pattern': pattern.toJson(),
-        'recipe': recipe.toJson(),
-      };
+    'pattern': pattern.toJson(),
+    'recipe': recipe.toJson(),
+  };
 
   factory NativeTargetRecipe.fromJson(Map<String, dynamic> json) {
     return NativeTargetRecipe(
       pattern: NativeTargetPattern.fromJson(
         json['pattern'] as Map<String, dynamic>,
       ),
-      recipe: StepBuildRecipe.fromJson(
-        json['recipe'] as Map<String, dynamic>,
-      ),
+      recipe: StepBuildRecipe.fromJson(json['recipe'] as Map<String, dynamic>),
     );
   }
 }
@@ -192,15 +189,16 @@ final class NativeBuildDefinition {
   }
 
   Map<String, dynamic> toJson() => {
-        'recipes': recipes.map((recipe) => recipe.toJson()).toList(),
-      };
+    'recipes': recipes.map((recipe) => recipe.toJson()).toList(),
+  };
 
   factory NativeBuildDefinition.fromJson(Map<String, dynamic> json) {
     return NativeBuildDefinition(
       recipes: (json['recipes'] as List<dynamic>? ?? const [])
-          .map((recipe) => NativeTargetRecipe.fromJson(
-                recipe as Map<String, dynamic>,
-              ))
+          .map(
+            (recipe) =>
+                NativeTargetRecipe.fromJson(recipe as Map<String, dynamic>),
+          )
           .toList(),
     );
   }
@@ -280,17 +278,17 @@ final class NativeProject {
   }
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'asset': asset.toJson(),
-        'prebuilts': prebuilts.toJson(),
-        'sources': sources.map((source) => source.toJson()).toList(),
-        'build': build.toJson(),
-        'prebuilt_policy': switch (prebuiltPolicy) {
-          _PreferPrebuilt() => 'prefer_prebuilt',
-          _ForceSourceBuild() => 'force_source_build',
-          _ => 'prefer_prebuilt',
-        },
-      };
+    'name': name,
+    'asset': asset.toJson(),
+    'prebuilts': prebuilts.toJson(),
+    'sources': sources.map((source) => source.toJson()).toList(),
+    'build': build.toJson(),
+    'prebuilt_policy': switch (prebuiltPolicy) {
+      _PreferPrebuilt() => 'prefer_prebuilt',
+      _ForceSourceBuild() => 'force_source_build',
+      _ => 'prefer_prebuilt',
+    },
+  };
 
   factory NativeProject.fromJson(Map<String, dynamic> json) {
     return NativeProject(
@@ -300,9 +298,10 @@ final class NativeProject {
         json['prebuilts'] as Map<String, dynamic>,
       ),
       sources: (json['sources'] as List<dynamic>? ?? const [])
-          .map((source) => SourceSpecification.fromJson(
-                source as Map<String, dynamic>,
-              ))
+          .map(
+            (source) =>
+                SourceSpecification.fromJson(source as Map<String, dynamic>),
+          )
           .toList(),
       build: NativeBuildDefinition.fromJson(
         json['build'] as Map<String, dynamic>,

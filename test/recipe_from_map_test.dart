@@ -35,9 +35,7 @@ void main() {
     });
 
     test('fromMap uses defaults for optional fields', () {
-      final step = CmakeConfigureStep.fromMap({
-        'source_directory': '.',
-      });
+      final step = CmakeConfigureStep.fromMap({'source_directory': '.'});
 
       expect(step.sourceDirectory, '.');
       expect(step.buildDirectory, isNull);
@@ -90,9 +88,7 @@ void main() {
     });
 
     test('fromMap defaults targets to empty and parallel to true', () {
-      final step = CmakeBuildStep.fromMap({
-        'build_directory': 'build',
-      });
+      final step = CmakeBuildStep.fromMap({'build_directory': 'build'});
 
       expect(step.targets, isEmpty);
       expect(step.parallel, isTrue);
@@ -122,7 +118,10 @@ void main() {
       expect(restored.id, original.id);
       expect(restored.declaration.id, original.declaration.id);
       expect(restored.declaration.kind, original.declaration.kind);
-      expect(restored.declaration.primaryPath, original.declaration.primaryPath);
+      expect(
+        restored.declaration.primaryPath,
+        original.declaration.primaryPath,
+      );
     });
 
     test('fromMap parses all fields including companions', () {
@@ -131,11 +130,7 @@ void main() {
         'kind': 'dynamic_library',
         'primary_path': 'build/libmylib.so',
         'companions': [
-          {
-            'path': 'build/libmylib.a',
-            'role': 'primary',
-            'optional': false,
-          },
+          {'path': 'build/libmylib.a', 'role': 'primary', 'optional': false},
         ],
       });
 

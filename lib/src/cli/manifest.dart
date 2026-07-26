@@ -54,31 +54,39 @@ class _ManifestUpdateCommand extends Command<void> {
 
   @override
   Future<void> run() async {
-    final configFile = resolveConfigFile(option('config') as String?) ??
+    final configFile =
+        resolveConfigFile(option('config') as String?) ??
         (throw UsageException(
           'Could not find native_prebuilt.yaml. Pass --config explicitly.',
           usage,
         ));
     final config = await loadNativePrebuiltConfig(configFile);
-    final outputPath = _resolveOutputPath(option('output') as String?, configFile, config);
+    final outputPath = _resolveOutputPath(
+      option('output') as String?,
+      configFile,
+      config,
+    );
     final tag = (option('tag') as String?) ?? config.release.tag;
     final builtLibraryDirPath = option('built-library-dir') as String?;
     final builtLibraryDir = builtLibraryDirPath != null
         ? Directory(builtLibraryDirPath)
         : (config.build != null
-            ? Directory(p.join(configFile.parent.path, 'built-library'))
-            : null);
+              ? Directory(p.join(configFile.parent.path, 'built-library'))
+              : null);
 
     final inferredLocalBuild =
-        builtLibraryDirPath == null && builtLibraryDir != null && builtLibraryDir.existsSync();
-    final allowMissing = (option('allow-missing') as bool?) ?? inferredLocalBuild;
+        builtLibraryDirPath == null &&
+        builtLibraryDir != null &&
+        builtLibraryDir.existsSync();
+    final allowMissing =
+        (option('allow-missing') as bool?) ?? inferredLocalBuild;
 
     final releaseAssetsDirPath = option('release-assets-dir') as String?;
     final releaseAssetsDir = releaseAssetsDirPath != null
         ? Directory(releaseAssetsDirPath)
         : (config.build != null
-            ? Directory(p.join(configFile.parent.path, 'release-assets'))
-            : null);
+              ? Directory(p.join(configFile.parent.path, 'release-assets'))
+              : null);
 
     final manifest = await generateManifest(
       config: config,
@@ -121,32 +129,40 @@ class _ManifestVerifyCommand extends Command<void> {
 
   @override
   Future<void> run() async {
-    final configFile = resolveConfigFile(option('config') as String?) ??
+    final configFile =
+        resolveConfigFile(option('config') as String?) ??
         (throw UsageException(
           'Could not find native_prebuilt.yaml. Pass --config explicitly.',
           usage,
         ));
     final config = await loadNativePrebuiltConfig(configFile);
-    final outputPath = _resolveOutputPath(option('output') as String?, configFile, config);
+    final outputPath = _resolveOutputPath(
+      option('output') as String?,
+      configFile,
+      config,
+    );
     final tag = (option('tag') as String?) ?? config.release.tag;
 
     final builtLibraryDirPath = option('built-library-dir') as String?;
     final builtLibraryDir = builtLibraryDirPath != null
         ? Directory(builtLibraryDirPath)
         : (config.build != null
-            ? Directory(p.join(configFile.parent.path, 'built-library'))
-            : null);
+              ? Directory(p.join(configFile.parent.path, 'built-library'))
+              : null);
 
     final releaseAssetsDirPath = option('release-assets-dir') as String?;
     final releaseAssetsDir = releaseAssetsDirPath != null
         ? Directory(releaseAssetsDirPath)
         : (config.build != null
-            ? Directory(p.join(configFile.parent.path, 'release-assets'))
-            : null);
+              ? Directory(p.join(configFile.parent.path, 'release-assets'))
+              : null);
 
     final inferredLocalBuild =
-        builtLibraryDirPath == null && builtLibraryDir != null && builtLibraryDir.existsSync();
-    final allowMissing = (option('allow-missing') as bool?) ?? inferredLocalBuild;
+        builtLibraryDirPath == null &&
+        builtLibraryDir != null &&
+        builtLibraryDir.existsSync();
+    final allowMissing =
+        (option('allow-missing') as bool?) ?? inferredLocalBuild;
     final manifest = await generateManifest(
       config: config,
       tag: tag,
@@ -185,8 +201,11 @@ bool _verifyManifestSubset(
 ) {
   final header = 'const ${config.package}Prebuilts = PrebuiltManifest(';
   if (!actual.contains(header)) return false;
-  if (!actual.contains("  schemaVersion: ${manifest.schemaVersion},")) return false;
-  if (!actual.contains("  release: ${renderReleaseSource(config.release.toReleaseSource().withTag(tag))},")) {
+  if (!actual.contains("  schemaVersion: ${manifest.schemaVersion},"))
+    return false;
+  if (!actual.contains(
+    "  release: ${renderReleaseSource(config.release.toReleaseSource().withTag(tag))},",
+  )) {
     return false;
   }
 

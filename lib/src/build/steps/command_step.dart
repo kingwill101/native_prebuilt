@@ -40,7 +40,9 @@ final class CommandStep implements NativeBuildStep {
     return CommandStep(
       id: map['id'] as String,
       commands: (map['commands'] as List<dynamic>)
-          .map((cmd) => (cmd as List<dynamic>).map((e) => e.toString()).toList())
+          .map(
+            (cmd) => (cmd as List<dynamic>).map((e) => e.toString()).toList(),
+          )
           .toList(),
       workingDirectory: map['working_directory'] as String?,
       environment: map['environment'] is Map

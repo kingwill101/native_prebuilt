@@ -58,13 +58,12 @@ final class PrebuiltManifest {
       artifacts[platformLabel];
 
   Map<String, dynamic> toJson() => {
-        'schema_version': schemaVersion,
-        'release': release.toJson(),
-        'artifacts': {
-          for (final entry in artifacts.entries)
-            entry.key: entry.value.toJson(),
-        },
-      };
+    'schema_version': schemaVersion,
+    'release': release.toJson(),
+    'artifacts': {
+      for (final entry in artifacts.entries) entry.key: entry.value.toJson(),
+    },
+  };
 
   factory PrebuiltManifest.fromJson(Map<String, dynamic> json) {
     return PrebuiltManifest(
@@ -72,7 +71,9 @@ final class PrebuiltManifest {
       release: ReleaseSource.fromJson(json['release'] as Map<String, dynamic>),
       artifacts: {
         for (final entry in (json['artifacts'] as Map<String, dynamic>).entries)
-          entry.key: PrebuiltArtifact.fromJson(entry.value as Map<String, dynamic>),
+          entry.key: PrebuiltArtifact.fromJson(
+            entry.value as Map<String, dynamic>,
+          ),
       },
     );
   }

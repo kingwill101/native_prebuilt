@@ -51,7 +51,8 @@ class WorkflowInitCommand extends Command<void> {
 
   @override
   Future<void> run() async {
-    final configFile = resolveConfigFile(option('config') as String?) ??
+    final configFile =
+        resolveConfigFile(option('config') as String?) ??
         (throw UsageException(
           'Could not find native_prebuilt.yaml. Pass --config explicitly.',
           usage,

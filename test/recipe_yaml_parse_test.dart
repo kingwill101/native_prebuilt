@@ -188,7 +188,7 @@ artifacts:
     });
 
     test('parses build recipes with dependencies', () {
-        final dir = Directory.systemTemp.createTempSync('npb_test_');
+      final dir = Directory.systemTemp.createTempSync('npb_test_');
       try {
         File('${dir.path}/native_prebuilt.yaml').writeAsStringSync('''
 schema: 2

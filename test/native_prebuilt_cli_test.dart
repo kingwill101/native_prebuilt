@@ -65,10 +65,7 @@ artifacts:
         config.artifacts['linux-arm64']!.archive,
         'my_package-linux-arm64.tar.gz',
       );
-      expect(
-        config.artifacts['linux-x64']!.payload.type,
-        'dynamic_library',
-      );
+      expect(config.artifacts['linux-x64']!.payload.type, 'dynamic_library');
     } finally {
       dir.deleteSync(recursive: true);
     }
@@ -369,11 +366,15 @@ artifacts:
   });
 
   group('manifest command', () {
-    test('update defaults to sibling built-library when build config exists', () async {
-      final dir = await Directory.systemTemp.createTemp('native_prebuilt_cli_');
-      try {
-        final configFile = File('${dir.path}/native_prebuilt.yaml');
-        configFile.writeAsStringSync('''
+    test(
+      'update defaults to sibling built-library when build config exists',
+      () async {
+        final dir = await Directory.systemTemp.createTemp(
+          'native_prebuilt_cli_',
+        );
+        try {
+          final configFile = File('${dir.path}/native_prebuilt.yaml');
+          configFile.writeAsStringSync('''
 schema: 1
 package: demo
 asset_name: src/demo.dart
@@ -406,34 +407,41 @@ artifacts:
       type: dynamic_library
 ''');
 
-        final builtLibraryDir = Directory('${dir.path}/built-library/linux-x64')
-          ..createSync(recursive: true);
-        File('${builtLibraryDir.path}/libdemo.so')
-          ..createSync(recursive: true)
-          ..writeAsBytesSync([0x7f, 0x45, 0x4c, 0x46]);
+          final builtLibraryDir = Directory(
+            '${dir.path}/built-library/linux-x64',
+          )..createSync(recursive: true);
+          File('${builtLibraryDir.path}/libdemo.so')
+            ..createSync(recursive: true)
+            ..writeAsBytesSync([0x7f, 0x45, 0x4c, 0x46]);
 
-        final outputFile = File('${dir.path}/lib/src/hook/demo_prebuilts.g.dart');
-        final previousDir = Directory.current;
-        try {
-          Directory.current = dir;
-          await runNativePrebuiltCli([
-            'manifest',
-            'update',
-            '--tag',
-            'demo-v1.0.0',
-          ]);
+          final outputFile = File(
+            '${dir.path}/lib/src/hook/demo_prebuilts.g.dart',
+          );
+          final previousDir = Directory.current;
+          try {
+            Directory.current = dir;
+            await runNativePrebuiltCli([
+              'manifest',
+              'update',
+              '--tag',
+              'demo-v1.0.0',
+            ]);
 
-          expect(outputFile.existsSync(), isTrue);
-          expect(outputFile.readAsStringSync(), contains('demo-linux-x64.tar.gz'));
+            expect(outputFile.existsSync(), isTrue);
+            expect(
+              outputFile.readAsStringSync(),
+              contains('demo-linux-x64.tar.gz'),
+            );
 
-          await runNativePrebuiltCli(['manifest', 'verify']);
+            await runNativePrebuiltCli(['manifest', 'verify']);
+          } finally {
+            Directory.current = previousDir;
+          }
         } finally {
-          Directory.current = previousDir;
+          dir.deleteSync(recursive: true);
         }
-      } finally {
-        dir.deleteSync(recursive: true);
-      }
-    });
+      },
+    );
   });
 
   group('plan command', () {
@@ -498,7 +506,10 @@ artifacts:
         final config = await loadNativePrebuiltConfig(configFile);
         final summary = renderDoctorSummary(config);
         expect(summary, contains('package: test'));
-        expect(summary, contains('release: GitHubReleaseSource(test/repo@v1.0.0)'));
+        expect(
+          summary,
+          contains('release: GitHubReleaseSource(test/repo@v1.0.0)'),
+        );
         expect(summary, contains('artifacts: 1'));
         expect(summary, contains('linux-x64'));
         expect(summary, contains('test-linux-x64.tar.gz'));

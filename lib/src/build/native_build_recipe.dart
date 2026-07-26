@@ -117,9 +117,9 @@ final class StepBuildRecipe implements NativeBuildRecipe {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': 'step_build_recipe',
-        'steps': steps.map((step) => step.toJson()).toList(),
-      };
+    'type': 'step_build_recipe',
+    'steps': steps.map((step) => step.toJson()).toList(),
+  };
 
   factory StepBuildRecipe.fromJson(Map<String, dynamic> json) {
     return StepBuildRecipe(
@@ -282,15 +282,16 @@ final class NativeStepResult {
   final List<BuiltNativeArtifact> artifacts;
 
   Map<String, dynamic> toJson() => {
-        'artifacts': artifacts.map((artifact) => artifact.toJson()).toList(),
-      };
+    'artifacts': artifacts.map((artifact) => artifact.toJson()).toList(),
+  };
 
   factory NativeStepResult.fromJson(Map<String, dynamic> json) {
     return NativeStepResult(
       artifacts: (json['artifacts'] as List<dynamic>? ?? const [])
-          .map((artifact) => BuiltNativeArtifact.fromJson(
-                artifact as Map<String, dynamic>,
-              ))
+          .map(
+            (artifact) =>
+                BuiltNativeArtifact.fromJson(artifact as Map<String, dynamic>),
+          )
           .toList(),
     );
   }

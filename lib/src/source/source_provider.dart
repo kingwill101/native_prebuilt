@@ -112,23 +112,22 @@ final class ArchiveSourceProvider implements SourceProvider {
     try {
       final archivePath = '${tempDir.path}/archive';
 
-       // Download.
-       final curlResult = await ProcessRunner(logger: logger).runStreaming(
+      // Download.
+      final curlResult = await ProcessRunner(logger: logger).runStreaming(
         'curl',
-        [
-          '-fsSL',
-          '-o',
-          archivePath,
-          spec.uri.toString(),
-        ],
+        ['-fsSL', '-o', archivePath, spec.uri.toString()],
         requireSuccess: false,
       );
       if (curlResult.exitCode != 0) {
-        throw Exception('Failed to download ${spec.uri}: ${curlResult.stderr.trim()}');
+        throw Exception(
+          'Failed to download ${spec.uri}: ${curlResult.stderr.trim()}',
+        );
       }
 
       // Verify SHA-256.
-      final hash = sha256.convert(File(archivePath).readAsBytesSync()).toString();
+      final hash = sha256
+          .convert(File(archivePath).readAsBytesSync())
+          .toString();
       if (hash != spec.sha256) {
         throw Exception(
           'SHA-256 mismatch for ${spec.uri}: expected ${spec.sha256}, got $hash',
@@ -138,17 +137,13 @@ final class ArchiveSourceProvider implements SourceProvider {
       // Extract.
       final tarResult = await ProcessRunner(logger: logger).runStreaming(
         'tar',
-        [
-          '-xzf',
-          archivePath,
-          '-C',
-          cacheDir.path,
-          '--strip-components=1',
-        ],
+        ['-xzf', archivePath, '-C', cacheDir.path, '--strip-components=1'],
         requireSuccess: false,
       );
       if (tarResult.exitCode != 0) {
-        throw Exception('Failed to extract archive: ${tarResult.stderr.trim()}');
+        throw Exception(
+          'Failed to extract archive: ${tarResult.stderr.trim()}',
+        );
       }
     } finally {
       tempDir.deleteSync(recursive: true);

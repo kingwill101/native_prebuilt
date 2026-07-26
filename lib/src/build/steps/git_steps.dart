@@ -98,11 +98,13 @@ final class GitCheckoutStep implements NativeBuildStep {
     Directory(targetDir).createSync(recursive: true);
 
     await r.runStreaming('git', ['init', targetDir]);
-    final existingOrigin = await r.runStreaming(
-      'git',
-      ['-C', targetDir, 'remote', 'get-url', 'origin'],
-      requireSuccess: false,
-    );
+    final existingOrigin = await r.runStreaming('git', [
+      '-C',
+      targetDir,
+      'remote',
+      'get-url',
+      'origin',
+    ], requireSuccess: false);
     if (existingOrigin.exitCode == 0) {
       await r.runStreaming('git', [
         '-C',
@@ -130,20 +132,22 @@ final class GitCheckoutStep implements NativeBuildStep {
       'origin',
       revision,
     ]);
-    await r.runStreaming('git', ['-C', targetDir, 'checkout', '--detach', 'FETCH_HEAD']);
+    await r.runStreaming('git', [
+      '-C',
+      targetDir,
+      'checkout',
+      '--detach',
+      'FETCH_HEAD',
+    ]);
 
     if (submodules) {
-      await _runGit(
-        r,
-        [
-          'submodule',
-          'update',
-          '--init',
-          '--recursive',
-          '--depth=1',
-        ],
-        workingDirectory: Directory(targetDir),
-      );
+      await _runGit(r, [
+        'submodule',
+        'update',
+        '--init',
+        '--recursive',
+        '--depth=1',
+      ], workingDirectory: Directory(targetDir));
     }
 
     return const NativeStepResult();
@@ -218,7 +222,10 @@ final class GitApplyPatchStep implements NativeBuildStep {
 
     logger?.info('[git_apply_patch] Patch: $patch');
     logger?.info('[git_apply_patch] Target: $target');
-    await r.runStreaming('git', ['apply', patch], workingDirectory: Directory(target));
+    await r.runStreaming('git', [
+      'apply',
+      patch,
+    ], workingDirectory: Directory(target));
     logger?.info('[git_apply_patch] Patch applied');
 
     return const NativeStepResult();

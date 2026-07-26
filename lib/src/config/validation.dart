@@ -29,9 +29,7 @@ void validateRecipe(TargetRecipeConfig recipe) {
   for (final step in recipe.steps) {
     for (final dependencyId in step.needs) {
       if (dependencyId == step.id) {
-        throw FormatException(
-          'Step "${step.id}" cannot depend on itself.',
-        );
+        throw FormatException('Step "${step.id}" cannot depend on itself.');
       }
       if (!stepById.containsKey(dependencyId)) {
         throw FormatException(

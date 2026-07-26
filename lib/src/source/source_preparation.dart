@@ -48,11 +48,9 @@ final class ApplyPatches extends SourcePreparation {
         '--strip=1',
       ];
 
-      final result = await ProcessRunner(logger: logger).runStreaming(
-        'patch',
-        args,
-        requireSuccess: false,
-      );
+      final result = await ProcessRunner(
+        logger: logger,
+      ).runStreaming('patch', args, requireSuccess: false);
       if (result.exitCode != 0) {
         throw SourcePreparationException(
           'Failed to apply patch ${p.basename(patchPath)}: ${result.stderr.trim()}',

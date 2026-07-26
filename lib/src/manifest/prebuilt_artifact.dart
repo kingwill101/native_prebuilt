@@ -30,18 +30,20 @@ final class PrebuiltArtifact {
   final ArtifactPayload payload;
 
   Map<String, dynamic> toJson() => {
-        'archive_name': archiveName,
-        'archive_sha256': archiveSha256,
-        'payload_sha256': payloadSha256,
-        'payload': payload.toJson(),
-      };
+    'archive_name': archiveName,
+    'archive_sha256': archiveSha256,
+    'payload_sha256': payloadSha256,
+    'payload': payload.toJson(),
+  };
 
   factory PrebuiltArtifact.fromJson(Map<String, dynamic> json) {
     return PrebuiltArtifact(
       archiveName: json['archive_name'] as String,
       archiveSha256: json['archive_sha256'] as String,
       payloadSha256: json['payload_sha256'] as String,
-      payload: ArtifactPayload.fromJson(json['payload'] as Map<String, dynamic>),
+      payload: ArtifactPayload.fromJson(
+        json['payload'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -60,12 +62,12 @@ sealed class ArtifactPayload {
   factory ArtifactPayload.fromJson(Map<String, dynamic> json) {
     return switch (json['type'] as String?) {
       'dynamic_library' => DynamicLibraryPayload(
-          libraryStem: json['library_stem'] as String,
-          acceptVersionedNames: json['accept_versioned_names'] as bool? ?? true,
-        ),
+        libraryStem: json['library_stem'] as String,
+        acceptVersionedNames: json['accept_versioned_names'] as bool? ?? true,
+      ),
       'static_library' => StaticLibraryPayload(
-          libraryStem: json['library_stem'] as String,
-        ),
+        libraryStem: json['library_stem'] as String,
+      ),
       final type => throw FormatException('Unknown payload type: $type'),
     };
   }
@@ -98,10 +100,10 @@ final class DynamicLibraryPayload extends ArtifactPayload {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': 'dynamic_library',
-        'library_stem': libraryStem,
-        'accept_versioned_names': acceptVersionedNames,
-      };
+    'type': 'dynamic_library',
+    'library_stem': libraryStem,
+    'accept_versioned_names': acceptVersionedNames,
+  };
 }
 
 /// A static library (`.a` archive).
@@ -119,7 +121,7 @@ final class StaticLibraryPayload extends ArtifactPayload {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': 'static_library',
-        'library_stem': libraryStem,
-      };
+    'type': 'static_library',
+    'library_stem': libraryStem,
+  };
 }

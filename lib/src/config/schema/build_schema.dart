@@ -20,13 +20,8 @@ final cmakeConfigureStepSchema = Schema.object(
     'build_directory': S.string(minLength: 1),
     'generator': S.string(),
     'toolchain_file': S.string(),
-    'definitions': S.object(
-      additionalProperties: S.string(),
-    ),
-    'needs': S.list(
-      items: S.string(minLength: 1),
-      uniqueItems: true,
-    ),
+    'definitions': S.object(additionalProperties: S.string()),
+    'needs': S.list(items: S.string(minLength: 1), uniqueItems: true),
   },
   additionalProperties: false,
 );
@@ -38,18 +33,10 @@ final cmakeBuildStepSchema = Schema.object(
     'id': S.string(minLength: 1),
     'type': S.string(enumValues: ['cmake_build']),
     'build_directory': S.string(minLength: 1),
-    'targets': S.list(
-      items: S.string(minLength: 1),
-      uniqueItems: true,
-    ),
+    'targets': S.list(items: S.string(minLength: 1), uniqueItems: true),
     'parallel': S.boolean(),
-    'environment': S.object(
-      additionalProperties: S.string(),
-    ),
-    'needs': S.list(
-      items: S.string(minLength: 1),
-      uniqueItems: true,
-    ),
+    'environment': S.object(additionalProperties: S.string()),
+    'needs': S.list(items: S.string(minLength: 1), uniqueItems: true),
   },
   additionalProperties: false,
 );
@@ -61,19 +48,12 @@ final exportArtifactStepSchema = Schema.object(
     'id': S.string(minLength: 1),
     'type': S.string(enumValues: ['export_artifact']),
     'artifact': S.string(minLength: 1),
-    'kind': S.string(
-      enumValues: ['dynamic_library', 'static_library'],
-    ),
+    'kind': S.string(enumValues: ['dynamic_library', 'static_library']),
     'primary': S.string(minLength: 1),
-    'runtime_dependencies': S.list(
-      items: S.string(minLength: 1),
-    ),
+    'runtime_dependencies': S.list(items: S.string(minLength: 1)),
     'import_library': S.string(),
     'debug_symbols': S.string(),
-    'needs': S.list(
-      items: S.string(minLength: 1),
-      uniqueItems: true,
-    ),
+    'needs': S.list(items: S.string(minLength: 1), uniqueItems: true),
   },
   additionalProperties: false,
 );
@@ -85,19 +65,12 @@ final commandStepSchema = Schema.object(
     'id': S.string(minLength: 1),
     'type': S.string(enumValues: ['command']),
     'commands': S.list(
-      items: S.list(
-        items: S.string(minLength: 1),
-      ),
+      items: S.list(items: S.string(minLength: 1)),
       minItems: 1,
     ),
     'working_directory': S.string(),
-    'environment': S.object(
-      additionalProperties: S.string(),
-    ),
-    'needs': S.list(
-      items: S.string(minLength: 1),
-      uniqueItems: true,
-    ),
+    'environment': S.object(additionalProperties: S.string()),
+    'needs': S.list(items: S.string(minLength: 1), uniqueItems: true),
   },
   additionalProperties: false,
 );
@@ -111,10 +84,7 @@ final downloadArchiveStepSchema = Schema.object(
     'url': S.string(minLength: 1),
     'sha256': S.string(),
     'output_directory': S.string(),
-    'needs': S.list(
-      items: S.string(minLength: 1),
-      uniqueItems: true,
-    ),
+    'needs': S.list(items: S.string(minLength: 1), uniqueItems: true),
   },
   additionalProperties: false,
 );
@@ -129,10 +99,7 @@ final gitCheckoutStepSchema = Schema.object(
     'revision': S.string(minLength: 1),
     'target_directory': S.string(),
     'submodules': S.boolean(),
-    'needs': S.list(
-      items: S.string(minLength: 1),
-      uniqueItems: true,
-    ),
+    'needs': S.list(items: S.string(minLength: 1), uniqueItems: true),
   },
   additionalProperties: false,
 );
@@ -145,10 +112,7 @@ final gitApplyPatchStepSchema = Schema.object(
     'type': S.string(enumValues: ['git_apply_patch']),
     'patch_path': S.string(minLength: 1),
     'target_directory': S.string(),
-    'needs': S.list(
-      items: S.string(minLength: 1),
-      uniqueItems: true,
-    ),
+    'needs': S.list(items: S.string(minLength: 1), uniqueItems: true),
   },
   additionalProperties: false,
 );
@@ -162,10 +126,7 @@ final copyStepSchema = S.object(
     'source_path': S.string(minLength: 1),
     'destination_path': S.string(minLength: 1),
     'recursive': S.boolean(),
-    'needs': S.list(
-      items: S.string(minLength: 1),
-      uniqueItems: true,
-    ),
+    'needs': S.list(items: S.string(minLength: 1), uniqueItems: true),
   },
   additionalProperties: false,
 );
@@ -179,10 +140,7 @@ final stripStepSchema = S.object(
     'input_path': S.string(minLength: 1),
     'output_path': S.string(minLength: 1),
     'strip_all': S.boolean(),
-    'needs': S.list(
-      items: S.string(minLength: 1),
-      uniqueItems: true,
-    ),
+    'needs': S.list(items: S.string(minLength: 1), uniqueItems: true),
   },
   additionalProperties: false,
 );
@@ -207,15 +165,9 @@ final buildStepSchema = S.combined(
 /// Schema for a target pattern.
 final targetPatternSchema = S.object(
   properties: {
-    'os': S.string(
-      enumValues: _osValues(),
-    ),
-    'architecture': S.string(
-      enumValues: _architectureValues(),
-    ),
-    'sdk': S.string(
-      enumValues: _iosSdkValues(),
-    ),
+    'os': S.string(enumValues: _osValues()),
+    'architecture': S.string(enumValues: _architectureValues()),
+    'sdk': S.string(enumValues: _iosSdkValues()),
   },
   additionalProperties: false,
 );
@@ -225,10 +177,7 @@ final targetRecipeSchema = S.object(
   required: ['target', 'steps'],
   properties: {
     'target': targetPatternSchema,
-    'steps': S.list(
-      items: buildStepSchema,
-      minItems: 1,
-    ),
+    'steps': S.list(items: buildStepSchema, minItems: 1),
   },
   additionalProperties: false,
 );
@@ -236,9 +185,7 @@ final targetRecipeSchema = S.object(
 /// Schema for the build section of the configuration.
 final buildConfigSchema = S.object(
   properties: {
-    'recipes': S.list(
-      items: targetRecipeSchema,
-    ),
+    'recipes': S.list(items: targetRecipeSchema),
     'dependencies': S.object(
       additionalProperties: S.object(
         properties: {
@@ -250,9 +197,7 @@ final buildConfigSchema = S.object(
         },
       ),
     ),
-    'options': S.object(
-      additionalProperties: S.any(),
-    ),
+    'options': S.object(additionalProperties: S.any()),
   },
   additionalProperties: false,
 );
@@ -285,9 +230,7 @@ final releaseConfigSchema = S.object(
 final payloadConfigSchema = S.object(
   required: ['type'],
   properties: {
-    'type': S.string(
-      enumValues: ['dynamic_library', 'static_library'],
-    ),
+    'type': S.string(enumValues: ['dynamic_library', 'static_library']),
   },
   additionalProperties: false,
 );
@@ -317,24 +260,25 @@ final targetConfigSchema = S.object(
 
 /// Schema for the entire native_prebuilt.yaml configuration.
 final nativePrebuiltSchema = S.object(
-  required: ['schema', 'package', 'asset_name', 'library_stem', 'release', 'artifacts'],
+  required: [
+    'schema',
+    'package',
+    'asset_name',
+    'library_stem',
+    'release',
+    'artifacts',
+  ],
   properties: {
     'schema': S.integer(minimum: 1),
     'package': S.string(minLength: 1),
     'asset_name': S.string(minLength: 1),
     'library_stem': S.string(minLength: 1),
-    'link_mode': S.string(
-      enumValues: ['dynamic_library', 'static_library'],
-    ),
+    'link_mode': S.string(enumValues: ['dynamic_library', 'static_library']),
     'source': sourceConfigSchema,
     'build': buildConfigSchema,
     'release': releaseConfigSchema,
-    'artifacts': S.object(
-      additionalProperties: artifactConfigSchema,
-    ),
-    'targets': S.object(
-      additionalProperties: targetConfigSchema,
-    ),
+    'artifacts': S.object(additionalProperties: artifactConfigSchema),
+    'targets': S.object(additionalProperties: targetConfigSchema),
   },
   additionalProperties: false,
 );

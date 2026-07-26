@@ -21,20 +21,20 @@ sealed class ReleaseSource {
   factory ReleaseSource.fromJson(Map<String, dynamic> json) {
     return switch (json['type'] as String?) {
       'github' => GitHubReleaseSource(
-          owner: json['owner'] as String,
-          repository: json['repository'] as String,
-          tag: json['tag'] as String,
-          baseUri: json['base_uri'] == null
-              ? null
-              : Uri.parse(json['base_uri'] as String),
-        ),
+        owner: json['owner'] as String,
+        repository: json['repository'] as String,
+        tag: json['tag'] as String,
+        baseUri: json['base_uri'] == null
+            ? null
+            : Uri.parse(json['base_uri'] as String),
+      ),
       'gitlab' => GitLabReleaseSource(
-          projectPath: json['project_path'] as String,
-          tag: json['tag'] as String,
-          baseUri: json['base_uri'] == null
-              ? null
-              : Uri.parse(json['base_uri'] as String),
-        ),
+        projectPath: json['project_path'] as String,
+        tag: json['tag'] as String,
+        baseUri: json['base_uri'] == null
+            ? null
+            : Uri.parse(json['base_uri'] as String),
+      ),
       final type => throw FormatException('Unknown release source type: $type'),
     };
   }
@@ -91,12 +91,12 @@ final class GitHubReleaseSource extends ReleaseSource {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': 'github',
-        'owner': owner,
-        'repository': repository,
-        'tag': tag,
-        if (baseUri != null) 'base_uri': baseUri.toString(),
-      };
+    'type': 'github',
+    'owner': owner,
+    'repository': repository,
+    'tag': tag,
+    if (baseUri != null) 'base_uri': baseUri.toString(),
+  };
 }
 
 /// Artifacts are hosted as GitLab release assets.
@@ -139,9 +139,9 @@ final class GitLabReleaseSource extends ReleaseSource {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': 'gitlab',
-        'project_path': projectPath,
-        'tag': tag,
-        if (baseUri != null) 'base_uri': baseUri.toString(),
-      };
+    'type': 'gitlab',
+    'project_path': projectPath,
+    'tag': tag,
+    if (baseUri != null) 'base_uri': baseUri.toString(),
+  };
 }

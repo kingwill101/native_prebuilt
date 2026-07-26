@@ -68,11 +68,15 @@ final class ExportArtifactStep implements NativeBuildStep {
       'kind': declaration.kind.name,
       'primary_path': declaration.primaryPath,
       if (declaration.companions.isNotEmpty)
-        'companions': declaration.companions.map((c) => <String, dynamic>{
-              'path': c.path,
-              'role': c.role.name,
-              'optional': c.optional,
-            }).toList(),
+        'companions': declaration.companions
+            .map(
+              (c) => <String, dynamic>{
+                'path': c.path,
+                'role': c.role.name,
+                'optional': c.optional,
+              },
+            )
+            .toList(),
     };
   }
 
@@ -196,7 +200,9 @@ final class ExportArtifactStep implements NativeBuildStep {
     String relativePath,
     NativeBuildContext context,
   ) {
-    final resolved = p.normalize(p.join(context.directories.output.path, relativePath));
+    final resolved = p.normalize(
+      p.join(context.directories.output.path, relativePath),
+    );
     final outputRoot = p.normalize(context.directories.output.path);
     if (!p.isWithin(outputRoot, resolved) && resolved != outputRoot) {
       throw StateError('Artifact path escapes output directory: $relativePath');
@@ -206,7 +212,9 @@ final class ExportArtifactStep implements NativeBuildStep {
 
   void _validateRelativePath(String path, NativeBuildContext context) {
     if (p.isAbsolute(path)) {
-      throw StateError('Artifact path must be relative to output directory: $path');
+      throw StateError(
+        'Artifact path must be relative to output directory: $path',
+      );
     }
     final resolved = p.normalize(p.join(context.directories.output.path, path));
     final outputRoot = p.normalize(context.directories.output.path);

@@ -119,11 +119,12 @@ final class DownloadArchiveStep implements NativeBuildStep {
   ) async {
     final lower = archivePath.toLowerCase();
     if (lower.endsWith('.zip')) {
-      final result = await runner.runStreaming(
-        'unzip',
-        ['-q', archivePath, '-d', outputDir],
-        requireSuccess: false,
-      );
+      final result = await runner.runStreaming('unzip', [
+        '-q',
+        archivePath,
+        '-d',
+        outputDir,
+      ], requireSuccess: false);
       if (result.exitCode != 0) {
         throw StateError('Failed to extract archive: ${result.stderr.trim()}');
       }

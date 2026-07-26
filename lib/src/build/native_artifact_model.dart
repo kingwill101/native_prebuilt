@@ -74,12 +74,12 @@ final class NativeArtifactEntry {
   final bool optional;
 
   Map<String, dynamic> toJson() => {
-        'source_path': source.path,
-        'source_kind': source is Directory ? 'directory' : 'file',
-        'path': path,
-        'role': role.name,
-        'optional': optional,
-      };
+    'source_path': source.path,
+    'source_kind': source is Directory ? 'directory' : 'file',
+    'path': path,
+    'role': role.name,
+    'optional': optional,
+  };
 
   factory NativeArtifactEntry.fromJson(Map<String, dynamic> json) {
     final sourcePath = json['source_path'] as String;
@@ -217,20 +217,20 @@ final class BuiltNativeArtifact {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'target': {
-          'os': target.os.name,
-          'architecture': target.architecture.name,
-          if (target.iOSSdk != null)
-            'iOSSdk': target.iOSSdk == IOSSdk.iPhoneSimulator
-                ? 'iPhoneSimulator'
-                : 'iPhoneOS',
-        },
-        'kind': kind.name,
-        'primary': primary.toJson(),
-        'companions': companions.map((c) => c.toJson()).toList(),
-        'metadata': metadata,
-      };
+    'id': id,
+    'target': {
+      'os': target.os.name,
+      'architecture': target.architecture.name,
+      if (target.iOSSdk != null)
+        'iOSSdk': target.iOSSdk == IOSSdk.iPhoneSimulator
+            ? 'iPhoneSimulator'
+            : 'iPhoneOS',
+    },
+    'kind': kind.name,
+    'primary': primary.toJson(),
+    'companions': companions.map((c) => c.toJson()).toList(),
+    'metadata': metadata,
+  };
 
   factory BuiltNativeArtifact.fromJson(Map<String, dynamic> json) {
     final target = json['target'] as Map<String, dynamic>;
@@ -342,12 +342,12 @@ final class NativeArtifactDeclaration {
   final List<NativeArtifactCompanion> companions;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'kind': kind.name,
-        'primary_path': primaryPath,
-        if (companions.isNotEmpty)
-          'companions': companions.map((c) => c.toJson()).toList(),
-      };
+    'id': id,
+    'kind': kind.name,
+    'primary_path': primaryPath,
+    if (companions.isNotEmpty)
+      'companions': companions.map((c) => c.toJson()).toList(),
+  };
 
   factory NativeArtifactDeclaration.fromJson(Map<String, dynamic> json) {
     return NativeArtifactDeclaration(
@@ -358,7 +358,9 @@ final class NativeArtifactDeclaration {
       ),
       primaryPath: json['primary_path'] as String,
       companions: (json['companions'] as List<dynamic>? ?? const [])
-          .map((c) => NativeArtifactCompanion.fromJson(c as Map<String, dynamic>))
+          .map(
+            (c) => NativeArtifactCompanion.fromJson(c as Map<String, dynamic>),
+          )
           .toList(),
     );
   }
@@ -382,10 +384,10 @@ final class NativeArtifactCompanion {
   final bool optional;
 
   Map<String, dynamic> toJson() => {
-        'path': path,
-        'role': role.name,
-        'optional': optional,
-      };
+    'path': path,
+    'role': role.name,
+    'optional': optional,
+  };
 
   factory NativeArtifactCompanion.fromJson(Map<String, dynamic> json) {
     return NativeArtifactCompanion(
