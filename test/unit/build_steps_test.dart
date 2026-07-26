@@ -238,6 +238,39 @@ void main() {
       });
     });
 
+    test('expands placeholders in commands and working directory', () async {
+      final step = CommandStep(
+        id: 'test-placeholders',
+        commands: [
+          ['echo', '\${work}/bin', '\${env.VCPKG_ROOT}/tools'],
+        ],
+        workingDirectory: '\${work}/subdir',
+        environment: {'ROOT': '\${env.VCPKG_ROOT}/root'},
+        runner: runner,
+      );
+
+      final (context, source) = createTestContext(
+        environment: {'VCPKG_ROOT': 'D:/vcpkg'},
+      );
+      await step.execute(context, source);
+
+      expect(runner.commands, hasLength(1));
+      expect(
+        runner.commands.first.arguments,
+        containsAll([
+          '${context.directories.work.path}/bin',
+          'D:/vcpkg/tools',
+        ]),
+      );
+      expect(
+        runner.commands.first.workingDirectory,
+        p.join(context.directories.work.path, 'subdir'),
+      );
+      expect(runner.commands.first.environment, {
+        'ROOT': 'D:/vcpkg/root',
+      });
+    });
+
     test('expands environment variables in cmake arguments', () async {
       final step = CmakeConfigureStep(
         sourceDirectory: '.',
@@ -393,6 +426,35 @@ void main() {
       expect(
         File(
           p.join(context.directories.output.path, 'build', 'libtdjson.so'),
+        ).existsSync(),
+        isTrue,
+      );
+    });
+
+    test('recursively finds windows-style artifact names', () async {
+      final artifactFile = File(
+        p.join(tempDir.path, 'build', 'td', 'Release', 'tdjson.dll'),
+      );
+      await artifactFile.parent.create(recursive: true);
+      await artifactFile.writeAsBytes([0, 1, 2]);
+
+      final step = ExportArtifactStep(
+        id: 'export_tdjson',
+        declaration: NativeArtifactDeclaration(
+          id: 'tdjson',
+          kind: NativeArtifactKind.dynamicLibrary,
+          primaryPath: 'build/td/tdjson.dll',
+        ),
+      );
+
+      final (context, source) = createTestContext(workDir: tempDir);
+      final result = await step.execute(context, source);
+
+      expect(result.artifacts, hasLength(1));
+      expect(result.artifacts.single.primary.source.path, artifactFile.path);
+      expect(
+        File(
+          p.join(context.directories.output.path, 'build', 'td', 'tdjson.dll'),
         ).existsSync(),
         isTrue,
       );

@@ -7,6 +7,7 @@ import '../fingerprint.dart';
 import '../native_build_context.dart';
 import '../native_build_recipe.dart';
 import '../process_runner.dart';
+import '../recipe_value_expansion.dart';
 import '../../source/resolved_source.dart';
 
 /// CMake configure step.
@@ -83,11 +84,36 @@ final class CmakeConfigureStep implements NativeBuildStep {
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
     final buffer = StringBuffer();
     buffer.write(id);
-    buffer.write(sourceDirectory);
-    buffer.write(buildDirectory);
-    buffer.write(defines);
+    buffer.write(
+      expandRecipeValue(sourceDirectory, context.buildContext, context.source),
+    );
+    buffer.write(
+      buildDirectory == null
+          ? null
+          : expandRecipeValue(
+              buildDirectory!,
+              context.buildContext,
+              context.source,
+            ),
+    );
+    buffer.write(
+      defines.map(
+        (key, value) => MapEntry(
+          key,
+          expandRecipeValue(value, context.buildContext, context.source),
+        ),
+      ),
+    );
     buffer.write(generator);
-    buffer.write(toolchainFile);
+    buffer.write(
+      toolchainFile == null
+          ? null
+          : expandRecipeValue(
+              toolchainFile!,
+              context.buildContext,
+              context.source,
+            ),
+    );
 
     // Include source file hashes for invalidation
     buffer.write(_sourceFilesHash(context.source.directory));
@@ -105,13 +131,25 @@ final class CmakeConfigureStep implements NativeBuildStep {
   ) async {
     final logger = context.logger;
     final r = runner ?? ProcessRunner(logger: logger);
-    final srcDir = p.isAbsolute(sourceDirectory)
-        ? sourceDirectory
-        : p.join(source.directory.path, sourceDirectory);
+    final expandedSourceDirectory = expandRecipeValue(
+      sourceDirectory,
+      context,
+      source,
+    );
+    final srcDir = p.isAbsolute(expandedSourceDirectory)
+        ? expandedSourceDirectory
+        : p.join(source.directory.path, expandedSourceDirectory);
     final buildDir = buildDirectory != null
-        ? (p.isAbsolute(buildDirectory!)
-              ? buildDirectory!
-              : p.join(source.directory.path, buildDirectory!))
+        ? (() {
+            final expandedBuildDirectory = expandRecipeValue(
+              buildDirectory!,
+              context,
+              source,
+            );
+            return p.isAbsolute(expandedBuildDirectory)
+                ? expandedBuildDirectory
+                : p.join(source.directory.path, expandedBuildDirectory);
+          })()
         : p.join(srcDir, 'build');
 
     final buildDirEntity = Directory(buildDir);
@@ -141,16 +179,16 @@ final class CmakeConfigureStep implements NativeBuildStep {
     final args = <String>['-S', srcDir, '-B', buildDir];
 
     if (generator != null) {
-      args.addAll(['-G', generator!]);
+      args.addAll(['-G', expandRecipeValue(generator!, context, source)]);
     }
     if (toolchainFile != null) {
       args.addAll([
-        '-DCMAKE_TOOLCHAIN_FILE=${_expandEnv(toolchainFile!, context.environment)}',
+        '-DCMAKE_TOOLCHAIN_FILE=${expandRecipeValue(toolchainFile!, context, source)}',
       ]);
     }
     for (final entry in defines.entries) {
       args.add(
-        '-D${entry.key}=${_expandEnv(entry.value, context.environment)}',
+        '-D${entry.key}=${expandRecipeValue(entry.value, context, source)}',
       );
     }
 
@@ -231,10 +269,18 @@ final class CmakeBuildStep implements NativeBuildStep {
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
     final buffer = StringBuffer();
     buffer.write(id);
-    buffer.write(buildDirectory);
-    buffer.write(targets.join(','));
+    buffer.write(
+      expandRecipeValue(buildDirectory, context.buildContext, context.source),
+    );
+    buffer.write(
+      expandRecipeValues(targets, context.buildContext, context.source).join(','),
+    );
     if (environment != null) {
-      final envEntries = environment!.entries.toList()
+      final envEntries = expandRecipeStringMap(
+        environment!,
+        context.buildContext,
+        context.source,
+      ).entries.toList()
         ..sort((a, b) => a.key.compareTo(b.key));
       buffer.write(envEntries.map((e) => '${e.key}=${e.value}').join('|'));
     }
@@ -252,13 +298,18 @@ final class CmakeBuildStep implements NativeBuildStep {
     final logger = context.logger;
     logger?.info('[$id] Starting build step');
     final r = runner ?? ProcessRunner(logger: logger);
-    final buildDir = p.isAbsolute(buildDirectory)
-        ? buildDirectory
-        : p.join(source.directory.path, buildDirectory);
+    final expandedBuildDirectory = expandRecipeValue(
+      buildDirectory,
+      context,
+      source,
+    );
+    final buildDir = p.isAbsolute(expandedBuildDirectory)
+        ? expandedBuildDirectory
+        : p.join(source.directory.path, expandedBuildDirectory);
 
     final args = <String>['--build', buildDir];
     if (targets.isNotEmpty) {
-      for (final target in targets) {
+      for (final target in expandRecipeValues(targets, context, source)) {
         args.addAll(['--target', target]);
       }
     }
@@ -271,7 +322,9 @@ final class CmakeBuildStep implements NativeBuildStep {
       'cmake',
       args,
       workingDirectory: Directory(buildDir),
-      environment: environment,
+      environment: environment == null
+          ? null
+          : expandRecipeStringMap(environment!, context, source),
     );
 
     return const NativeStepResult();
@@ -281,25 +334,6 @@ final class CmakeBuildStep implements NativeBuildStep {
 /// Compute a hash of key source files for cache invalidation.
 ///
 /// Hashes CMakeLists.txt and all .c/.cpp/.h/.hpp files in the source directory.
-String _expandEnv(String value, Map<String, String> environment) {
-  final envVarPattern = RegExp(
-    r'^(?:\$\{([A-Za-z_][A-Za-z0-9_]*)\}|\$([A-Za-z_][A-Za-z0-9_]*)|([A-Za-z_][A-Za-z0-9_]*))(.*)$',
-  );
-  final match = envVarPattern.firstMatch(value);
-  if (match == null) return value;
-
-  final varName = match.group(1) ?? match.group(2) ?? match.group(3)!;
-  final remainder = match.group(4) ?? '';
-  final replacement = environment[varName];
-  if (replacement == null || replacement.isEmpty) return value;
-
-  if (remainder.isEmpty) return replacement;
-  if (remainder.startsWith('/') || remainder.startsWith('\\')) {
-    return '$replacement$remainder';
-  }
-  return replacement;
-}
-
 String _sourceFilesHash(Directory sourceDir) {
   final files = <File>[];
   final cmakeFile = File(p.join(sourceDir.path, 'CMakeLists.txt'));

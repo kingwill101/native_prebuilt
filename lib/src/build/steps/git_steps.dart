@@ -7,6 +7,7 @@ import '../fingerprint.dart';
 import '../native_build_context.dart';
 import '../native_build_recipe.dart';
 import '../process_runner.dart';
+import '../recipe_value_expansion.dart';
 import '../../source/resolved_source.dart';
 
 /// Git checkout step.
@@ -71,10 +72,14 @@ final class GitCheckoutStep implements NativeBuildStep {
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
     final buffer = StringBuffer();
     buffer.write('git_checkout');
-    buffer.write(repository);
-    buffer.write(revision);
+    buffer.write(expandRecipeValue(repository, context.buildContext, context.source));
+    buffer.write(expandRecipeValue(revision, context.buildContext, context.source));
     buffer.write(submodules);
-    if (targetDirectory != null) buffer.write(targetDirectory);
+    if (targetDirectory != null) {
+      buffer.write(
+        expandRecipeValue(targetDirectory!, context.buildContext, context.source),
+      );
+    }
     return NativeStepFingerprint(
       id: id,
       hash: fingerprintHash(buffer.toString()),
@@ -89,11 +94,14 @@ final class GitCheckoutStep implements NativeBuildStep {
     final logger = context.logger;
     logger?.info('[git_checkout] Cloning repository');
     final r = runner ?? ProcessRunner(logger: logger);
-    final targetDir = targetDirectory != null
-        ? (p.isAbsolute(targetDirectory!)
-              ? targetDirectory!
-              : p.join(context.directories.work.path, targetDirectory!))
-        : p.join(context.directories.work.path, id);
+    final resolvedRepository = expandRecipeValue(repository, context, source);
+    final resolvedRevision = expandRecipeValue(revision, context, source);
+    final resolvedTargetDirectory = targetDirectory == null
+        ? p.join(context.directories.work.path, id)
+        : expandRecipeValue(targetDirectory!, context, source);
+    final targetDir = p.isAbsolute(resolvedTargetDirectory)
+        ? resolvedTargetDirectory
+        : p.join(context.directories.work.path, resolvedTargetDirectory);
 
     Directory(targetDir).createSync(recursive: true);
 
@@ -112,7 +120,7 @@ final class GitCheckoutStep implements NativeBuildStep {
         'remote',
         'set-url',
         'origin',
-        repository,
+        resolvedRepository,
       ]);
     } else {
       await r.runStreaming('git', [
@@ -121,7 +129,7 @@ final class GitCheckoutStep implements NativeBuildStep {
         'remote',
         'add',
         'origin',
-        repository,
+        resolvedRepository,
       ]);
     }
     await r.runStreaming('git', [
@@ -130,7 +138,7 @@ final class GitCheckoutStep implements NativeBuildStep {
       'fetch',
       '--depth=1',
       'origin',
-      revision,
+      resolvedRevision,
     ]);
     await r.runStreaming('git', [
       '-C',
@@ -209,7 +217,10 @@ final class GitApplyPatchStep implements NativeBuildStep {
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
     return NativeStepFingerprint(
       id: id,
-      hash: fingerprintHash('$id:$patchPath:${targetDirectory ?? ''}'),
+      hash: fingerprintHash(
+        '$id:${expandRecipeValue(patchPath, context.buildContext, context.source)}:'
+        '${expandRecipeValue(targetDirectory ?? '', context.buildContext, context.source)}',
+      ),
     );
   }
 
@@ -221,14 +232,16 @@ final class GitApplyPatchStep implements NativeBuildStep {
     final logger = context.logger;
     logger?.info('[git_apply_patch] Applying patch');
     final r = runner ?? ProcessRunner(logger: logger);
-    final patch = p.isAbsolute(patchPath)
-        ? patchPath
-        : p.join(source.directory.path, patchPath);
-    final target = targetDirectory == null
+    final resolvedPatchPath = expandRecipeValue(patchPath, context, source);
+    final patch = p.isAbsolute(resolvedPatchPath)
+        ? resolvedPatchPath
+        : p.join(source.directory.path, resolvedPatchPath);
+    final resolvedTargetDirectory = targetDirectory == null
         ? context.directories.work.path
-        : (p.isAbsolute(targetDirectory!)
-              ? targetDirectory!
-              : p.join(context.directories.work.path, targetDirectory!));
+        : expandRecipeValue(targetDirectory!, context, source);
+    final target = p.isAbsolute(resolvedTargetDirectory)
+        ? resolvedTargetDirectory
+        : p.join(context.directories.work.path, resolvedTargetDirectory);
 
     logger?.info('[git_apply_patch] Patch: $patch');
     logger?.info('[git_apply_patch] Target: $target');

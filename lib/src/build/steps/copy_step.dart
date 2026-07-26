@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import '../fingerprint.dart';
 import '../native_build_context.dart';
 import '../native_build_recipe.dart';
+import '../recipe_value_expansion.dart';
 import '../../source/resolved_source.dart';
 
 /// Copy files or directories.
@@ -57,7 +58,10 @@ final class CopyStep implements NativeBuildStep {
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
     return NativeStepFingerprint(
       id: id,
-      hash: fingerprintHash('$id:${sourcePath}_$destinationPath'),
+      hash: fingerprintHash(
+        '$id:${expandRecipeValue(sourcePath, context.buildContext, context.source)}_'
+        '${expandRecipeValue(destinationPath, context.buildContext, context.source)}',
+      ),
     );
   }
 
@@ -68,12 +72,14 @@ final class CopyStep implements NativeBuildStep {
   ) async {
     final logger = context.logger;
     logger?.info('[copy] Copying files');
-    final src = p.isAbsolute(sourcePath)
-        ? sourcePath
-        : p.join(source.directory.path, sourcePath);
-    final dest = p.isAbsolute(destinationPath)
-        ? destinationPath
-        : p.join(context.directories.work.path, destinationPath);
+    final srcPath = expandRecipeValue(sourcePath, context, source);
+    final destPath = expandRecipeValue(destinationPath, context, source);
+    final src = p.isAbsolute(srcPath)
+        ? srcPath
+        : p.join(source.directory.path, srcPath);
+    final dest = p.isAbsolute(destPath)
+        ? destPath
+        : p.join(context.directories.work.path, destPath);
 
     logger?.info('[copy] Source: $src');
     logger?.info('[copy] Destination: $dest');

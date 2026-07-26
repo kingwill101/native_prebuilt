@@ -7,6 +7,7 @@ import '../fingerprint.dart';
 import '../native_build_context.dart';
 import '../native_build_recipe.dart';
 import '../process_runner.dart';
+import '../recipe_value_expansion.dart';
 import '../../source/resolved_source.dart';
 
 /// Strip debug symbols from a binary.
@@ -62,7 +63,10 @@ final class StripStep implements NativeBuildStep {
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
     return NativeStepFingerprint(
       id: id,
-      hash: fingerprintHash('$id:${inputPath}_$outputPath'),
+      hash: fingerprintHash(
+        '$id:${expandRecipeValue(inputPath, context.buildContext, context.source)}_'
+        '${expandRecipeValue(outputPath, context.buildContext, context.source)}',
+      ),
     );
   }
 
@@ -74,12 +78,14 @@ final class StripStep implements NativeBuildStep {
     final logger = context.logger;
     logger?.info('[strip] Stripping binary');
     final r = runner ?? ProcessRunner(logger: logger);
-    final input = p.isAbsolute(inputPath)
-        ? inputPath
-        : p.join(context.directories.work.path, inputPath);
-    final output = p.isAbsolute(outputPath)
-        ? outputPath
-        : p.join(context.directories.work.path, outputPath);
+    final resolvedInputPath = expandRecipeValue(inputPath, context, source);
+    final resolvedOutputPath = expandRecipeValue(outputPath, context, source);
+    final input = p.isAbsolute(resolvedInputPath)
+        ? resolvedInputPath
+        : p.join(context.directories.work.path, resolvedInputPath);
+    final output = p.isAbsolute(resolvedOutputPath)
+        ? resolvedOutputPath
+        : p.join(context.directories.work.path, resolvedOutputPath);
 
     final args = <String>[];
     if (stripAll) {

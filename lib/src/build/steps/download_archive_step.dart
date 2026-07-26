@@ -7,6 +7,7 @@ import '../fingerprint.dart';
 import '../native_build_context.dart';
 import '../native_build_recipe.dart';
 import '../process_runner.dart';
+import '../recipe_value_expansion.dart';
 import '../../source/resolved_source.dart';
 
 /// Download and extract an archive step.
@@ -64,12 +65,16 @@ final class DownloadArchiveStep implements NativeBuildStep {
   @override
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
     final buffer = StringBuffer();
-    buffer.write('download_archive');
-    buffer.write(url);
-    buffer.write(sha256);
+    buffer.write(id);
+    buffer.write(expandRecipeValue(url, context.buildContext, context.source));
+    if (sha256 != null) {
+      buffer.write(
+        expandRecipeValue(sha256!, context.buildContext, context.source),
+      );
+    }
     return NativeStepFingerprint(
       id: id,
-      hash: fingerprintHash('$id:${buffer.toString()}'),
+      hash: fingerprintHash(buffer.toString()),
     );
   }
 
@@ -79,29 +84,34 @@ final class DownloadArchiveStep implements NativeBuildStep {
     ResolvedSource source,
   ) async {
     final logger = context.logger;
-    logger?.info('[download_archive] Downloading archive from $url');
+    final resolvedUrl = expandRecipeValue(url, context, source);
+    logger?.info('[download_archive] Downloading archive from $resolvedUrl');
     final r = runner ?? ProcessRunner(logger: logger);
-    final outputDir = outputDirectory != null
-        ? p.isAbsolute(outputDirectory!)
-              ? outputDirectory!
-              : p.join(context.directories.work.path, outputDirectory!)
-        : p.join(context.directories.work.path, id);
+    final resolvedOutputDirectory = outputDirectory == null
+        ? p.join(context.directories.work.path, id)
+        : expandRecipeValue(outputDirectory!, context, source);
+    final outputDir = p.isAbsolute(resolvedOutputDirectory)
+        ? resolvedOutputDirectory
+        : p.join(context.directories.work.path, resolvedOutputDirectory);
     final archivePath = p.join(
       outputDir,
-      'archive${_extensionFromUrl(Uri.parse(url))}',
+      'archive${_extensionFromUrl(Uri.parse(resolvedUrl))}',
     );
 
     Directory(outputDir).createSync(recursive: true);
 
     // Download using curl
-    await r.runStreaming('curl', ['-L', '-o', archivePath, url]);
+    await r.runStreaming('curl', ['-L', '-o', archivePath, resolvedUrl]);
 
     // Verify SHA-256 if provided
     if (sha256 != null) {
+      final resolvedSha256 = expandRecipeValue(sha256!, context, source);
       final result = await r.runStreaming('shasum', ['-a', '256', archivePath]);
       final hash = result.stdout.split(' ').first;
-      if (hash != sha256) {
-        throw StateError('SHA-256 mismatch: expected $sha256, got $hash');
+      if (hash != resolvedSha256) {
+        throw StateError(
+          'SHA-256 mismatch: expected $resolvedSha256, got $hash',
+        );
       }
     }
 
