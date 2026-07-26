@@ -425,7 +425,10 @@ void main() {
       final result = await step.execute(context, source);
 
       expect(result.artifacts, hasLength(1));
-      expect(result.artifacts.single.primary.source.path, artifactFile.path);
+      expect(
+        p.normalize(result.artifacts.single.primary.source.path),
+        p.normalize(artifactFile.path),
+      );
       expect(
         File(
           p.join(context.directories.output.path, 'build', 'libtdjson.so'),
@@ -454,7 +457,10 @@ void main() {
       final result = await step.execute(context, source);
 
       expect(result.artifacts, hasLength(1));
-      expect(result.artifacts.single.primary.source.path, artifactFile.path);
+      expect(
+        p.normalize(result.artifacts.single.primary.source.path),
+        p.normalize(artifactFile.path),
+      );
       expect(
         File(
           p.join(context.directories.output.path, 'build', 'td', 'tdjson.dll'),
