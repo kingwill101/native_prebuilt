@@ -138,13 +138,13 @@ final class StepBuildRecipe implements NativeBuildRecipe {
       needsById: json['needs_by_id'] is Map
           ? Map<String, List<String>>.fromEntries(
               (json['needs_by_id'] as Map).entries.map(
-                    (entry) => MapEntry(
-                      entry.key.toString(),
-                      (entry.value as List<dynamic>? ?? const [])
-                          .map((value) => value.toString())
-                          .toList(),
-                    ),
-                  ),
+                (entry) => MapEntry(
+                  entry.key.toString(),
+                  (entry.value as List<dynamic>? ?? const [])
+                      .map((value) => value.toString())
+                      .toList(),
+                ),
+              ),
             )
           : const {},
     );

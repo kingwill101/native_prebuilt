@@ -105,7 +105,11 @@ final class ExportArtifactStep implements NativeBuildStep {
     final logger = context.logger;
     logger?.info('[export_artifact] Exporting artifact: ${declaration.id}');
 
-    final primaryPath = expandRecipeValue(declaration.primaryPath, context, source);
+    final primaryPath = expandRecipeValue(
+      declaration.primaryPath,
+      context,
+      source,
+    );
     final primaryEntry = await _resolveRequiredEntry(
       context: context,
       source: source,

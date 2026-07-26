@@ -238,38 +238,39 @@ void main() {
       });
     });
 
-    test('expands liquid templates in commands and working directory', () async {
-      final step = CommandStep(
-        id: 'test-placeholders',
-        commands: [
-          ['echo', '{{ work }}/bin', '{{ env.VCPKG_ROOT }}/tools'],
-        ],
-        workingDirectory: '{{ work }}/subdir',
-        environment: {'ROOT': '{{ env.VCPKG_ROOT }}/root'},
-        runner: runner,
-      );
+    test(
+      'expands liquid templates in commands and working directory',
+      () async {
+        final step = CommandStep(
+          id: 'test-placeholders',
+          commands: [
+            ['echo', '{{ work }}/bin', '{{ env.VCPKG_ROOT }}/tools'],
+          ],
+          workingDirectory: '{{ work }}/subdir',
+          environment: {'ROOT': '{{ env.VCPKG_ROOT }}/root'},
+          runner: runner,
+        );
 
-      final (context, source) = createTestContext(
-        environment: {'VCPKG_ROOT': 'D:/vcpkg'},
-      );
-      await step.execute(context, source);
+        final (context, source) = createTestContext(
+          environment: {'VCPKG_ROOT': 'D:/vcpkg'},
+        );
+        await step.execute(context, source);
 
-      expect(runner.commands, hasLength(1));
-      expect(
-        runner.commands.first.arguments,
-        containsAll([
-          '${context.directories.work.path}/bin',
-          'D:/vcpkg/tools',
-        ]),
-      );
-      expect(
-        runner.commands.first.workingDirectory,
-        p.join(context.directories.work.path, 'subdir'),
-      );
-      expect(runner.commands.first.environment, {
-        'ROOT': 'D:/vcpkg/root',
-      });
-    });
+        expect(runner.commands, hasLength(1));
+        expect(
+          runner.commands.first.arguments,
+          containsAll([
+            '${context.directories.work.path}/bin',
+            'D:/vcpkg/tools',
+          ]),
+        );
+        expect(
+          runner.commands.first.workingDirectory,
+          p.join(context.directories.work.path, 'subdir'),
+        );
+        expect(runner.commands.first.environment, {'ROOT': 'D:/vcpkg/root'});
+      },
+    );
 
     test('expands liquid templates in cmake arguments', () async {
       final step = CmakeConfigureStep(

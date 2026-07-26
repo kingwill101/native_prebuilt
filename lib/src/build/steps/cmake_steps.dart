@@ -273,15 +273,18 @@ final class CmakeBuildStep implements NativeBuildStep {
       expandRecipeValue(buildDirectory, context.buildContext, context.source),
     );
     buffer.write(
-      expandRecipeValues(targets, context.buildContext, context.source).join(','),
+      expandRecipeValues(
+        targets,
+        context.buildContext,
+        context.source,
+      ).join(','),
     );
     if (environment != null) {
       final envEntries = expandRecipeStringMap(
         environment!,
         context.buildContext,
         context.source,
-      ).entries.toList()
-        ..sort((a, b) => a.key.compareTo(b.key));
+      ).entries.toList()..sort((a, b) => a.key.compareTo(b.key));
       buffer.write(envEntries.map((e) => '${e.key}=${e.value}').join('|'));
     }
     return NativeStepFingerprint(

@@ -72,12 +72,20 @@ final class GitCheckoutStep implements NativeBuildStep {
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
     final buffer = StringBuffer();
     buffer.write('git_checkout');
-    buffer.write(expandRecipeValue(repository, context.buildContext, context.source));
-    buffer.write(expandRecipeValue(revision, context.buildContext, context.source));
+    buffer.write(
+      expandRecipeValue(repository, context.buildContext, context.source),
+    );
+    buffer.write(
+      expandRecipeValue(revision, context.buildContext, context.source),
+    );
     buffer.write(submodules);
     if (targetDirectory != null) {
       buffer.write(
-        expandRecipeValue(targetDirectory!, context.buildContext, context.source),
+        expandRecipeValue(
+          targetDirectory!,
+          context.buildContext,
+          context.source,
+        ),
       );
     }
     return NativeStepFingerprint(
