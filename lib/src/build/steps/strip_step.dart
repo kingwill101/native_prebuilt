@@ -62,7 +62,7 @@ final class StripStep implements NativeBuildStep {
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
     return NativeStepFingerprint(
       id: id,
-      hash: fingerprintHash('${inputPath}_$outputPath'),
+      hash: fingerprintHash('$id:${inputPath}_$outputPath'),
     );
   }
 

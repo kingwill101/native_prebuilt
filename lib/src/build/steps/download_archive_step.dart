@@ -69,7 +69,7 @@ final class DownloadArchiveStep implements NativeBuildStep {
     buffer.write(sha256);
     return NativeStepFingerprint(
       id: id,
-      hash: fingerprintHash(buffer.toString()),
+      hash: fingerprintHash('$id:${buffer.toString()}'),
     );
   }
 

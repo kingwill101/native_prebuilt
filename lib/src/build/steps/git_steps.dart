@@ -165,13 +165,14 @@ final class GitCheckoutStep implements NativeBuildStep {
 /// Apply a git patch.
 final class GitApplyPatchStep implements NativeBuildStep {
   const GitApplyPatchStep({
+    this.id = 'git_apply_patch',
     required this.patchPath,
     this.targetDirectory,
     this.runner,
   });
 
   @override
-  final String id = 'git_apply_patch';
+  final String id;
 
   /// Path to the patch file (relative to source or absolute).
   final String patchPath;
@@ -185,6 +186,7 @@ final class GitApplyPatchStep implements NativeBuildStep {
   /// Creates a [GitApplyPatchStep] from a YAML-derived map.
   factory GitApplyPatchStep.fromMap(Map<String, dynamic> map) {
     return GitApplyPatchStep(
+      id: map['id'] as String? ?? 'git_apply_patch',
       patchPath: map['patch_path'] as String,
       targetDirectory: map['target_directory'] as String?,
     );
@@ -194,6 +196,7 @@ final class GitApplyPatchStep implements NativeBuildStep {
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       'type': 'git_apply_patch',
+      'id': id,
       'patch_path': patchPath,
       if (targetDirectory != null) 'target_directory': targetDirectory,
     };
@@ -204,7 +207,10 @@ final class GitApplyPatchStep implements NativeBuildStep {
 
   @override
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
-    return NativeStepFingerprint(id: id, hash: fingerprintHash(patchPath));
+    return NativeStepFingerprint(
+      id: id,
+      hash: fingerprintHash('$id:$patchPath:${targetDirectory ?? ''}'),
+    );
   }
 
   @override
@@ -218,7 +224,11 @@ final class GitApplyPatchStep implements NativeBuildStep {
     final patch = p.isAbsolute(patchPath)
         ? patchPath
         : p.join(source.directory.path, patchPath);
-    final target = targetDirectory ?? context.directories.work.path;
+    final target = targetDirectory == null
+        ? context.directories.work.path
+        : (p.isAbsolute(targetDirectory!)
+              ? targetDirectory!
+              : p.join(context.directories.work.path, targetDirectory!));
 
     logger?.info('[git_apply_patch] Patch: $patch');
     logger?.info('[git_apply_patch] Target: $target');

@@ -467,6 +467,37 @@ void main() {
       expect(runner.commands[2].arguments, ['third']);
     });
 
+    test('executes steps after their needs even if listed later', () async {
+      final recipe = StepBuildRecipe(
+        steps: [
+          CommandStep(
+            id: 'build',
+            commands: [
+              ['echo', 'build'],
+            ],
+            runner: runner,
+          ),
+          CommandStep(
+            id: 'prepare',
+            commands: [
+              ['echo', 'prepare'],
+            ],
+            runner: runner,
+          ),
+        ],
+        needsById: const {
+          'build': ['prepare'],
+        },
+      );
+
+      final (context, source) = createTestContext(workDir: tempDir);
+      await recipe.execute(context, source);
+
+      expect(runner.commands, hasLength(2));
+      expect(runner.commands[0].arguments, ['prepare']);
+      expect(runner.commands[1].arguments, ['build']);
+    });
+
     test('stops on step failure', () async {
       runner.enqueueFailure();
 

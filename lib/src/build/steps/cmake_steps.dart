@@ -14,6 +14,7 @@ import '../../source/resolved_source.dart';
 /// Configures a CMake project with specified options.
 final class CmakeConfigureStep implements NativeBuildStep {
   const CmakeConfigureStep({
+    this.id = 'cmake_configure',
     required this.sourceDirectory,
     this.buildDirectory,
     this.defines = const {},
@@ -24,7 +25,7 @@ final class CmakeConfigureStep implements NativeBuildStep {
 
   /// Step identifier.
   @override
-  String get id => 'cmake_configure';
+  final String id;
 
   /// Path to the source directory (relative to source root or absolute).
   final String sourceDirectory;
@@ -47,6 +48,7 @@ final class CmakeConfigureStep implements NativeBuildStep {
   /// Creates a [CmakeConfigureStep] from a YAML-derived map.
   factory CmakeConfigureStep.fromMap(Map<String, dynamic> map) {
     return CmakeConfigureStep(
+      id: map['id'] as String? ?? 'cmake_configure',
       sourceDirectory: map['source_directory'] as String,
       buildDirectory: map['build_directory'] as String?,
       defines: map['defines'] is Map
@@ -65,6 +67,7 @@ final class CmakeConfigureStep implements NativeBuildStep {
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       'type': 'cmake_configure',
+      'id': id,
       'source_directory': sourceDirectory,
       if (buildDirectory != null) 'build_directory': buildDirectory,
       if (defines.isNotEmpty) 'defines': defines,
@@ -79,7 +82,7 @@ final class CmakeConfigureStep implements NativeBuildStep {
   @override
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
     final buffer = StringBuffer();
-    buffer.write('cmake_configure');
+    buffer.write(id);
     buffer.write(sourceDirectory);
     buffer.write(buildDirectory);
     buffer.write(defines);
@@ -90,7 +93,7 @@ final class CmakeConfigureStep implements NativeBuildStep {
     buffer.write(_sourceFilesHash(context.source.directory));
 
     return NativeStepFingerprint(
-      id: 'cmake_configure',
+      id: id,
       hash: fingerprintHash(buffer.toString()),
     );
   }
@@ -151,7 +154,7 @@ final class CmakeConfigureStep implements NativeBuildStep {
       );
     }
 
-    logger?.info('[cmake_configure] Running: cmake ${args.join(' ')}');
+    logger?.info('[$id] Running: cmake ${args.join(' ')}');
     await r.runStreaming('cmake', args, workingDirectory: Directory(buildDir));
 
     return const NativeStepResult();
@@ -163,6 +166,7 @@ final class CmakeConfigureStep implements NativeBuildStep {
 /// Executes the actual build process using CMake.
 final class CmakeBuildStep implements NativeBuildStep {
   const CmakeBuildStep({
+    this.id = 'cmake_build',
     required this.buildDirectory,
     this.targets = const [],
     this.parallel = true,
@@ -172,7 +176,7 @@ final class CmakeBuildStep implements NativeBuildStep {
 
   /// Step identifier.
   @override
-  String get id => 'cmake_build';
+  final String id;
 
   /// Path to the build directory (where CMakeCache.txt is).
   final String buildDirectory;
@@ -192,6 +196,7 @@ final class CmakeBuildStep implements NativeBuildStep {
   /// Creates a [CmakeBuildStep] from a YAML-derived map.
   factory CmakeBuildStep.fromMap(Map<String, dynamic> map) {
     return CmakeBuildStep(
+      id: map['id'] as String? ?? 'cmake_build',
       buildDirectory: map['build_directory'] as String,
       targets: map['targets'] is List
           ? (map['targets'] as List).map((e) => e.toString()).toList()
@@ -211,6 +216,7 @@ final class CmakeBuildStep implements NativeBuildStep {
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       'type': 'cmake_build',
+      'id': id,
       'build_directory': buildDirectory,
       if (targets.isNotEmpty) 'targets': targets,
       if (parallel != true) 'parallel': parallel,
@@ -224,7 +230,7 @@ final class CmakeBuildStep implements NativeBuildStep {
   @override
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
     final buffer = StringBuffer();
-    buffer.write('cmake_build');
+    buffer.write(id);
     buffer.write(buildDirectory);
     buffer.write(targets.join(','));
     if (environment != null) {
@@ -244,7 +250,7 @@ final class CmakeBuildStep implements NativeBuildStep {
     ResolvedSource source,
   ) async {
     final logger = context.logger;
-    logger?.info('[cmake_build] Starting build step');
+    logger?.info('[$id] Starting build step');
     final r = runner ?? ProcessRunner(logger: logger);
     final buildDir = p.isAbsolute(buildDirectory)
         ? buildDirectory
@@ -260,7 +266,7 @@ final class CmakeBuildStep implements NativeBuildStep {
       args.addAll(['--parallel', Platform.numberOfProcessors.toString()]);
     }
 
-    logger?.info('[cmake_build] Running: cmake ${args.join(' ')}');
+    logger?.info('[$id] Running: cmake ${args.join(' ')}');
     await r.runStreaming(
       'cmake',
       args,

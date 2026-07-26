@@ -161,7 +161,11 @@ final class NativeProjectExecutor {
     // Inject cache into StepBuildRecipe if available
     NativeBuildRecipe effectiveRecipe = recipe;
     if (cache != null && recipe is StepBuildRecipe) {
-      effectiveRecipe = StepBuildRecipe(steps: recipe.steps, cache: cache);
+      effectiveRecipe = StepBuildRecipe(
+        steps: recipe.steps,
+        needsById: recipe.needsById,
+        cache: cache,
+      );
     }
 
     final result = await effectiveRecipe.execute(context, resolvedSource);

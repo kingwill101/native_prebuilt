@@ -34,10 +34,17 @@ abstract interface class NativeBuildRecipe {
 /// before execution. On cache hit, the step is skipped. On cache miss,
 /// the step is executed and its output recorded.
 final class StepBuildRecipe implements NativeBuildRecipe {
-  const StepBuildRecipe({required this.steps, this.cache});
+  const StepBuildRecipe({
+    required this.steps,
+    this.needsById = const {},
+    this.cache,
+  });
 
   /// The ordered list of build steps to execute.
   final List<NativeBuildStep> steps;
+
+  /// Step dependencies keyed by step id.
+  final Map<String, List<String>> needsById;
 
   /// Optional build cache for step-level caching.
   final BuildCache? cache;
@@ -53,9 +60,10 @@ final class StepBuildRecipe implements NativeBuildRecipe {
       'Recipe has ${steps.length} steps: ${steps.map((s) => s.id).join(', ')}',
     );
 
+    final orderedSteps = _orderedSteps();
     final artifacts = <BuiltNativeArtifact>[];
 
-    for (final step in steps) {
+    for (final step in orderedSteps) {
       logger.info('Executing step: ${step.id}');
       final stopwatch = Stopwatch()..start();
 
@@ -119,6 +127,7 @@ final class StepBuildRecipe implements NativeBuildRecipe {
   Map<String, dynamic> toJson() => {
     'type': 'step_build_recipe',
     'steps': steps.map((step) => step.toJson()).toList(),
+    if (needsById.isNotEmpty) 'needs_by_id': needsById,
   };
 
   factory StepBuildRecipe.fromJson(Map<String, dynamic> json) {
@@ -126,7 +135,48 @@ final class StepBuildRecipe implements NativeBuildRecipe {
       steps: (json['steps'] as List<dynamic>? ?? const [])
           .map((step) => NativeBuildStep.fromJson(step as Map<String, dynamic>))
           .toList(),
+      needsById: json['needs_by_id'] is Map
+          ? Map<String, List<String>>.fromEntries(
+              (json['needs_by_id'] as Map).entries.map(
+                    (entry) => MapEntry(
+                      entry.key.toString(),
+                      (entry.value as List<dynamic>? ?? const [])
+                          .map((value) => value.toString())
+                          .toList(),
+                    ),
+                  ),
+            )
+          : const {},
     );
+  }
+
+  List<NativeBuildStep> _orderedSteps() {
+    if (needsById.isEmpty) return steps;
+
+    final ordered = <NativeBuildStep>[];
+    final orderedIds = <String>{};
+
+    while (ordered.length < steps.length) {
+      var progress = false;
+      for (final step in steps) {
+        if (orderedIds.contains(step.id)) continue;
+        final deps = needsById[step.id] ?? const [];
+        if (deps.every(orderedIds.contains)) {
+          ordered.add(step);
+          orderedIds.add(step.id);
+          progress = true;
+        }
+      }
+      if (!progress) {
+        final unresolved = steps
+            .map((step) => step.id)
+            .where((id) => !orderedIds.contains(id))
+            .toList();
+        throw StateError('Unable to resolve build step order: $unresolved');
+      }
+    }
+
+    return ordered;
   }
 
   /// Serialize a [BuiltNativeArtifact] to a JSON-serializable map.

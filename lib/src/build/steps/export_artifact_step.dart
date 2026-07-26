@@ -49,10 +49,12 @@ final class ExportArtifactStep implements NativeBuildStep {
         }
       }
     }
+    final stepId = map['id'] as String;
+    final artifactId = map['artifact'] as String? ?? stepId;
     return ExportArtifactStep(
-      id: map['id'] as String,
+      id: stepId,
       declaration: NativeArtifactDeclaration(
-        id: map['id'] as String,
+        id: artifactId,
         kind: kind,
         primaryPath: map['primary_path'] as String,
         companions: companions,
@@ -64,7 +66,8 @@ final class ExportArtifactStep implements NativeBuildStep {
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       'type': 'export_artifact',
-      'id': declaration.id,
+      'id': id,
+      'artifact': declaration.id,
       'kind': declaration.kind.name,
       'primary_path': declaration.primaryPath,
       if (declaration.companions.isNotEmpty)
@@ -87,7 +90,7 @@ final class ExportArtifactStep implements NativeBuildStep {
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
     return NativeStepFingerprint(
       id: id,
-      hash: fingerprintHash(declaration.toJson().toString()),
+      hash: fingerprintHash('$id:${declaration.toJson()}'),
     );
   }
 

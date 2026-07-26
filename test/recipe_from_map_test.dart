@@ -104,7 +104,7 @@ void main() {
   group('ExportArtifactStep fromMap / toMap', () {
     test('round-trip through fromMap and toMap', () {
       final original = ExportArtifactStep(
-        id: 'mylib',
+        id: 'export_mylib',
         declaration: NativeArtifactDeclaration(
           id: 'mylib',
           kind: NativeArtifactKind.dynamicLibrary,
@@ -115,6 +115,8 @@ void main() {
       final map = original.toMap();
       final restored = ExportArtifactStep.fromMap(map);
 
+      expect(map['id'], 'export_mylib');
+      expect(map['artifact'], 'mylib');
       expect(restored.id, original.id);
       expect(restored.declaration.id, original.declaration.id);
       expect(restored.declaration.kind, original.declaration.kind);

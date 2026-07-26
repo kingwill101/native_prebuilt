@@ -57,7 +57,7 @@ final class CopyStep implements NativeBuildStep {
   Future<NativeStepFingerprint> fingerprint(NativeStepContext context) async {
     return NativeStepFingerprint(
       id: id,
-      hash: fingerprintHash('${sourcePath}_$destinationPath'),
+      hash: fingerprintHash('$id:${sourcePath}_$destinationPath'),
     );
   }
 

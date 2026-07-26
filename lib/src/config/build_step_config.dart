@@ -75,6 +75,7 @@ final class CmakeConfigureStepConfig extends BuildStepConfig {
 
   @override
   NativeBuildStep toBuildStep() => CmakeConfigureStep(
+    id: id,
     sourceDirectory: sourceDirectory,
     buildDirectory: buildDirectory,
     defines: definitions,
@@ -115,6 +116,7 @@ final class CmakeBuildStepConfig extends BuildStepConfig {
 
   @override
   NativeBuildStep toBuildStep() => CmakeBuildStep(
+    id: id,
     buildDirectory: buildDirectory,
     targets: targets,
     parallel: parallel,
@@ -301,8 +303,11 @@ final class GitApplyPatchStepConfig extends BuildStepConfig {
   Map<String, dynamic> toJson() => _$GitApplyPatchStepConfigToJson(this);
 
   @override
-  NativeBuildStep toBuildStep() =>
-      GitApplyPatchStep(patchPath: patchPath, targetDirectory: targetDirectory);
+  NativeBuildStep toBuildStep() => GitApplyPatchStep(
+    id: id,
+    patchPath: patchPath,
+    targetDirectory: targetDirectory,
+  );
 
   final String patchPath;
   final String? targetDirectory;

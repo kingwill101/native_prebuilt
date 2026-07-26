@@ -164,6 +164,9 @@ final class BuildConfig {
             pattern: recipe.target.toNativeTargetPattern(),
             recipe: StepBuildRecipe(
               steps: [for (final step in recipe.steps) step.toBuildStep()],
+              needsById: {
+                for (final step in recipe.steps) step.id: step.needs,
+              },
             ),
           ),
       ],
