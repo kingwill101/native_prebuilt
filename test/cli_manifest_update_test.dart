@@ -3,7 +3,7 @@ library;
 
 import 'dart:io';
 
-import 'package:native_prebuilt/src/cli/native_prebuilt_config.dart';
+import 'package:native_prebuilt/src/config/native_prebuilt_config.dart';
 import 'package:native_prebuilt/native_prebuilt.dart';
 import 'package:test/test.dart';
 
@@ -44,22 +44,19 @@ void main() {
         // built-library/android-arm64/libtdjson.so (platform-specific layout)
 
         final config = NativePrebuiltConfig(
+          schema: 2,
           package: 'tdlib',
           assetName: 'tdlib_bindings_generated.dart',
           libraryStem: 'tdjson',
-          schema: 1,
-          release: GitHubReleaseSource(
-            owner: 'tdlib',
-            repository: 'tdlib',
+          release: ReleaseConfig(
+            provider: 'github',
+            repository: 'tdlib/tdlib',
             tag: 'tdlib-v1.8.65',
           ),
           artifacts: {
-            'android-arm64': NativePrebuiltArtifactConfig(
-              archiveName: 'tdlib-android-arm64.tar.gz',
-              payload: DynamicLibraryPayload(
-                libraryStem: 'tdjson',
-                acceptVersionedNames: true,
-              ),
+            'android-arm64': ArtifactConfig(
+              archive: 'tdlib-android-arm64.tar.gz',
+              payload: PayloadConfig(type: 'dynamic_library'),
             ),
           },
         );
@@ -94,22 +91,19 @@ void main() {
         libFile.writeAsBytesSync([0x7f, 0x45, 0x4c, 0x46]);
 
         final config = NativePrebuiltConfig(
+          schema: 2,
           package: 'tdlib',
           assetName: 'tdlib_bindings_generated.dart',
           libraryStem: 'tdjson',
-          schema: 1,
-          release: GitHubReleaseSource(
-            owner: 'tdlib',
-            repository: 'tdlib',
+          release: ReleaseConfig(
+            provider: 'github',
+            repository: 'tdlib/tdlib',
             tag: 'tdlib-v1.8.65',
           ),
           artifacts: {
-            'linux-x64': NativePrebuiltArtifactConfig(
-              archiveName: 'tdlib-linux-x64.tar.gz',
-              payload: DynamicLibraryPayload(
-                libraryStem: 'tdjson',
-                acceptVersionedNames: true,
-              ),
+            'linux-x64': ArtifactConfig(
+              archive: 'tdlib-linux-x64.tar.gz',
+              payload: PayloadConfig(type: 'dynamic_library'),
             ),
           },
         );
@@ -134,22 +128,19 @@ void main() {
         emptyDir.createSync(recursive: true);
 
         final config = NativePrebuiltConfig(
+          schema: 2,
           package: 'tdlib',
           assetName: 'tdlib_bindings_generated.dart',
           libraryStem: 'tdjson',
-          schema: 1,
-          release: GitHubReleaseSource(
-            owner: 'tdlib',
-            repository: 'tdlib',
+          release: ReleaseConfig(
+            provider: 'github',
+            repository: 'tdlib/tdlib',
             tag: 'tdlib-v1.8.65',
           ),
           artifacts: {
-            'android-arm64': NativePrebuiltArtifactConfig(
-              archiveName: 'tdlib-android-arm64.tar.gz',
-              payload: DynamicLibraryPayload(
-                libraryStem: 'tdjson',
-                acceptVersionedNames: true,
-              ),
+            'android-arm64': ArtifactConfig(
+              archive: 'tdlib-android-arm64.tar.gz',
+              payload: PayloadConfig(type: 'dynamic_library'),
             ),
           },
         );

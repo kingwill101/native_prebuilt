@@ -1,4 +1,4 @@
-schema: 1
+schema: 2
 package: managed_build_example
 asset_name: managed_build_example_bindings_generated.dart
 library_stem: managed_build_example
@@ -7,6 +7,62 @@ release:
   owner: example
   repository: managed_build_example
   tag: managed_build_example-v0.1.0
+build:
+  recipes:
+    - target:
+        os: linux
+      steps:
+        - id: configure
+          type: cmake_configure
+          source_directory: .
+          build_directory: build
+          generator: Ninja
+          definitions:
+            CMAKE_BUILD_TYPE: Release
+        - id: build
+          type: cmake_build
+          build_directory: build
+        - id: export
+          type: export_artifact
+          artifact: managed_build_example
+          kind: dynamic_library
+          primary: build/libmanaged_build_example.so
+    - target:
+        os: macos
+      steps:
+        - id: configure
+          type: cmake_configure
+          source_directory: .
+          build_directory: build
+          generator: Ninja
+          definitions:
+            CMAKE_BUILD_TYPE: Release
+        - id: build
+          type: cmake_build
+          build_directory: build
+        - id: export
+          type: export_artifact
+          artifact: managed_build_example
+          kind: dynamic_library
+          primary: build/libmanaged_build_example.dylib
+    - target:
+        os: windows
+      steps:
+        - id: configure
+          type: cmake_configure
+          source_directory: .
+          build_directory: build
+          generator: Ninja
+          definitions:
+            CMAKE_BUILD_TYPE: Release
+        - id: build
+          type: cmake_build
+          build_directory: build
+        - id: export
+          type: export_artifact
+          artifact: managed_build_example
+          kind: dynamic_library
+          primary: build/managed_build_example.dll
 artifacts:
   linux-x64:
     archive: managed_build_example-linux-x64.tar.gz

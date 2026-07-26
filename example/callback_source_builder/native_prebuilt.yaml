@@ -1,4 +1,4 @@
-schema: 1
+schema: 2
 package: callback_source_builder_example
 asset_name: callback_source_builder_example_bindings_generated.dart
 library_stem: callback_source_builder_example
@@ -7,6 +7,26 @@ release:
   owner: example
   repository: callback_source_builder_example
   tag: v0.1.0
+build:
+  recipes:
+    - target:
+        os: linux
+      steps:
+        - id: configure
+          type: cmake_configure
+          source_directory: .
+          build_directory: build
+          generator: Ninja
+          definitions:
+            CMAKE_BUILD_TYPE: Release
+        - id: build
+          type: cmake_build
+          build_directory: build
+        - id: export
+          type: export_artifact
+          artifact: callback_source_builder_example
+          kind: dynamic_library
+          primary: build/libcallback_source_builder_example.so
 artifacts:
   linux-x64:
     archive: callback_source_builder_example-linux-x64.tar.gz
