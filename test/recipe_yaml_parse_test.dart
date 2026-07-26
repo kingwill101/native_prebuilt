@@ -69,8 +69,8 @@ artifacts:
         expect(steps[1], isA<CmakeBuildStep>(), reason: target.label);
         expect(steps[2], isA<ExportArtifactStep>(), reason: target.label);
         expect(steps.map((s) => s.id).toList(), [
-          'cmake_configure',
-          'cmake_build',
+          'configure',
+          'build',
           'export_tdjson',
         ], reason: target.label);
       }
@@ -85,24 +85,25 @@ artifacts:
       );
       expect(recipe, isA<StepBuildRecipe>());
       final steps = (recipe as StepBuildRecipe).steps;
-      expect(steps, hasLength(8));
+      expect(steps, hasLength(9));
       expect(steps[0], isA<CmakeConfigureStep>());
       expect(steps[1], isA<CmakeBuildStep>());
       expect(steps[2], isA<GitCheckoutStep>());
-      expect(steps[3], isA<CommandStep>());
-      expect(steps[4], isA<CmakeConfigureStep>());
-      expect(steps[5], isA<CmakeBuildStep>());
-      expect(steps[6], isA<CommandStep>());
-      expect(steps[7], isA<ExportArtifactStep>());
-      expect((steps[3] as CommandStep).commands, [
+      expect(steps[3], isA<GitApplyPatchStep>());
+      expect(steps[4], isA<CommandStep>());
+      expect(steps[5], isA<CmakeConfigureStep>());
+      expect(steps[6], isA<CmakeBuildStep>());
+      expect(steps[7], isA<CommandStep>());
+      expect(steps[8], isA<ExportArtifactStep>());
+      expect((steps[4] as CommandStep).commands, [
         ['/usr/bin/make', 'OpenSSL-iOS'],
       ]);
-      expect((steps[6] as CommandStep).commands, [
+      expect((steps[7] as CommandStep).commands, [
         [
           'install_name_tool',
           '-id',
           '@rpath/libtdjson.dylib',
-          'install/lib/libtdjson.dylib',
+          '{{ work }}/install/lib/libtdjson.dylib',
         ],
       ]);
     });

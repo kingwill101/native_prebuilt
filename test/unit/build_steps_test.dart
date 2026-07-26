@@ -258,17 +258,20 @@ void main() {
 
         expect(runner.commands, hasLength(1));
         expect(
-          runner.commands.first.arguments,
+          runner.commands.first.arguments.map(p.normalize),
           containsAll([
-            '${context.directories.work.path}/bin',
-            'D:/vcpkg/tools',
+            p.normalize('${context.directories.work.path}/bin'),
+            p.normalize('D:/vcpkg/tools'),
           ]),
         );
         expect(
-          runner.commands.first.workingDirectory,
-          p.join(context.directories.work.path, 'subdir'),
+          p.normalize(runner.commands.first.workingDirectory!),
+          p.normalize(p.join(context.directories.work.path, 'subdir')),
         );
-        expect(runner.commands.first.environment, {'ROOT': 'D:/vcpkg/root'});
+        expect(
+          runner.commands.first.environment,
+          {'ROOT': p.normalize('D:/vcpkg/root')},
+        );
       },
     );
 
