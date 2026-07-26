@@ -238,14 +238,14 @@ void main() {
       });
     });
 
-    test('expands placeholders in commands and working directory', () async {
+    test('expands liquid templates in commands and working directory', () async {
       final step = CommandStep(
         id: 'test-placeholders',
         commands: [
-          ['echo', '\${work}/bin', '\${env.VCPKG_ROOT}/tools'],
+          ['echo', '{{ work }}/bin', '{{ env.VCPKG_ROOT }}/tools'],
         ],
-        workingDirectory: '\${work}/subdir',
-        environment: {'ROOT': '\${env.VCPKG_ROOT}/root'},
+        workingDirectory: '{{ work }}/subdir',
+        environment: {'ROOT': '{{ env.VCPKG_ROOT }}/root'},
         runner: runner,
       );
 
@@ -271,11 +271,11 @@ void main() {
       });
     });
 
-    test('expands environment variables in cmake arguments', () async {
+    test('expands liquid templates in cmake arguments', () async {
       final step = CmakeConfigureStep(
         sourceDirectory: '.',
         buildDirectory: 'build',
-        toolchainFile: 'VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake',
+        toolchainFile: '{{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake',
         runner: runner,
       );
 

@@ -434,7 +434,7 @@ packages:
     source: hosted
     version: "6.1.0"
   liquify:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: liquify
       sha256: "23aaa728dd2adc15dcc863772dec64425e8bc35bfa3f81323e0726fb83e1e28f"
