@@ -13,12 +13,13 @@ import 'package:native_prebuilt/native_prebuilt.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
+import '../support/fixture_workspace.dart';
 import '../support/test_helpers.dart';
 
 bool _cmakeAvailable = false;
 
 void main() {
-  late Directory fixtureDir;
+  late FixtureWorkspace workspace;
   late Directory tempDir;
 
   setUpAll(() async {
@@ -27,23 +28,10 @@ void main() {
     if (!_cmakeAvailable) {
       print('Skipping managed build tests: CMake not found');
     }
-
-    fixtureDir = Directory(
-      p.join(
-        Directory.current.path,
-        'test',
-        'fixtures',
-        'native_projects',
-        'simple_shared',
-      ),
-    );
-
-    if (!fixtureDir.existsSync()) {
-      fail('Fixture directory not found: ${fixtureDir.path}');
-    }
   });
 
   setUp(() async {
+    workspace = await FixtureWorkspace.create('simple_shared');
     tempDir = await Directory.systemTemp.createTemp('managed_build_test_');
   });
 
@@ -51,6 +39,7 @@ void main() {
     if (tempDir.existsSync()) {
       await tempDir.delete(recursive: true);
     }
+    await workspace.dispose();
   });
 
   group('NativeProjectExecutor', () {
@@ -114,7 +103,7 @@ void main() {
         final executor = NativeProjectExecutor(
           project: project,
           source: ResolvedSource(
-            directory: fixtureDir,
+            directory: workspace.source,
             origin: SourceOrigin.local,
           ),
           logger: null,
@@ -278,7 +267,7 @@ void main() {
         final executor = NativeProjectExecutor(
           project: project,
           source: ResolvedSource(
-            directory: fixtureDir,
+            directory: workspace.source,
             origin: SourceOrigin.local,
           ),
           logger: null,
@@ -378,7 +367,7 @@ void main() {
         );
 
         final source = ResolvedSource(
-          directory: fixtureDir,
+          directory: workspace.source,
           origin: SourceOrigin.local,
         );
 
