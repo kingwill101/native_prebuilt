@@ -1,7 +1,23 @@
 import 'dart:io';
 
+import 'package:native_prebuilt/native_prebuilt.dart';
 import 'package:native_prebuilt/src/cli/cli_config.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
+
+Directory _findPackageDirectory(String packageName) {
+  var dir = Directory.current.absolute;
+  while (true) {
+    final candidate = Directory(p.join(dir.path, packageName));
+    if (File(p.join(candidate.path, 'native_prebuilt.yaml')).existsSync()) {
+      return candidate;
+    }
+    if (dir.parent.path == dir.path) {
+      throw StateError('Could not find $packageName in parent directories');
+    }
+    dir = dir.parent;
+  }
+}
 
 void main() {
   group('detect() with build recipes', () {
@@ -36,6 +52,66 @@ artifacts:
       } finally {
         dir.deleteSync(recursive: true);
       }
+    });
+
+    test('parses the TDLib desktop manifest recipes', () {
+      final project = detect(_findPackageDirectory('tdlib'));
+      expect(project, isNotNull);
+
+      for (final target in [
+        const NativeTarget(os: OS.macOS, architecture: Architecture.arm64),
+        const NativeTarget(os: OS.windows, architecture: Architecture.x64),
+      ]) {
+        final recipe = project!.build.recipeFor(target);
+        expect(recipe, isA<StepBuildRecipe>(), reason: target.label);
+        final steps = (recipe as StepBuildRecipe).steps;
+        expect(steps, hasLength(3), reason: target.label);
+        expect(steps[0], isA<CmakeConfigureStep>(), reason: target.label);
+        expect(steps[1], isA<CmakeBuildStep>(), reason: target.label);
+        expect(steps[2], isA<ExportArtifactStep>(), reason: target.label);
+        expect(
+          steps.map((s) => s.id).toList(),
+          ['cmake_configure', 'cmake_build', 'export_tdjson'],
+          reason: target.label,
+        );
+      }
+    });
+
+    test('parses the TDLib iOS manifest recipe', () {
+      final project = detect(_findPackageDirectory('tdlib'));
+      expect(project, isNotNull);
+
+      final recipe = project!.build.recipeFor(
+        const NativeTarget(os: OS.iOS, architecture: Architecture.arm64),
+      );
+      expect(recipe, isA<StepBuildRecipe>());
+      final steps = (recipe as StepBuildRecipe).steps;
+      expect(steps, hasLength(8));
+      expect(steps[0], isA<CmakeConfigureStep>());
+      expect(steps[1], isA<CmakeBuildStep>());
+      expect(steps[2], isA<GitCheckoutStep>());
+      expect(steps[3], isA<CommandStep>());
+      expect(steps[4], isA<CmakeConfigureStep>());
+      expect(steps[5], isA<CmakeBuildStep>());
+      expect(steps[6], isA<CommandStep>());
+      expect(steps[7], isA<ExportArtifactStep>());
+      expect(
+        (steps[3] as CommandStep).commands,
+        [
+          ['make', 'OpenSSL-iOS'],
+        ],
+      );
+      expect(
+        (steps[6] as CommandStep).commands,
+        [
+          [
+            'install_name_tool',
+            '-id',
+            '@rpath/libtdjson.dylib',
+            'install/lib/libtdjson.dylib',
+          ],
+        ],
+      );
     });
 
     test('falls back to generic CMake when no build section present', () {
