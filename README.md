@@ -2,6 +2,18 @@
 
 Reusable infrastructure for Dart packages that build, cache, and ship native libraries through Dart hooks.
 
+## Contents
+
+- [Two API paths](#two-api-paths)
+- [Comparison](#comparison)
+- [Install](#install)
+- [Source fallback pipeline](#source-fallback-pipeline)
+- [Build steps](#build-steps)
+- [CLI commands](#cli-commands)
+- [Platform toolchains](#platform-toolchains)
+- [Caching](#caching)
+- [License](#license)
+
 ## Two API paths
 
 ### 1. Hooks Builder integration (simple packages)
