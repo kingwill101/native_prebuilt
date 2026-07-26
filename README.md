@@ -95,6 +95,22 @@ Resolution order:
 
 ## Build steps
 
+Recipe values are Liquid templates rendered with:
+
+- `source.path`
+- `work`
+- `output`
+- `cache`
+- `env.*`
+
+Example:
+
+```yaml
+source_directory: "{{ source.path }}/example/android"
+build_directory: "{{ work }}/build"
+CMAKE_TOOLCHAIN_FILE: "{{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake"
+```
+
 | Step | Purpose |
 |------|---------|
 | `CmakeConfigureStep` | Run `cmake -B` with defines |
