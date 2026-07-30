@@ -465,6 +465,81 @@ artifacts:
         }
       },
     );
+
+    test('update can write a native_prebuilt.lock.yaml file', () async {
+      final dir = await Directory.systemTemp.createTemp('native_prebuilt_cli_');
+      try {
+        File('${dir.path}/native_prebuilt.yaml').writeAsStringSync('''
+schema: 1
+package: demo
+asset_name: src/demo.dart
+library_stem: demo
+release:
+  provider: github
+  repository: owner/demo
+  tag: demo-v1.0.0
+build:
+  recipes:
+    - target:
+        os: linux
+      steps:
+        - id: configure
+          type: cmake_configure
+          source_directory: .
+          build_directory: build
+        - id: build
+          type: cmake_build
+          build_directory: build
+        - id: export
+          type: export_artifact
+          artifact: demo
+          kind: dynamic_library
+          primary: build/libdemo.so
+artifacts:
+  linux-x64:
+    archive: demo-linux-x64.tar.gz
+    payload:
+      type: dynamic_library
+''');
+
+        final builtLibraryDir = Directory('${dir.path}/built-library/linux-x64')
+          ..createSync(recursive: true);
+        File('${builtLibraryDir.path}/libdemo.so')
+          ..createSync(recursive: true)
+          ..writeAsBytesSync([0x7f, 0x45, 0x4c, 0x46]);
+
+        final outputFile = File('${dir.path}/native_prebuilt.lock.yaml');
+        final previousDir = Directory.current;
+        try {
+          Directory.current = dir;
+          await runNativePrebuiltCli([
+            'manifest',
+            'update',
+            '--output',
+            outputFile.path,
+            '--tag',
+            'demo-v1.0.0',
+          ]);
+
+          expect(outputFile.existsSync(), isTrue);
+          final lock = outputFile.readAsStringSync();
+          expect(lock, contains("tag: 'demo-v1.0.0'"));
+          expect(lock, contains("'linux-x64':"));
+          expect(lock, contains('archive_sha256:'));
+
+          await runNativePrebuiltCli([
+            'manifest',
+            'verify',
+            '--output',
+            outputFile.path,
+          ]);
+        } finally {
+          Directory.current = previousDir;
+        }
+      } finally {
+        dir.deleteSync(recursive: true);
+      }
+    });
   });
 
   group('plan command', () {

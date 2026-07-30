@@ -53,7 +53,40 @@ artifacts:
       }
     });
 
-    test('skips artifacts without valid hashes for runtime resolution', () {
+    test(
+      'keeps placeholder artifacts without hashes until a lock file is present',
+      () {
+        final dir = Directory.systemTemp.createTempSync('npb_test_');
+        try {
+          File('${dir.path}/native_prebuilt.yaml').writeAsStringSync('''
+schema: 1
+package: parent_pkg
+asset_name: parent.dart
+library_stem: parent
+release:
+  provider: github
+  repository: owner/repo
+  tag: v1.0.0
+artifacts:
+  linux-x64:
+    archive: parent-linux-x64.tar.gz
+    payload:
+      type: dynamic_library
+''');
+          final project = detect(dir);
+          expect(project, isNotNull);
+          final artifact = project!.prebuilts.artifacts['linux-x64'];
+          expect(artifact, isNotNull);
+          expect(artifact!.archiveName, 'parent-linux-x64.tar.gz');
+          expect(artifact.archiveSha256, isEmpty);
+          expect(artifact.payloadSha256, isEmpty);
+        } finally {
+          dir.deleteSync(recursive: true);
+        }
+      },
+    );
+
+    test('overlays native_prebuilt.lock.yaml hashes when present', () {
       final dir = Directory.systemTemp.createTempSync('npb_test_');
       try {
         File('${dir.path}/native_prebuilt.yaml').writeAsStringSync('''
@@ -71,9 +104,28 @@ artifacts:
     payload:
       type: dynamic_library
 ''');
+        File('${dir.path}/native_prebuilt.lock.yaml').writeAsStringSync('''
+schema: 1
+release:
+  tag: 'v2.0.0'
+artifacts:
+  'linux-x64':
+    archive_sha256: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+    payload_sha256: 'fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210'
+''');
         final project = detect(dir);
         expect(project, isNotNull);
-        expect(project!.prebuilts.artifacts, isEmpty);
+        final artifact = project!.prebuilts.artifacts['linux-x64'];
+        expect(artifact, isNotNull);
+        expect(
+          artifact!.archiveSha256,
+          '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+        );
+        expect(
+          artifact.payloadSha256,
+          'fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210',
+        );
+        expect(project.prebuilts.release.tag, 'v2.0.0');
       } finally {
         dir.deleteSync(recursive: true);
       }

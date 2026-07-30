@@ -67,21 +67,14 @@ NativeProject? detect([Directory? workingDirectory]) {
       final platform = entry.key as String;
       final aDoc = entry.value as Map?;
       if (aDoc == null) continue;
-
-      final archiveSha256 = aDoc['archive_sha256'] as String?;
-      final payloadSha256 = aDoc['payload_sha256'] as String?;
-      if (!_isSha256(archiveSha256) || !_isSha256(payloadSha256)) {
-        continue;
-      }
-
       final archive = aDoc['archive'] as String? ?? '';
       final payload = aDoc['payload'] as Map?;
       final payloadType = payload?['type'] as String? ?? 'dynamic_library';
       final isStatic = payloadType == 'static_library';
       artifacts[platform] = PrebuiltArtifact(
         archiveName: archive,
-        archiveSha256: archiveSha256!,
-        payloadSha256: payloadSha256!,
+        archiveSha256: aDoc['archive_sha256'] as String? ?? '',
+        payloadSha256: aDoc['payload_sha256'] as String? ?? '',
         payload: isStatic
             ? StaticLibraryPayload(libraryStem: libraryStem)
             : DynamicLibraryPayload(libraryStem: libraryStem),
@@ -111,7 +104,7 @@ NativeProject? detect([Directory? workingDirectory]) {
   // Build recipes: use YAML-defined declarative recipes only.
   final build = _parseBuildDefinition(doc);
 
-  return NativeProject(
+  final project = NativeProject(
     name: packageName,
     asset: NativeAssetSpec(
       assetName: assetName,
@@ -125,6 +118,87 @@ NativeProject? detect([Directory? workingDirectory]) {
     ),
     sources: sources,
     build: build,
+  );
+
+  final lockFile = resolveLockFile(null, configFile.parent);
+  if (lockFile != null && lockFile.existsSync()) {
+    return _applyNativePrebuiltLock(project, lockFile);
+  }
+
+  return project;
+}
+
+File? resolveLockFile([String? lockPath, Directory? workingDirectory]) {
+  if (lockPath != null) {
+    return File(lockPath).absolute;
+  }
+
+  var dir = (workingDirectory ?? Directory.current).absolute;
+  while (true) {
+    final candidate = File(p.join(dir.path, 'native_prebuilt.lock.yaml'));
+    if (candidate.existsSync()) {
+      return candidate;
+    }
+
+    final parent = dir.parent;
+    if (parent.path == dir.path) return null;
+    dir = parent;
+  }
+}
+
+NativeProject _applyNativePrebuiltLock(NativeProject project, File lockFile) {
+  final doc = loadYaml(lockFile.readAsStringSync());
+  if (doc is! Map) {
+    return project;
+  }
+
+  final schema = doc['schema'];
+  if (schema is! int || schema < 1) {
+    return project;
+  }
+
+  final releaseSection = doc['release'] as Map?;
+  final lockTag = releaseSection?['tag'] as String?;
+  final artifactsSection = doc['artifacts'] as Map?;
+  if (lockTag == null && artifactsSection == null) {
+    return project;
+  }
+
+  final artifacts = <String, PrebuiltArtifact>{
+    for (final entry in project.prebuilts.artifacts.entries)
+      entry.key: entry.value,
+  };
+
+  if (artifactsSection != null) {
+    for (final entry in artifactsSection.entries) {
+      final platform = entry.key as String;
+      final lockArtifact = entry.value as Map?;
+      final baseArtifact = artifacts[platform];
+      if (lockArtifact == null || baseArtifact == null) continue;
+
+      final archiveSha256 = lockArtifact['archive_sha256'] as String?;
+      final payloadSha256 = lockArtifact['payload_sha256'] as String?;
+      if (!_isSha256(archiveSha256) || !_isSha256(payloadSha256)) {
+        continue;
+      }
+
+      artifacts[platform] = PrebuiltArtifact(
+        archiveName: baseArtifact.archiveName,
+        archiveSha256: archiveSha256!,
+        payloadSha256: payloadSha256!,
+        payload: baseArtifact.payload,
+      );
+    }
+  }
+
+  return project.copyWith(
+    prebuilts: PrebuiltManifest(
+      schemaVersion: project.prebuilts.schemaVersion,
+      release: lockTag == null
+          ? project.prebuilts.release
+          : project.prebuilts.release.withTag(lockTag),
+      artifacts: artifacts,
+    ),
   );
 }
 

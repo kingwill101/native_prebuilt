@@ -56,7 +56,7 @@ For multi-stage builds with caching and cross-compilation, you can write the `Na
 final project = NativeProject(
   name: 'tdlib',
   asset: const NativeAssetSpec(
-    assetName: 'src/tdlib.g.dart',
+    assetName: 'src/client/platform/io/tdjson_native.dart',
     libraryStem: 'tdjson',
     linkMode: DynamicLoadingBundled(),
   ),
@@ -80,6 +80,8 @@ await runNativeProjectCli(args, project: project);
 You can define the complete project in `native_prebuilt.yaml` instead of writing `NativeProject` code manually. The CLI reads that manifest, validates it, and generates the build graph from it.
 
 `assetName` is the Dart library path that declares the native code asset (the `@Native` bindings), not the shared-library filename.
+
+If `native_prebuilt.lock.yaml` is present next to the config file, `detect()` overlays it automatically. Use `project.copyWith(prebuilts: ...)` only for manual overrides in custom code.
 
 ## Comparison
 
@@ -179,7 +181,7 @@ for example in VS Code:
 | `cache-key --target <platform>` | Show cache key |
 | `explain-cache --target <platform>` | Explain cache state |
 | `verify --target <platform>` | Verify built artifact |
-| `manifest update` | Generate/refresh Dart manifest |
+| `manifest update` | Generate/refresh Dart manifest or lock YAML |
 | `manifest verify` | Verify manifest hashes |
 | `schema export` | Write the JSON schema copy used by editors |
 | `fetch` | Download prebuilt artifacts |

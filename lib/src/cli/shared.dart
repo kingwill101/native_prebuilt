@@ -236,6 +236,41 @@ String renderManifest(
   return b.toString();
 }
 
+String renderLockManifest(PrebuiltManifest manifest) {
+  final b = StringBuffer()
+    ..writeln('# GENERATED CODE - DO NOT MODIFY BY HAND.')
+    ..writeln('schema: ${manifest.schemaVersion}')
+    ..writeln('release:')
+    ..writeln("  tag: '${manifest.release.tag}'")
+    ..writeln('artifacts:');
+
+  for (final entry in manifest.artifacts.entries) {
+    final platform = entry.key;
+    final artifact = entry.value;
+    b.writeln("  '$platform':");
+    b.writeln("    archive_sha256: '${artifact.archiveSha256}'");
+    b.writeln("    payload_sha256: '${artifact.payloadSha256}'");
+  }
+
+  b.writeln();
+  return b.toString();
+}
+
+String renderManifestOutput(
+  NativePrebuiltConfig config,
+  PrebuiltManifest manifest,
+  String tag,
+  String outputPath,
+) {
+  return isLockManifestOutput(outputPath)
+      ? renderLockManifest(manifest)
+      : renderManifest(config, manifest, tag);
+}
+
+bool isLockManifestOutput(String outputPath) {
+  return outputPath.endsWith('.lock.yaml') || outputPath.endsWith('.lock.yml');
+}
+
 Future<void> packageBuiltLibrary({
   required File builtFile,
   required File archiveFile,

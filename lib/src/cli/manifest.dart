@@ -99,7 +99,7 @@ class _ManifestUpdateCommand extends Command<void> {
 
     final outputFile = File(outputPath);
     outputFile.parent.createSync(recursive: true);
-    final content = renderManifest(config, manifest, tag);
+    final content = renderManifestOutput(config, manifest, tag, outputPath);
     outputFile.writeAsStringSync(content);
     io.info('Wrote $outputPath');
   }
@@ -174,6 +174,21 @@ class _ManifestVerifyCommand extends Command<void> {
 
     final actual = File(outputPath).readAsStringSync();
     if (inferredLocalBuild) {
+      if (isLockManifestOutput(outputPath)) {
+        final expected = renderManifestOutput(
+          config,
+          manifest,
+          tag,
+          outputPath,
+        );
+        if (actual != expected) {
+          stderr.writeln('Manifest mismatch: $outputPath');
+          exitCode = 1;
+          return;
+        }
+        io.info('OK: $outputPath');
+        return;
+      }
       if (!_verifyManifestSubset(actual, config, manifest, tag)) {
         stderr.writeln('Manifest mismatch: $outputPath');
         exitCode = 1;
@@ -183,7 +198,7 @@ class _ManifestVerifyCommand extends Command<void> {
       return;
     }
 
-    final expected = renderManifest(config, manifest, tag);
+    final expected = renderManifestOutput(config, manifest, tag, outputPath);
     if (actual != expected) {
       stderr.writeln('Manifest mismatch: $outputPath');
       exitCode = 1;

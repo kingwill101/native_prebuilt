@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+- Add native_prebuilt.lock.yaml support and automatic lock overlay detection.
+- Allow manifest updates to emit lock YAML in addition to Dart manifests.
+- Update TDLib to consume the checked-in lock file instead of a generated g.dart manifest.
+
 ## 0.2.1
 
 - Resolve built libraries from nested platform output directories when generating manifests.

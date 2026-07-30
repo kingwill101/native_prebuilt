@@ -44,7 +44,7 @@ For multi-stage builds with caching and cross-compilation, you can write the `Na
 final project = NativeProject(
   name: 'tdlib',
   asset: const NativeAssetSpec(
-    assetName: 'src/tdlib.g.dart',
+    assetName: 'src/client/platform/io/tdjson_native.dart',
     libraryStem: 'tdjson',
     linkMode: DynamicLoadingBundled(),
   ),
@@ -70,7 +70,7 @@ You can define the complete project in `native_prebuilt.yaml` instead of writing
 ## CLI Commands
 
 ### Manifest Management
-- `dart run native_prebuilt manifest update` - Generate/refresh manifest from `native_prebuilt.yaml`
+- `dart run native_prebuilt manifest update` - Generate/refresh manifest or lock file from `native_prebuilt.yaml`
 - `dart run native_prebuilt manifest verify` - Verify manifest hashes match built artifacts
 - `dart run native_prebuilt schema export` - Write `schema/native_prebuilt.schema.json` for editor validation
 
