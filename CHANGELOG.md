@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1
+
+- Resolve built libraries from nested platform output directories when generating manifests.
+- Keep flat built-library layouts working for backward compatibility.
+
 ## 0.2.0
 
 - Add hook/build.dart fallback for packages without declarative recipes.

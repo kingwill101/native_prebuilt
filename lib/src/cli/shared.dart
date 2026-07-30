@@ -127,28 +127,25 @@ Future<PrebuiltManifest> generateManifest({
         p.join((releaseAssetsDir ?? tempDir).path, artifactConfig.archive),
       );
       if (builtLibraryDir != null) {
-        final platformBuiltFile = File(
-          p.join(builtLibraryDir.path, platform, canonicalName),
+        final builtFileSearch = _findBuiltLibraryFile(
+          builtLibraryDir: builtLibraryDir,
+          platform: platform,
+          canonicalName: canonicalName,
         );
 
-        final flatBuiltFile = File(p.join(builtLibraryDir.path, canonicalName));
-
-        final builtFile = platformBuiltFile.existsSync()
-            ? platformBuiltFile
-            : flatBuiltFile;
-
-        if (!builtFile.existsSync()) {
+        if (builtFileSearch == null) {
           if (allowMissing || toleratePartialBuiltLibrary) continue;
 
           throw StateError(
             'Missing built library for $platform. Checked:\n'
-            '  ${platformBuiltFile.path}\n'
-            '  ${flatBuiltFile.path}',
+            '  ${p.join(builtLibraryDir.path, platform, canonicalName)}\n'
+            '  ${p.join(builtLibraryDir.path, canonicalName)}\n'
+            '  ${p.join(builtLibraryDir.path, platform)}/**/$canonicalName',
           );
         }
 
         await packageBuiltLibrary(
-          builtFile: builtFile,
+          builtFile: builtFileSearch,
           archiveFile: archiveFile,
         );
       } else {
@@ -254,6 +251,38 @@ Future<void> packageBuiltLibrary({
       'tar create failed for ${builtFile.path}: ${result.stderr.trim()}',
     );
   }
+}
+
+File? _findBuiltLibraryFile({
+  required Directory builtLibraryDir,
+  required String platform,
+  required String canonicalName,
+}) {
+  final platformDir = Directory(p.join(builtLibraryDir.path, platform));
+
+  final directCandidates = [
+    File(p.join(platformDir.path, canonicalName)),
+    File(p.join(builtLibraryDir.path, canonicalName)),
+  ];
+  for (final candidate in directCandidates) {
+    if (candidate.existsSync()) {
+      return candidate;
+    }
+  }
+
+  if (!platformDir.existsSync()) {
+    return null;
+  }
+
+  final recursiveMatches =
+      platformDir
+          .listSync(recursive: true, followLinks: false)
+          .whereType<File>()
+          .where((file) => p.basename(file.path) == canonicalName)
+          .toList()
+        ..sort((a, b) => a.path.compareTo(b.path));
+
+  return recursiveMatches.isEmpty ? null : recursiveMatches.first;
 }
 
 String renderPayload(ArtifactPayload payload) => switch (payload) {

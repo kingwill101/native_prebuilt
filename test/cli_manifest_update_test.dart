@@ -38,11 +38,6 @@ void main() {
     test(
       'generateManifest finds library in platform-specific subdirectory',
       () async {
-        // This test should PASS after the fix
-        // Before the fix, it will FAIL because generateManifest only looks at
-        // built-library/libtdjson.so (flat layout) not
-        // built-library/android-arm64/libtdjson.so (platform-specific layout)
-
         final config = NativePrebuiltConfig(
           schema: 2,
           package: 'tdlib',
@@ -61,8 +56,6 @@ void main() {
           },
         );
 
-        // This should work after the fix - it should find the library in
-        // built-library/android-arm64/libtdjson.so
         final manifest = await generateManifest(
           config: config,
           tag: 'tdlib-v1.8.65',
@@ -76,6 +69,46 @@ void main() {
           manifest.artifacts['android-arm64']!.archiveName,
           'tdlib-android-arm64.tar.gz',
         );
+      },
+    );
+
+    test(
+      'generateManifest finds library in nested platform subdirectory',
+      () async {
+        final nestedDir = Directory('${builtLibraryDir.path}/linux-x64/build');
+        nestedDir.createSync(recursive: true);
+
+        final nestedFile = File('${nestedDir.path}/libtdjson.so');
+        nestedFile.createSync(recursive: true);
+        nestedFile.writeAsBytesSync([0x7f, 0x45, 0x4c, 0x46]);
+
+        final config = NativePrebuiltConfig(
+          schema: 2,
+          package: 'tdlib',
+          assetName: 'tdlib_bindings_generated.dart',
+          libraryStem: 'tdjson',
+          release: ReleaseConfig(
+            provider: 'github',
+            repository: 'tdlib/tdlib',
+            tag: 'tdlib-v1.8.65',
+          ),
+          artifacts: {
+            'linux-x64': ArtifactConfig(
+              archive: 'tdlib-linux-x64.tar.gz',
+              payload: PayloadConfig(type: 'dynamic_library'),
+            ),
+          },
+        );
+
+        final manifest = await generateManifest(
+          config: config,
+          tag: 'tdlib-v1.8.65',
+          allowMissing: false,
+          builtLibraryDir: builtLibraryDir,
+          releaseAssetsDir: releaseAssetsDir,
+        );
+
+        expect(manifest.artifacts, contains('linux-x64'));
       },
     );
 
