@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:archive/archive.dart';
 import 'package:code_assets/code_assets.dart';
 import 'package:crypto/crypto.dart';
 import 'package:hooks/hooks.dart';
@@ -239,18 +240,19 @@ Future<void> packageBuiltLibrary({
   required File builtFile,
   required File archiveFile,
 }) async {
-  final result = await ProcessRunner().runStreaming('tar', [
-    'czf',
-    archiveFile.path,
-    '-C',
-    builtFile.parent.path,
-    p.basename(builtFile.path),
-  ], requireSuccess: false);
-  if (result.exitCode != 0) {
-    throw StateError(
-      'tar create failed for ${builtFile.path}: ${result.stderr.trim()}',
+  final archive = Archive()
+    ..addFile(
+      ArchiveFile.bytes(
+          p.basename(builtFile.path),
+          await builtFile.readAsBytes(),
+        )
+        ..lastModTime = 0
+        ..mode = 0x1a4,
     );
-  }
+  final tarBytes = TarEncoder().encodeBytes(archive);
+  final gzipBytes = GZipEncoder().encodeBytes(tarBytes);
+  archiveFile.parent.createSync(recursive: true);
+  await archiveFile.writeAsBytes(gzipBytes, flush: true);
 }
 
 File? _findBuiltLibraryFile({

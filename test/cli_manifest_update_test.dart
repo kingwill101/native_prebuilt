@@ -155,6 +155,59 @@ void main() {
     );
 
     test(
+      'generateManifest produces stable archive hashes across file mtimes',
+      () async {
+        final stableDir = Directory('${tempDir.path}/stable-built-library');
+        stableDir.createSync(recursive: true);
+
+        final libFile = File('${stableDir.path}/libtdjson.so');
+        libFile.createSync(recursive: true);
+        libFile.writeAsBytesSync([0x7f, 0x45, 0x4c, 0x46]);
+
+        final config = NativePrebuiltConfig(
+          schema: 2,
+          package: 'tdlib',
+          assetName: 'tdlib_bindings_generated.dart',
+          libraryStem: 'tdjson',
+          release: ReleaseConfig(
+            provider: 'github',
+            repository: 'tdlib/tdlib',
+            tag: 'tdlib-v1.8.65',
+          ),
+          artifacts: {
+            'linux-x64': ArtifactConfig(
+              archive: 'tdlib-linux-x64.tar.gz',
+              payload: PayloadConfig(type: 'dynamic_library'),
+            ),
+          },
+        );
+
+        libFile.setLastModifiedSync(DateTime.utc(2020, 1, 1));
+        final first = await generateManifest(
+          config: config,
+          tag: 'tdlib-v1.8.65',
+          allowMissing: false,
+          builtLibraryDir: stableDir,
+          releaseAssetsDir: releaseAssetsDir,
+        );
+
+        libFile.setLastModifiedSync(DateTime.utc(2021, 1, 1));
+        final second = await generateManifest(
+          config: config,
+          tag: 'tdlib-v1.8.65',
+          allowMissing: false,
+          builtLibraryDir: stableDir,
+          releaseAssetsDir: releaseAssetsDir,
+        );
+
+        expect(
+          first.artifacts['linux-x64']!.archiveSha256,
+          equals(second.artifacts['linux-x64']!.archiveSha256),
+        );
+      },
+    );
+
+    test(
       'generateManifest fails with clear error when library missing entirely',
       () async {
         final emptyDir = Directory('${tempDir.path}/empty');

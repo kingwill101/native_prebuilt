@@ -184,7 +184,7 @@ artifacts:
     expect(templates.keys, contains('native-prebuilt-release.yml'));
     expect(templates.keys, contains('native-prebuilt-update-manifest.yml'));
     expect(templates['prebuilt.yml'], contains('name: Prebuilt'));
-    expect(templates['prebuilt.yml'], contains('native_prebuilt_demo-v*'));
+    expect(templates['prebuilt.yml'], contains('Release tag to publish'));
     expect(
       templates['prebuilt.yml'],
       contains('lib/src/hook/native_prebuilt_demo_prebuilts.g.dart'),

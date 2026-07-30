@@ -121,14 +121,12 @@ on:
   push:
     branches:
       - main
-    tags:
-      - '[[ package_name ]]-v*'
   pull_request:
   workflow_dispatch:
     inputs:
       tag:
-        description: Tag to stamp into the generated manifest
-        required: false
+        description: Release tag to publish
+        required: true
         type: string
 
 permissions:
@@ -142,7 +140,7 @@ env:
 jobs:
 [[ build_jobs ]]
   update-manifest:
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     needs:
 [[ update_manifest_needs ]]
     runs-on: ubuntu-latest
@@ -158,8 +156,12 @@ jobs:
       - run: dart pub get
       - name: Generate manifest and release assets
         run: |
-          TAG="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}"
-          dart run native_prebuilt manifest update --config "$CONFIG" --output "$MANIFEST_OUTPUT" --built-library-dir built-library --release-assets-dir release-assets --tag "$TAG"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.tag }}"
+            dart run native_prebuilt manifest update --config "$CONFIG" --output "$MANIFEST_OUTPUT" --built-library-dir built-library --release-assets-dir release-assets --tag "$TAG"
+          else
+            dart run native_prebuilt manifest update --config "$CONFIG" --output "$MANIFEST_OUTPUT" --built-library-dir built-library --release-assets-dir release-assets
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: release-assets
@@ -167,7 +169,7 @@ jobs:
           if-no-files-found: error
 
   release:
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+    if: github.event_name == 'workflow_dispatch'
     needs:
       - update-manifest
     runs-on: ubuntu-latest
@@ -182,7 +184,7 @@ jobs:
       - name: Publish GitHub release assets
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
+          tag_name: ${{ github.event.inputs.tag }}
           fail_on_unmatched_files: true
           files: release-assets/*
 ''';
