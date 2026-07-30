@@ -57,6 +57,13 @@ final class DefaultArtifactInstaller implements ArtifactInstaller {
       return null;
     }
 
+    if (!_hasValidHashes(artifact)) {
+      logger?.info(
+        'Manifest entry for ${target.label} is missing hashes; skipping prebuilt.',
+      );
+      return null;
+    }
+
     logger?.info(
       'Found manifest entry for ${target.label}: ${artifact.archiveName}.',
     );
@@ -217,5 +224,11 @@ final class DefaultArtifactInstaller implements ArtifactInstaller {
       canonicalName,
     ].join('\n');
     return sha256.convert(utf8.encode(data)).toString();
+  }
+
+  bool _hasValidHashes(PrebuiltArtifact artifact) {
+    final hashPattern = RegExp(r'^[a-fA-F0-9]{64}$');
+    return hashPattern.hasMatch(artifact.archiveSha256) &&
+        hashPattern.hasMatch(artifact.payloadSha256);
   }
 }

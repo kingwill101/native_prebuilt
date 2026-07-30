@@ -60,8 +60,6 @@ NativeProject? detect([Directory? workingDirectory]) {
 
   final release = _parseReleaseSource(releaseSection);
 
-  // Prebuilt artifacts: archiveSha256/payloadSha256 may be empty
-  // placeholders until valid hashes are available.
   final artifactsSection = doc['artifacts'] as Map?;
   final artifacts = <String, PrebuiltArtifact>{};
   if (artifactsSection != null) {
@@ -69,14 +67,21 @@ NativeProject? detect([Directory? workingDirectory]) {
       final platform = entry.key as String;
       final aDoc = entry.value as Map?;
       if (aDoc == null) continue;
+
+      final archiveSha256 = aDoc['archive_sha256'] as String?;
+      final payloadSha256 = aDoc['payload_sha256'] as String?;
+      if (!_isSha256(archiveSha256) || !_isSha256(payloadSha256)) {
+        continue;
+      }
+
       final archive = aDoc['archive'] as String? ?? '';
       final payload = aDoc['payload'] as Map?;
       final payloadType = payload?['type'] as String? ?? 'dynamic_library';
       final isStatic = payloadType == 'static_library';
       artifacts[platform] = PrebuiltArtifact(
         archiveName: archive,
-        archiveSha256: aDoc['archive_sha256'] as String? ?? '',
-        payloadSha256: aDoc['payload_sha256'] as String? ?? '',
+        archiveSha256: archiveSha256!,
+        payloadSha256: payloadSha256!,
         payload: isStatic
             ? StaticLibraryPayload(libraryStem: libraryStem)
             : DynamicLibraryPayload(libraryStem: libraryStem),
@@ -293,4 +298,8 @@ NativeBuildDefinition _parseBuildDefinition(Map<dynamic, dynamic> doc) {
   } on CheckedFromJsonException {
     return const NativeBuildDefinition(recipes: []);
   }
+}
+
+bool _isSha256(String? value) {
+  return value != null && RegExp(r'^[a-fA-F0-9]{64}$').hasMatch(value);
 }

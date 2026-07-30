@@ -12,6 +12,7 @@ void main() {
   var hitCount = 0;
 
   setUp(() async {
+    hitCount = 0;
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     baseUri = Uri.parse('http://127.0.0.1:${server.port}/');
 
@@ -90,6 +91,47 @@ void main() {
       expect(second, isNotNull);
       expect(second!.path, first.path);
       expect(hitCount, 1);
+    } finally {
+      temp.deleteSync(recursive: true);
+    }
+  });
+
+  test('returns null when manifest entry is missing hashes', () async {
+    final temp = await Directory.systemTemp.createTemp(
+      'native_prebuilt_installer_',
+    );
+    try {
+      final manifest = PrebuiltManifest(
+        schemaVersion: 1,
+        release: GitHubReleaseSource(
+          owner: 'kingwill101',
+          repository: 'dart_terminal',
+          tag: 'v1',
+          baseUri: baseUri,
+        ),
+        artifacts: {
+          'linux-x64': PrebuiltArtifact(
+            archiveName: 'artifact.tar.gz',
+            archiveSha256: '',
+            payloadSha256: '',
+            payload: const DynamicLibraryPayload(libraryStem: 'demo'),
+          ),
+        },
+      );
+
+      final result = await DefaultArtifactInstaller().install(
+        manifest: manifest,
+        target: const NativeTarget(
+          os: OS.linux,
+          architecture: Architecture.x64,
+        ),
+        libraryStem: 'demo',
+        payload: const DynamicLibraryPayload(libraryStem: 'demo'),
+        cacheDirectory: Directory('${temp.path}/cache'),
+      );
+
+      expect(result, isNull);
+      expect(hitCount, 0);
     } finally {
       temp.deleteSync(recursive: true);
     }

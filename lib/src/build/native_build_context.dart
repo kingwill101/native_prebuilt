@@ -111,7 +111,7 @@ final class NativeHookConfiguration {
   /// The Dart package name.
   final String packageName;
 
-  /// The asset name for the generated bindings file.
+  /// The Dart library path that declares the native code asset.
   final String assetName;
 
   /// The library stem (e.g., `tdjson` for libtdjson.so).

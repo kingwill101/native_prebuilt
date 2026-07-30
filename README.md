@@ -79,6 +79,8 @@ await runNativeProjectCli(args, project: project);
 
 You can define the complete project in `native_prebuilt.yaml` instead of writing `NativeProject` code manually. The CLI reads that manifest, validates it, and generates the build graph from it.
 
+`assetName` is the Dart library path that declares the native code asset (the `@Native` bindings), not the shared-library filename.
+
 ## Comparison
 
 | Capability | Hooks Builder callback | Managed recipe |

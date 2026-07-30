@@ -53,6 +53,32 @@ artifacts:
       }
     });
 
+    test('skips artifacts without valid hashes for runtime resolution', () {
+      final dir = Directory.systemTemp.createTempSync('npb_test_');
+      try {
+        File('${dir.path}/native_prebuilt.yaml').writeAsStringSync('''
+schema: 1
+package: parent_pkg
+asset_name: parent.dart
+library_stem: parent
+release:
+  provider: github
+  repository: owner/repo
+  tag: v1.0.0
+artifacts:
+  linux-x64:
+    archive: parent-linux-x64.tar.gz
+    payload:
+      type: dynamic_library
+''');
+        final project = detect(dir);
+        expect(project, isNotNull);
+        expect(project!.prebuilts.artifacts, isEmpty);
+      } finally {
+        dir.deleteSync(recursive: true);
+      }
+    });
+
     test('parses the TDLib desktop manifest recipes', () {
       final project = detect(_findPackageDirectory('tdlib'));
       expect(project, isNotNull);

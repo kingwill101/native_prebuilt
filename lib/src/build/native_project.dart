@@ -21,7 +21,9 @@ final class NativeAssetSpec {
     required this.linkMode,
   });
 
-  /// The asset name for the generated bindings file.
+  /// The Dart library path that declares the native code asset.
+  ///
+  /// This becomes the code-asset ID under `package:<name>/`.
   final String assetName;
 
   /// The library stem (e.g., 'tdjson' for libtdjson.so).
