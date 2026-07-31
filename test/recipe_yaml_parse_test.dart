@@ -335,6 +335,42 @@ artifacts:
       }
     });
 
+    test('parses shared manifest variables', () {
+      final dir = Directory.systemTemp.createTempSync('npb_test_');
+      try {
+        File('${dir.path}/native_prebuilt.yaml').writeAsStringSync('''
+schema: 1
+package: demo
+asset_name: src/demo.dart
+library_stem: demo
+release:
+  provider: github
+  repository: owner/repo
+  tag: v1.0.0
+variables:
+  cargo_manifest: "{{ source.path }}/Cargo.toml"
+build:
+  recipes:
+    - target: {os: linux}
+      steps:
+        - id: build
+          type: command
+          commands: [[cargo, build, "{{ variables.cargo_manifest }}"]]
+artifacts:
+  linux-x64:
+    archive: demo-linux-x64.tar.gz
+''');
+        final project = detect(dir);
+        expect(project, isNotNull);
+        expect(
+          project!.build.variables['cargo_manifest'],
+          '{{ source.path }}/Cargo.toml',
+        );
+      } finally {
+        dir.deleteSync(recursive: true);
+      }
+    });
+
     test('parses build recipes with dependencies', () {
       final dir = Directory.systemTemp.createTempSync('npb_test_');
       try {

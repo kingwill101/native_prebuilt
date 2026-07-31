@@ -19,6 +19,7 @@ import 'cli_config.dart';
 import 'doctor.dart';
 import 'explain_cache.dart';
 import 'fetch.dart';
+import 'init.dart';
 import 'manifest.dart';
 import 'plan.dart';
 import 'schema.dart';
@@ -47,6 +48,7 @@ Future<void> runNativePrebuiltCli(
           'native_prebuilt',
           'Utilities for prebuilt native artifacts in Dart packages.',
         )
+        ..addCommand(InitCommand())
         ..addCommand(ManifestCommand())
         ..addCommand(FetchCommand())
         ..addCommand(SchemaCommand())

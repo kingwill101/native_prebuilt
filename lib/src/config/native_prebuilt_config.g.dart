@@ -22,6 +22,7 @@ NativePrebuiltConfig _$NativePrebuiltConfigFromJson(
         'link_mode',
         'source',
         'build',
+        'variables',
         'release',
         'artifacts',
         'targets',
@@ -42,6 +43,10 @@ NativePrebuiltConfig _$NativePrebuiltConfigFromJson(
         'build',
         (v) =>
             v == null ? null : BuildConfig.fromJson(v as Map<String, dynamic>),
+      ),
+      variables: $checkedConvert(
+        'variables',
+        (v) => v as Map<String, dynamic>? ?? const {},
       ),
       release: $checkedConvert(
         'release',
@@ -81,6 +86,7 @@ Map<String, dynamic> _$NativePrebuiltConfigToJson(
   'link_mode': instance.linkMode,
   'source': instance.source?.toJson(),
   'build': instance.build?.toJson(),
+  'variables': instance.variables,
   'release': instance.release.toJson(),
   'artifacts': instance.artifacts.map((k, e) => MapEntry(k, e.toJson())),
   'targets': instance.targets?.map((k, e) => MapEntry(k, e.toJson())),
@@ -97,6 +103,13 @@ const _$NativePrebuiltConfigJsonSchema = {
     'link_mode': {'type': 'string'},
     'source': {r'$ref': r'#/$defs/SourceConfig'},
     'build': {r'$ref': r'#/$defs/BuildConfig'},
+    'variables': {
+      'type': 'object',
+      'additionalProperties': {'type': 'object'},
+      'description':
+          'Shared values exposed to Liquid recipes as `variables.*`.',
+      'default': {},
+    },
     'release': {r'$ref': r'#/$defs/ReleaseConfig'},
     'artifacts': {
       'type': 'object',

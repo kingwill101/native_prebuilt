@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.1
+
+- Add `native_prebuilt init` to scaffold a manifest from package metadata.
+- Expose target, library, directory, source, hook, and custom option values to Liquid recipes.
+- Add manifest-level shared `variables.*` values with recursive Liquid expansion.
+- Treat dynamic artifact payloads as the default in declarative manifests.
+- Select the effective payload/link mode from target artifact declarations.
+
 ## 0.3.0
 
 - Add native_prebuilt.lock.yaml support and automatic lock overlay detection.

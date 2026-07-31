@@ -70,6 +70,7 @@ You can define the complete project in `native_prebuilt.yaml` instead of writing
 ## CLI Commands
 
 ### Manifest Management
+- `dart run native_prebuilt init` - Scaffold an initial `native_prebuilt.yaml` from the package's `pubspec.yaml`
 - `dart run native_prebuilt manifest update` - Generate/refresh manifest or lock file from `native_prebuilt.yaml`
 - `dart run native_prebuilt manifest verify` - Verify manifest hashes match built artifacts
 - `dart run native_prebuilt schema export` - Write `schema/native_prebuilt.schema.json` for editor validation
@@ -104,6 +105,14 @@ Common YAML keys:
 | `copy` | Copy files or directories |
 | `strip` | Strip debug symbols |
 | `export_artifact` | Export the final artifact |
+
+Recipe values use Liquid templates with `source.*`, `work`, `output`, `cache`,
+`directories.*`, `env.*`, `target.*`, `library.*`, `hook.*`, `project.*`, and
+custom `build.options.*` values. Common target helpers include
+`target.rust_target`, `target.zig_target`, `target.sdk`, and OS booleans.
+Manifest-level `variables.*` values can refer to these values and to other
+shared variables. YAML anchors can share complete step lists. Dynamic artifact
+payloads are the default; declare `static_library` only for static targets.
 
 Use `schema/native_prebuilt.schema.json` for editor validation.
 

@@ -103,8 +103,11 @@ final class NativeProjectBuilder {
     }
 
     final target = targetFromCodeConfig(code);
-    final linkMode = project.asset.linkMode;
-    final payload = _payloadForLinkMode(linkMode);
+    final configuredLinkMode = project.asset.linkMode;
+    final configuredPayload = _payloadForLinkMode(configuredLinkMode);
+    final payload =
+        project.prebuilts.artifacts[target.label]?.payload ?? configuredPayload;
+    final linkMode = _linkModeForPayload(payload, configuredLinkMode);
 
     _logInfo(
       logger,
@@ -353,6 +356,12 @@ final class NativeProjectBuilder {
       return StaticLibraryPayload(libraryStem: project.asset.libraryStem);
     }
     return DynamicLibraryPayload(libraryStem: project.asset.libraryStem);
+  }
+
+  LinkMode _linkModeForPayload(ArtifactPayload payload, LinkMode fallback) {
+    if (payload is StaticLibraryPayload) return StaticLinking();
+    if (payload is DynamicLibraryPayload) return DynamicLoadingBundled();
+    return fallback;
   }
 
   void _logInfo(Logger? logger, String message) {

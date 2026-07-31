@@ -3,10 +3,70 @@ import 'dart:io';
 import 'package:native_prebuilt/native_prebuilt.dart';
 import 'package:native_prebuilt/src/config/native_prebuilt_config.dart';
 import 'package:native_prebuilt/src/cli/doctor.dart';
+import 'package:native_prebuilt/src/cli/init.dart';
 import 'package:native_prebuilt/src/cli/workflow.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('init renders a manifest from package metadata', () {
+    final manifest = renderInitialManifest(
+      package: 'portable_pty',
+      assetName: 'portable_pty_bindings_generated.dart',
+      libraryStem: 'portable_pty_rs',
+      linkMode: 'dynamic_library',
+      releaseRepository: 'owner/repo',
+      releaseTag: 'portable_pty-v0.1.0',
+      sourceRepository: 'https://github.com/owner/repo',
+      sourceRevision: 'deadbeef',
+      sourceSubdirectory: 'pkgs/portable_pty',
+      platforms: ['linux-x64', 'windows-x64'],
+    );
+
+    expect(manifest, contains('schema: 1'));
+    expect(manifest, contains('package: portable_pty'));
+    expect(manifest, contains('library_stem: portable_pty_rs'));
+    expect(manifest, contains('subdirectory: pkgs/portable_pty'));
+    expect(manifest, contains('portable_pty_rs-linux-x64.tar.gz'));
+    expect(manifest, contains('portable_pty_rs-windows-x64.tar.gz'));
+  });
+
+  test('init discovers package metadata and refuses overwrite', () async {
+    final dir = await Directory.systemTemp.createTemp('native_prebuilt_init_');
+    final previous = Directory.current;
+    try {
+      Directory.current = dir;
+      File('${dir.path}/pubspec.yaml').writeAsStringSync('''
+name: demo_package
+version: 2.3.4
+repository: https://github.com/example/demo_package
+''');
+
+      await runNativePrebuiltCli([
+        'init',
+        '--output',
+        'native_prebuilt.yaml',
+        '--platform',
+        'linux-x64,macos-arm64',
+      ]);
+
+      final output = File('${dir.path}/native_prebuilt.yaml');
+      expect(output.existsSync(), isTrue);
+      final content = output.readAsStringSync();
+      expect(content, contains('package: demo_package'));
+      expect(content, contains('repository: example/demo_package'));
+      expect(content, contains('tag: demo_package-v2.3.4'));
+      expect(content, contains('linux-x64'));
+      expect(content, contains('macos-arm64'));
+
+      final before = output.readAsStringSync();
+      await runNativePrebuiltCli(['init']);
+      expect(output.readAsStringSync(), before);
+    } finally {
+      Directory.current = previous;
+      dir.deleteSync(recursive: true);
+    }
+  });
+
   test('loads CLI config', () async {
     final dir = await Directory.systemTemp.createTemp('native_prebuilt_cli_');
     try {

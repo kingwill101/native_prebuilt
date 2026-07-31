@@ -164,6 +164,8 @@ final class NativeProjectExecutor {
       ),
       toolchains: const ToolchainRegistry(),
       environment: Platform.environment,
+      options: project.build.options,
+      variables: project.build.variables,
       logger: logger,
     );
 

@@ -281,6 +281,7 @@ final nativePrebuiltSchema = S.fromMap({
           ),
           'source': sourceConfigSchema,
           'build': buildConfigSchema,
+          'variables': S.object(additionalProperties: S.any()),
           'release': releaseConfigSchema,
           'artifacts': S.object(additionalProperties: artifactConfigSchema),
           'targets': S.object(additionalProperties: targetConfigSchema),

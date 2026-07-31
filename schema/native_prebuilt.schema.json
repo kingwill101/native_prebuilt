@@ -551,6 +551,10 @@
       },
       "additionalProperties": false
     },
+    "variables": {
+      "type": "object",
+      "additionalProperties": {}
+    },
     "release": {
       "type": "object",
       "properties": {

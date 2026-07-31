@@ -30,6 +30,7 @@ final class NativePrebuiltConfig {
     this.linkMode,
     this.source,
     this.build,
+    this.variables = const {},
     required this.release,
     required this.artifacts,
     this.targets,
@@ -47,6 +48,10 @@ final class NativePrebuiltConfig {
   final String? linkMode;
   final SourceConfig? source;
   final BuildConfig? build;
+
+  /// Shared values exposed to Liquid recipes as `variables.*`.
+  final Map<String, Object?> variables;
+
   final ReleaseConfig release;
   final Map<String, ArtifactConfig> artifacts;
   final Map<String, TargetConfig>? targets;
@@ -172,6 +177,7 @@ final class BuildConfig {
             ),
           ),
       ],
+      options: options,
     );
   }
 }

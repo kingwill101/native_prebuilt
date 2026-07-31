@@ -175,10 +175,20 @@ final class NativeTargetRecipe {
 
 /// Definition of how to build a native project for different platforms.
 final class NativeBuildDefinition {
-  const NativeBuildDefinition({required this.recipes});
+  const NativeBuildDefinition({
+    required this.recipes,
+    this.options = const <String, Object?>{},
+    this.variables = const <String, Object?>{},
+  });
 
   /// Build recipes with target patterns.
   final List<NativeTargetRecipe> recipes;
+
+  /// User-defined values exposed to Liquid recipes as `options.*`.
+  final Map<String, Object?> options;
+
+  /// Shared values exposed to Liquid recipes as `variables.*`.
+  final Map<String, Object?> variables;
 
   /// Find the first recipe that matches the given [target].
   NativeBuildRecipe? recipeFor(NativeTarget target) {
@@ -192,6 +202,8 @@ final class NativeBuildDefinition {
 
   Map<String, dynamic> toJson() => {
     'recipes': recipes.map((recipe) => recipe.toJson()).toList(),
+    if (options.isNotEmpty) 'options': options,
+    if (variables.isNotEmpty) 'variables': variables,
   };
 
   factory NativeBuildDefinition.fromJson(Map<String, dynamic> json) {
@@ -202,6 +214,12 @@ final class NativeBuildDefinition {
                 NativeTargetRecipe.fromJson(recipe as Map<String, dynamic>),
           )
           .toList(),
+      options: Map<String, Object?>.from(
+        (json['options'] as Map?)?.cast<String, Object?>() ?? const {},
+      ),
+      variables: Map<String, Object?>.from(
+        (json['variables'] as Map?)?.cast<String, Object?>() ?? const {},
+      ),
     );
   }
 }

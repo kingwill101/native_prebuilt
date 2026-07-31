@@ -77,6 +77,8 @@ final class NativeBuildContext {
     required this.directories,
     required this.toolchains,
     required this.environment,
+    this.options = const <String, Object?>{},
+    this.variables = const <String, Object?>{},
     this.logger,
   });
 
@@ -94,6 +96,12 @@ final class NativeBuildContext {
 
   /// Environment variables to pass to build tools.
   final Map<String, String> environment;
+
+  /// User-defined recipe values from `build.options`.
+  final Map<String, Object?> options;
+
+  /// Shared recipe values from the manifest's `variables` section.
+  final Map<String, Object?> variables;
 
   /// Optional logger for build output.
   final Logger? logger;

@@ -100,7 +100,7 @@ If `native_prebuilt.lock.yaml` is present next to the config file, `detect()` ov
 
 ```yaml
 dependencies:
-  native_prebuilt: ^0.3.0
+  native_prebuilt: ^0.3.1
 ```
 
 ## Source fallback pipeline
@@ -121,11 +121,35 @@ entry for the target, that entry is used to standardize the staged payload name.
 
 Recipe values are Liquid templates rendered with:
 
-- `source.path`
-- `work`
-- `output`
-- `cache`
+- `source.path`, `source.origin`, and `source.revision`
+- `work`, `output`, `cache`, and the equivalent `directories.*` paths
 - `env.*`
+- `target.label`, `target.os`, `target.architecture`, `target.sdk`
+- `target.rust_target`, `target.zig_target`, and target OS booleans
+- `library.name`, `library.dynamic_name`, `library.static_name`,
+  `library.versioned_name`, and `library.extension`
+- `hook.*`, `project.*`, and custom `build.options.*` values
+
+The manifest-level `variables` map defines shared Liquid values. Variables can
+refer to the standard recipe values and to one another:
+
+```yaml
+variables:
+  cargo_manifest: "{{ source.path }}/rust/Cargo.toml"
+  cargo_target: "{{ target.rust_target }}"
+
+build:
+  recipes:
+    - target: {os: linux, architecture: x64}
+      steps:
+        - id: build
+          type: command
+          commands:
+            - [cargo, build, --manifest-path, "{{ variables.cargo_manifest }}", --target, "{{ variables.cargo_target }}"]
+```
+
+YAML anchors can still share complete step lists. Dynamic artifact payloads are
+the default; specify `payload: {type: static_library}` only for static targets.
 
 Example:
 
@@ -176,6 +200,7 @@ for example in VS Code:
 
 | Command | Description |
 |---------|-------------|
+| `init` | Generate an initial `native_prebuilt.yaml` scaffold from `pubspec.yaml` |
 | `plan --target <platform>` | Show build plan and recipe steps |
 | `build --target <platform> --output <dir>` | Build native library from declarative recipes |
 | `cache-key --target <platform>` | Show cache key |
@@ -187,6 +212,12 @@ for example in VS Code:
 | `fetch` | Download prebuilt artifacts |
 | `doctor` | Check build environment |
 | `workflow init` | Generate GitHub/GitLab CI workflows |
+
+`init` creates a manifest without overwriting an existing file unless `--force`
+is passed. Use `--package`, `--library-stem`, `--asset-name`, `--platform`, and
+source/release options to make the scaffold non-interactive. Add the declarative
+`build.recipes` for the native source build, then use `dart run native_prebuilt`
+for build, manifest, and workflow commands.
 
 `workflow init` writes 5 GitHub workflow files, or 8 GitLab files by default. Use `--gitlab --platform ...` to filter GitLab outputs to selected platforms.
 

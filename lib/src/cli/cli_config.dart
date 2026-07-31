@@ -102,7 +102,7 @@ NativeProject? detect([Directory? workingDirectory]) {
   }
 
   // Build recipes: use YAML-defined declarative recipes only.
-  final build = _parseBuildDefinition(doc);
+  final build = _parseBuildDefinition(doc, variables: _parseVariables(doc));
 
   final project = NativeProject(
     name: packageName,
@@ -354,7 +354,24 @@ String? readPackageName([Directory? workingDirectory]) {
   }
 }
 
-NativeBuildDefinition _parseBuildDefinition(Map<dynamic, dynamic> doc) {
+Map<String, Object?> _parseVariables(Map<dynamic, dynamic> doc) {
+  final section = doc['variables'];
+  if (section == null) return const {};
+  try {
+    final normalized = normalizeYaml(section);
+    if (normalized is Map<String, dynamic>) {
+      return Map<String, Object?>.from(normalized);
+    }
+  } on FormatException {
+    // Let manifest validation report malformed values through the typed loader.
+  }
+  return const {};
+}
+
+NativeBuildDefinition _parseBuildDefinition(
+  Map<dynamic, dynamic> doc, {
+  Map<String, Object?> variables = const {},
+}) {
   final buildSection = doc['build'] as Map?;
   if (buildSection == null) {
     return const NativeBuildDefinition(recipes: []);
@@ -366,7 +383,12 @@ NativeBuildDefinition _parseBuildDefinition(Map<dynamic, dynamic> doc) {
       return const NativeBuildDefinition(recipes: []);
     }
     final buildConfig = BuildConfig.fromJson(normalized);
-    return buildConfig.toBuildDefinition();
+    final definition = buildConfig.toBuildDefinition();
+    return NativeBuildDefinition(
+      recipes: definition.recipes,
+      options: definition.options,
+      variables: variables,
+    );
   } on FormatException {
     return const NativeBuildDefinition(recipes: []);
   } on CheckedFromJsonException {
