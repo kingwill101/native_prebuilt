@@ -104,10 +104,16 @@ final class NativeProjectBuilder {
 
     final target = targetFromCodeConfig(code);
     final configuredLinkMode = project.asset.linkMode;
-    final configuredPayload = _payloadForLinkMode(configuredLinkMode);
-    final payload =
-        project.prebuilts.artifacts[target.label]?.payload ?? configuredPayload;
-    final linkMode = _linkModeForPayload(payload, configuredLinkMode);
+    final requestedLinkMode = _requestedLinkMode(
+      code.linkModePreference,
+      configuredLinkMode,
+    );
+    final manifestPayload = project.prebuilts.artifacts[target.label]?.payload;
+    final payload = _payloadForRequest(
+      requestedLinkMode: requestedLinkMode,
+      manifestPayload: manifestPayload,
+    );
+    final linkMode = _linkModeForPayload(payload, requestedLinkMode);
 
     _logInfo(
       logger,
@@ -116,7 +122,8 @@ final class NativeProjectBuilder {
     );
 
     // Try prebuilt resolution first
-    if (project.prebuiltPolicy == PrebuiltPolicy.preferPrebuilt) {
+    if (project.prebuiltPolicy == PrebuiltPolicy.preferPrebuilt &&
+        _manifestSupportsPayload(manifestPayload, payload)) {
       final context = PrebuiltResolutionContext(
         input: input,
         manifest: project.prebuilts,
@@ -356,6 +363,42 @@ final class NativeProjectBuilder {
       return StaticLibraryPayload(libraryStem: project.asset.libraryStem);
     }
     return DynamicLibraryPayload(libraryStem: project.asset.libraryStem);
+  }
+
+  LinkMode _requestedLinkMode(
+    LinkModePreference preference,
+    LinkMode fallback,
+  ) {
+    return switch (preference) {
+      LinkModePreference.static ||
+      LinkModePreference.preferStatic => StaticLinking(),
+      LinkModePreference.dynamic ||
+      LinkModePreference.preferDynamic => DynamicLoadingBundled(),
+      _ => fallback,
+    };
+  }
+
+  ArtifactPayload _payloadForRequest({
+    required LinkMode requestedLinkMode,
+    required ArtifactPayload? manifestPayload,
+  }) {
+    // An explicit static request must not silently consume a dynamic prebuilt.
+    // Conversely, a static artifact in the manifest (notably iOS) remains the
+    // authoritative payload when dynamic loading is impossible.
+    if (requestedLinkMode is StaticLinking) {
+      return _payloadForLinkMode(requestedLinkMode);
+    }
+    return manifestPayload ?? _payloadForLinkMode(requestedLinkMode);
+  }
+
+  bool _manifestSupportsPayload(
+    ArtifactPayload? manifestPayload,
+    ArtifactPayload requestedPayload,
+  ) {
+    // A custom resolver may provide a payload even when the manifest has no
+    // artifact entry, so leave that path enabled.
+    if (manifestPayload == null) return true;
+    return manifestPayload.runtimeType == requestedPayload.runtimeType;
   }
 
   LinkMode _linkModeForPayload(ArtifactPayload payload, LinkMode fallback) {

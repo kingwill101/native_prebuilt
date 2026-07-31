@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.2
+
+- Honor the hook's requested static or dynamic link mode when resolving manifests.
+- Fall back to source builds when a requested static payload has no matching prebuilt.
+
 ## 0.3.1
 
 - Add `native_prebuilt init` to scaffold a manifest from package metadata.
