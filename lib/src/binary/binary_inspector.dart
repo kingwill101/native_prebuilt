@@ -180,15 +180,15 @@ const int _emX86_64 = 62;
 const int _emAArch64 = 183;
 
 /// Maps an [Architecture] to the expected ELF e_machine value.
-int _expectedElfMachine(Architecture architecture) {
+///
+/// Returns `null` for architectures where validation is not yet implemented.
+int? _expectedElfMachine(Architecture architecture) {
   return switch (architecture) {
     Architecture.ia32 => _em386,
     Architecture.arm => _emArm,
     Architecture.x64 => _emX86_64,
     Architecture.arm64 => _emAArch64,
-    _ => throw BinaryArchitectureException(
-      'Unsupported ELF target architecture: ${architecture.name}',
-    ),
+    _ => null, // riscv32, riscv64, etc. - no validation available
   };
 }
 
@@ -238,6 +238,9 @@ void _validateElfArchitecture(
 
   final expected = _expectedElfMachine(target.architecture);
 
+  // Skip validation for unsupported architectures.
+  if (expected == null) return;
+
   if (eMachine != expected) {
     throw BinaryArchitectureException(
       'Binary architecture mismatch for ${target.label}:\n'
@@ -249,15 +252,15 @@ void _validateElfArchitecture(
 }
 
 /// Maps an [Architecture] to the expected Mach-O CPU type.
-int _expectedMachOCpuType(Architecture architecture) {
+///
+/// Returns `null` for architectures where validation is not yet implemented.
+int? _expectedMachOCpuType(Architecture architecture) {
   return switch (architecture) {
     Architecture.arm => 12, // CPU_TYPE_ARM
     Architecture.arm64 => 0x0100000C, // CPU_TYPE_ARM64
     Architecture.x64 => 0x01000007, // CPU_TYPE_X86_64
     Architecture.ia32 => 7, // CPU_TYPE_X86
-    _ => throw BinaryArchitectureException(
-      'Unsupported Mach-O target architecture: ${architecture.name}',
-    ),
+    _ => null, // riscv32, riscv64, etc. - no validation available
   };
 }
 
@@ -291,10 +294,12 @@ void _validateMachOArchitecture(
     );
   }
 
-  // Detect endianness from magic
+  // Detect endianness from magic.
+  // Valid Mach-O magics: 0xFEEDFACE (32-bit), 0xFEEDFACF (64-bit)
+  // when composed as big-endian from the raw bytes.
   final magic =
       (header[0] << 24) | (header[1] << 16) | (header[2] << 8) | header[3];
-  final isBigEndian = magic == 0xFEEDFACF || magic == 0xFEEDFACB;
+  final isBigEndian = magic == 0xFEEDFACE || magic == 0xFEEDFACF;
 
   int cpuType;
   if (isBigEndian) {
@@ -305,14 +310,14 @@ void _validateMachOArchitecture(
         header[4] | (header[5] << 8) | (header[6] << 16) | (header[7] << 24);
   }
 
-  // Mask off CPU_ARCH_ABI64 flag for comparison
-  const cpuArchAbi64 = 0x01000000;
-  final cpuTypeBase = cpuType & ~cpuArchAbi64;
   final expected = _expectedMachOCpuType(target.architecture);
-  final expectedBase = expected & ~cpuArchAbi64;
 
-  // Check if the CPU type matches, allowing for the ABI64 flag
-  if (cpuType != expected && cpuTypeBase != expectedBase) {
+  // Skip validation for unsupported architectures.
+  if (expected == null) return;
+
+  // CPU_ARCH_ABI64 distinguishes arm64 from arm and x86_64 from x86, so it
+  // must take part in the comparison.
+  if (cpuType != expected) {
     throw BinaryArchitectureException(
       'Binary architecture mismatch for ${target.label}:\n'
       '  expected: ${_machOCpuTypeName(expected)}\n'
