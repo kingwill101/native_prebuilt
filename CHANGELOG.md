@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.0
+
+- Add ELF architecture validation in `NativeBinaryInspector`.
+  - Reads the `e_machine` field from ELF headers with proper endianness handling.
+  - Validates ARM, AArch64, x86, and x86-64 architectures.
+  - Throws `BinaryArchitectureException` with diagnostic messages on mismatch.
+- Add Mach-O architecture validation in `NativeBinaryInspector`.
+  - Reads the `cputype` field from Mach-O headers.
+  - Validates ARM, ARM64, x86, and x86_64 architectures.
+- Update test utilities to generate proper ELF and Mach-O headers with architecture fields.
+- Add comprehensive tests for architecture validation including mismatch detection.
+
 ## 0.3.2
 
 - Honor the hook's requested static or dynamic link mode when resolving manifests.
