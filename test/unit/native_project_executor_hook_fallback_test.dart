@@ -62,9 +62,9 @@ name: hook_fallback_pkg
         );
 
         final result = await executor.build(
-          target: NativeTarget(
+          target: const NativeTarget(
             os: OS.linux,
-            architecture: Architecture.current,
+            architecture: Architecture.x64,
           ),
           outputDir: outputDir,
         );
