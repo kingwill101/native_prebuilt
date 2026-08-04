@@ -82,8 +82,8 @@ void main() {
       final archiveFile = File('${dir.path}/fixture.tar.gz');
       archiveFile.writeAsBytesSync(
         makeTarGz({
-          'libdemo.so': makeElfBytes('one'),
-          'nested/libdemo.so': makeElfBytes('two'),
+          'libdemo.so': makeElfBytes(marker: 'one'),
+          'nested/libdemo.so': makeElfBytes(marker: 'two'),
         }),
       );
 

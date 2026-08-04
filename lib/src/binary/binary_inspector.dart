@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:code_assets/code_assets.dart';
+
 import '../platform/native_target.dart';
 
 /// Validates that a file is a correctly-typed native binary for its
@@ -156,9 +158,173 @@ void _validateArchitecture(
   NativeTarget target,
   String path,
 ) {
-  // Architecture validation from headers is format-specific.
-  // For v1 we validate format only; architecture validation
-  // can be extended per format in a future version.
+  switch (format) {
+    case _BinaryFormat.elf:
+      _validateElfArchitecture(header, target, path);
+    case _BinaryFormat.machO:
+      _validateMachOArchitecture(header, target, path);
+    case _BinaryFormat.pe:
+    case _BinaryFormat.staticArchive:
+    case _BinaryFormat.wasm:
+      // PE, static archive, and WASM architecture validation
+      // is not yet implemented.
+      break;
+  }
+}
+
+/// ELF e_machine values.
+const int _emNone = 0;
+const int _em386 = 3;
+const int _emArm = 40;
+const int _emX86_64 = 62;
+const int _emAArch64 = 183;
+
+/// Maps an [Architecture] to the expected ELF e_machine value.
+///
+/// Returns `null` for architectures where validation is not yet implemented.
+int? _expectedElfMachine(Architecture architecture) {
+  return switch (architecture) {
+    Architecture.ia32 => _em386,
+    Architecture.arm => _emArm,
+    Architecture.x64 => _emX86_64,
+    Architecture.arm64 => _emAArch64,
+    _ => null, // riscv32, riscv64, etc. - no validation available
+  };
+}
+
+/// Returns a human-readable name for an ELF e_machine value.
+String _elfMachineName(int machine) {
+  return switch (machine) {
+    _emNone => 'EM_NONE (0)',
+    _em386 => 'IA-32 / EM_386 (3)',
+    _emArm => 'ARM / EM_ARM (40)',
+    _emX86_64 => 'x86-64 / EM_X86_64 (62)',
+    _emAArch64 => 'AArch64 / EM_AArch64 (183)',
+    _ => 'unknown ($machine)',
+  };
+}
+
+/// Validates that an ELF binary matches the expected target architecture.
+///
+/// Reads the ELF header to extract the `e_machine` field and compares it
+/// against the expected value for the target architecture.
+void _validateElfArchitecture(
+  List<int> header,
+  NativeTarget target,
+  String path,
+) {
+  // ELF header layout:
+  //   bytes 0-3:   e_ident[0..3] = 0x7F 'E' 'L' 'F'
+  //   byte  4:     e_ident[4] = EI_CLASS (1=32-bit, 2=64-bit)
+  //   byte  5:     e_ident[5] = EI_DATA (1=LE, 2=BE)
+  //   bytes 18-19: e_machine (for both 32-bit and 64-bit ELF)
+  if (header.length < 20) {
+    throw BinaryArchitectureException(
+      'ELF header too short to read e_machine: $path',
+    );
+  }
+
+  final eiData = header[5]; // Endianness: 1 = little-endian, 2 = big-endian
+  final eMachineBytes = header.sublist(18, 20);
+
+  int eMachine;
+  if (eiData == 2) {
+    // Big-endian
+    eMachine = (eMachineBytes[0] << 8) | eMachineBytes[1];
+  } else {
+    // Little-endian (default for most targets)
+    eMachine = eMachineBytes[0] | (eMachineBytes[1] << 8);
+  }
+
+  final expected = _expectedElfMachine(target.architecture);
+
+  // Skip validation for unsupported architectures.
+  if (expected == null) return;
+
+  if (eMachine != expected) {
+    throw BinaryArchitectureException(
+      'Binary architecture mismatch for ${target.label}:\n'
+      '  expected: ${_elfMachineName(expected)}\n'
+      '  actual:   ${_elfMachineName(eMachine)}\n'
+      '  file:     $path',
+    );
+  }
+}
+
+/// Maps an [Architecture] to the expected Mach-O CPU type.
+///
+/// Returns `null` for architectures where validation is not yet implemented.
+int? _expectedMachOCpuType(Architecture architecture) {
+  return switch (architecture) {
+    Architecture.arm => 12, // CPU_TYPE_ARM
+    Architecture.arm64 => 0x0100000C, // CPU_TYPE_ARM64
+    Architecture.x64 => 0x01000007, // CPU_TYPE_X86_64
+    Architecture.ia32 => 7, // CPU_TYPE_X86
+    _ => null, // riscv32, riscv64, etc. - no validation available
+  };
+}
+
+/// Returns a human-readable name for a Mach-O CPU type.
+String _machOCpuTypeName(int cpuType) {
+  return switch (cpuType) {
+    7 => 'x86 (CPU_TYPE_X86)',
+    12 => 'ARM (CPU_TYPE_ARM)',
+    0x01000007 => 'x86_64 (CPU_TYPE_X86_64)',
+    0x0100000C => 'ARM64 (CPU_TYPE_ARM64)',
+    _ => 'unknown (0x${cpuType.toRadixString(16)})',
+  };
+}
+
+/// Validates that a Mach-O binary matches the expected target architecture.
+///
+/// Reads the Mach-O header to extract the `cputype` field and compares it
+/// against the expected value for the target architecture.
+void _validateMachOArchitecture(
+  List<int> header,
+  NativeTarget target,
+  String path,
+) {
+  // Mach-O header layout (both 32-bit and 64-bit):
+  //   bytes 0-3:  magic
+  //   bytes 4-7:  cputype
+  //   bytes 8-11: cpusubtype
+  if (header.length < 12) {
+    throw BinaryArchitectureException(
+      'Mach-O header too short to read cputype: $path',
+    );
+  }
+
+  // Detect endianness from magic.
+  // Valid Mach-O magics: 0xFEEDFACE (32-bit), 0xFEEDFACF (64-bit)
+  // when composed as big-endian from the raw bytes.
+  final magic =
+      (header[0] << 24) | (header[1] << 16) | (header[2] << 8) | header[3];
+  final isBigEndian = magic == 0xFEEDFACE || magic == 0xFEEDFACF;
+
+  int cpuType;
+  if (isBigEndian) {
+    cpuType =
+        (header[4] << 24) | (header[5] << 16) | (header[6] << 8) | header[7];
+  } else {
+    cpuType =
+        header[4] | (header[5] << 8) | (header[6] << 16) | (header[7] << 24);
+  }
+
+  final expected = _expectedMachOCpuType(target.architecture);
+
+  // Skip validation for unsupported architectures.
+  if (expected == null) return;
+
+  // CPU_ARCH_ABI64 distinguishes arm64 from arm and x86_64 from x86, so it
+  // must take part in the comparison.
+  if (cpuType != expected) {
+    throw BinaryArchitectureException(
+      'Binary architecture mismatch for ${target.label}:\n'
+      '  expected: ${_machOCpuTypeName(expected)}\n'
+      '  actual:   ${_machOCpuTypeName(cpuType)}\n'
+      '  file:     $path',
+    );
+  }
 }
 
 /// Thrown when a binary does not match the expected format.

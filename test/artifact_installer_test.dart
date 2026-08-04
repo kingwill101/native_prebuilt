@@ -16,7 +16,9 @@ void main() {
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     baseUri = Uri.parse('http://127.0.0.1:${server.port}/');
 
-    archiveBytes = makeTarGz({'libdemo.so': makeElfBytes('demo-binary')});
+    archiveBytes = makeTarGz({
+      'libdemo.so': makeElfBytes(arch: 'x64', marker: 'demo-binary'),
+    });
 
     server.listen((request) async {
       if (request.uri.path == '/artifact.tar.gz') {
@@ -44,7 +46,9 @@ void main() {
     );
     try {
       final archiveHash = sha256Hash(archiveBytes);
-      final payloadHash = sha256Hash(makeElfBytes('demo-binary'));
+      final payloadHash = sha256Hash(
+        makeElfBytes(arch: 'x64', marker: 'demo-binary'),
+      );
 
       final manifest = PrebuiltManifest(
         schemaVersion: 1,
