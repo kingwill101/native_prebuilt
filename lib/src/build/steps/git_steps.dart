@@ -16,6 +16,7 @@ import '../../source/resolved_source.dart';
 final class GitCheckoutStep implements NativeBuildStep {
   const GitCheckoutStep({
     required this.id,
+    this.execution = 'target',
     required this.repository,
     required this.revision,
     this.targetDirectory,
@@ -26,6 +27,10 @@ final class GitCheckoutStep implements NativeBuildStep {
   /// Step identifier.
   @override
   final String id;
+
+  @override
+  final String execution;
+
 
   /// Repository URL (e.g., https://github.com/org/repo.git).
   final String repository;
@@ -182,6 +187,7 @@ final class GitCheckoutStep implements NativeBuildStep {
 final class GitApplyPatchStep implements NativeBuildStep {
   const GitApplyPatchStep({
     this.id = 'git_apply_patch',
+    this.execution = 'target',
     required this.patchPath,
     this.targetDirectory,
     this.runner,
@@ -189,6 +195,10 @@ final class GitApplyPatchStep implements NativeBuildStep {
 
   @override
   final String id;
+
+  @override
+  final String execution;
+
 
   /// Path to the patch file (relative to source or absolute).
   final String patchPath;

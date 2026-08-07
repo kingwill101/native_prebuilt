@@ -11,13 +11,20 @@ part 'build_step_config.g.dart';
 /// Subclasses are dispatched by the [type] field using
 /// [BuildStepConfig.fromJson].
 sealed class BuildStepConfig {
-  const BuildStepConfig({required this.id, this.needs = const []});
+  const BuildStepConfig({
+    required this.id,
+    this.needs = const [],
+    this.execution = 'target',
+  });
 
   /// Unique identifier for this step within the recipe.
   final String id;
 
   /// Step IDs that must complete before this step runs.
   final List<String> needs;
+
+  /// Execution context: `target` (cross-compiled) or `host` (built for host).
+  final String execution;
 
   /// The step type string used for registry dispatch.
   String get type;
@@ -61,7 +68,9 @@ final class CmakeConfigureStepConfig extends BuildStepConfig {
     this.generator,
     this.toolchainFile,
     this.definitions = const {},
+    this.expectTargets = const [],
     super.needs,
+    super.execution,
   });
 
   @override
@@ -75,12 +84,14 @@ final class CmakeConfigureStepConfig extends BuildStepConfig {
 
   @override
   NativeBuildStep toBuildStep() => CmakeConfigureStep(
+    execution: execution,
     id: id,
     sourceDirectory: sourceDirectory,
     buildDirectory: buildDirectory,
     defines: definitions,
     generator: generator,
     toolchainFile: toolchainFile,
+    expectTargets: expectTargets,
   );
 
   final String sourceDirectory;
@@ -88,6 +99,7 @@ final class CmakeConfigureStepConfig extends BuildStepConfig {
   final String? generator;
   final String? toolchainFile;
   final Map<String, String> definitions;
+  final List<String> expectTargets;
 }
 
 @JsonSerializable(
@@ -103,6 +115,7 @@ final class CmakeBuildStepConfig extends BuildStepConfig {
     this.parallel = true,
     this.environment,
     super.needs,
+    super.execution,
   });
 
   @override
@@ -116,6 +129,7 @@ final class CmakeBuildStepConfig extends BuildStepConfig {
 
   @override
   NativeBuildStep toBuildStep() => CmakeBuildStep(
+    execution: execution,
     id: id,
     buildDirectory: buildDirectory,
     targets: targets,
@@ -141,6 +155,7 @@ final class ExportArtifactStepConfig extends BuildStepConfig {
     this.kind = 'dynamic_library',
     this.primary,
     super.needs,
+    super.execution,
   });
 
   @override
@@ -154,6 +169,7 @@ final class ExportArtifactStepConfig extends BuildStepConfig {
 
   @override
   NativeBuildStep toBuildStep() => ExportArtifactStep(
+    execution: execution,
     id: id,
     declaration: NativeArtifactDeclaration(
       id: artifact,
@@ -181,6 +197,7 @@ final class CommandStepConfig extends BuildStepConfig {
     this.workingDirectory,
     this.environment,
     super.needs,
+    super.execution,
   });
 
   @override
@@ -194,6 +211,7 @@ final class CommandStepConfig extends BuildStepConfig {
 
   @override
   NativeBuildStep toBuildStep() => CommandStep(
+    execution: execution,
     id: id,
     commands: commands,
     workingDirectory: workingDirectory,
@@ -217,6 +235,7 @@ final class DownloadArchiveStepConfig extends BuildStepConfig {
     this.sha256,
     this.outputDirectory,
     super.needs,
+    super.execution,
   });
 
   @override
@@ -230,6 +249,7 @@ final class DownloadArchiveStepConfig extends BuildStepConfig {
 
   @override
   NativeBuildStep toBuildStep() => DownloadArchiveStep(
+    execution: execution,
     id: id,
     url: url,
     sha256: sha256,
@@ -254,6 +274,7 @@ final class GitCheckoutStepConfig extends BuildStepConfig {
     this.targetDirectory,
     this.submodules = false,
     super.needs,
+    super.execution,
   });
 
   @override
@@ -267,6 +288,7 @@ final class GitCheckoutStepConfig extends BuildStepConfig {
 
   @override
   NativeBuildStep toBuildStep() => GitCheckoutStep(
+    execution: execution,
     id: id,
     repository: repository,
     revision: revision,
@@ -291,6 +313,7 @@ final class GitApplyPatchStepConfig extends BuildStepConfig {
     required this.patchPath,
     this.targetDirectory,
     super.needs,
+    super.execution,
   });
 
   @override
@@ -304,6 +327,7 @@ final class GitApplyPatchStepConfig extends BuildStepConfig {
 
   @override
   NativeBuildStep toBuildStep() => GitApplyPatchStep(
+    execution: execution,
     id: id,
     patchPath: patchPath,
     targetDirectory: targetDirectory,
@@ -325,6 +349,7 @@ final class CopyStepConfig extends BuildStepConfig {
     required this.destinationPath,
     this.recursive = true,
     super.needs,
+    super.execution,
   });
 
   @override
@@ -338,6 +363,7 @@ final class CopyStepConfig extends BuildStepConfig {
 
   @override
   NativeBuildStep toBuildStep() => CopyStep(
+    execution: execution,
     id: id,
     sourcePath: sourcePath,
     destinationPath: destinationPath,
@@ -361,6 +387,7 @@ final class StripStepConfig extends BuildStepConfig {
     required this.outputPath,
     this.stripAll = false,
     super.needs,
+    super.execution,
   });
 
   @override
@@ -374,6 +401,7 @@ final class StripStepConfig extends BuildStepConfig {
 
   @override
   NativeBuildStep toBuildStep() => StripStep(
+    execution: execution,
     id: id,
     inputPath: inputPath,
     outputPath: outputPath,

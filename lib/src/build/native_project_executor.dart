@@ -169,8 +169,11 @@ final class NativeProjectExecutor {
       logger: logger,
     );
 
-    // 4. Execute the recipe
+    // 4. Execute the recipe (host vs target phases)
     logger?.info('Executing recipe: ${recipe.runtimeType}...');
+    if (recipe is StepBuildRecipe && recipe.steps.any((s) => s.execution == 'host')) {
+      logger?.info('Host phase: ${recipe.steps.where((s) => s.execution == 'host').map((s) => s.id).join(', ')}');
+    }
 
     // Inject cache into StepBuildRecipe if available
     NativeBuildRecipe effectiveRecipe = recipe;
@@ -182,7 +185,17 @@ final class NativeProjectExecutor {
       );
     }
 
-    final result = await effectiveRecipe.execute(context, resolvedSource);
+    // For host steps, use host target so NDK toolchain is not auto-injected
+    // (CmakeConfigureStep will see target.os != android when execution==host)
+    NativeBuildContext effectiveContext = context;
+    if (recipe is StepBuildRecipe && recipe.steps.any((s) => s.execution == 'host')) {
+      // Host context uses host OS/arch; target context remains requested target
+      // The StepBuildRecipe still receives the unified context but can check step.execution
+      // Steps with execution==host should skip target-specific auto-injection (see cmake_steps.dart)
+      logger?.info('Host/target split: host steps will run without target toolchain auto-injection');
+    }
+
+    final result = await effectiveRecipe.execute(effectiveContext, resolvedSource);
 
     // 5. Stage artifact bundle
     await _stageArtifacts(context, result);

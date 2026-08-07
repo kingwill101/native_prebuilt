@@ -8,12 +8,14 @@ import '../native_build_context.dart';
 import '../native_build_recipe.dart';
 import '../process_runner.dart';
 import '../recipe_value_expansion.dart';
+import '../toolchains/toolchain_registry.dart';
 import '../../source/resolved_source.dart';
 
 /// Strip debug symbols from a binary.
 final class StripStep implements NativeBuildStep {
   const StripStep({
     required this.id,
+    this.execution = 'target',
     required this.inputPath,
     required this.outputPath,
     this.stripAll = false,
@@ -22,6 +24,10 @@ final class StripStep implements NativeBuildStep {
 
   @override
   final String id;
+
+  @override
+  final String execution;
+
 
   /// Source file to strip (relative to work dir or absolute).
   final String inputPath;
@@ -87,18 +93,33 @@ final class StripStep implements NativeBuildStep {
         ? resolvedOutputPath
         : p.join(context.directories.work.path, resolvedOutputPath);
 
+    final resolver = const NativeToolchainResolver();
+    final stripCmd = resolver.stripCommand(context.target);
     final args = <String>[];
     if (stripAll) {
       args.add('-s');
     }
-    args.addAll(['-o', output, input]);
-
-    // Try system strip first, fall back to llvm-strip
+    // xcrun strip needs `xcrun strip ...`, plain strip is `strip ...`
+    final resolvedArgs = stripCmd.length > 1
+        ? [...stripCmd.sublist(1), ...args, '-o', output, input]
+        : [...args, '-o', output, input];
+    final exe = stripCmd.first;
     try {
-      await r.runStreaming('strip', args);
+      await r.runStreaming(exe, resolvedArgs);
     } on ProcessException {
-      logger?.info('[strip] System strip failed, trying llvm-strip');
-      await r.runStreaming('llvm-strip', args);
+      // Fallback chain: try llvm-strip then system strip
+      if (exe != 'llvm-strip') {
+        logger?.info('[strip] $exe failed, trying llvm-strip');
+        try {
+          await r.runStreaming('llvm-strip', [...args, '-o', output, input]);
+        } on ProcessException {
+          logger?.info('[strip] llvm-strip failed, trying strip');
+          await r.runStreaming('strip', [...args, '-o', output, input]);
+        }
+      } else {
+        logger?.info('[strip] llvm-strip failed, trying strip');
+        await r.runStreaming('strip', [...args, '-o', output, input]);
+      }
     }
     logger?.info('[strip] Stripped: $outputPath');
 

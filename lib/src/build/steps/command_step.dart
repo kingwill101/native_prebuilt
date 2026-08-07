@@ -16,6 +16,7 @@ import '../../source/resolved_source.dart';
 final class CommandStep implements NativeBuildStep {
   const CommandStep({
     required this.id,
+    this.execution = 'target',
     required this.commands,
     this.workingDirectory,
     this.environment,
@@ -25,6 +26,10 @@ final class CommandStep implements NativeBuildStep {
   /// Step identifier.
   @override
   final String id;
+
+  @override
+  final String execution;
+
 
   /// Commands to execute in order. Each entry is [executable, ...args].
   final List<List<String>> commands;

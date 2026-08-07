@@ -139,13 +139,12 @@ env:
 
 jobs:
 [[ build_jobs ]]
-  update-manifest:
-    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+  merge:
     needs:
 [[ update_manifest_needs ]]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dart-lang/setup-dart@v1
 [[ download_artifact_steps ]]
       - name: Merge built libraries
@@ -153,16 +152,72 @@ jobs:
           rm -rf built-library release-assets
           mkdir -p built-library release-assets
 [[ copy_built_library_lines ]]
+      - name: Doctor check (strict)
+        run: dart run native_prebuilt doctor --config "$CONFIG" --built-library-dir built-library --strict
+      - uses: actions/upload-artifact@v6
+        with:
+          name: merged-built-library
+          path: built-library/
+          if-no-files-found: error
+
+  doctor:
+    needs:
+      - merge
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dart-lang/setup-dart@v1
+      - uses: actions/download-artifact@v7
+        with:
+          name: merged-built-library
+          path: built-library/
+      - run: dart pub get
+      - name: Verify manifest drift
+        run: dart run native_prebuilt doctor --config "$CONFIG" --built-library-dir built-library --strict
+
+  verify-consumer:
+    needs:
+      - merge
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dart-lang/setup-dart@v1
+      - uses: actions/download-artifact@v7
+        with:
+          name: merged-built-library
+          path: built-library/
+      - run: dart pub get
+      - name: Verify archives (local)
+        run: |
+          mkdir -p release-assets
+          dart run native_prebuilt manifest update --config "$CONFIG" --output "$MANIFEST_OUTPUT" --built-library-dir built-library --release-assets-dir release-assets --tag verify-dry-run || true
+          dart run native_prebuilt manifest verify-release --config "$CONFIG" --manifest "$MANIFEST_OUTPUT" --release-assets-dir release-assets
+
+  update-manifest:
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    needs:
+      - doctor
+      - verify-consumer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dart-lang/setup-dart@v1
+      - uses: actions/download-artifact@v7
+        with:
+          name: merged-built-library
+          path: built-library/
+      - name: Prepare release assets
+        run: mkdir -p release-assets
       - run: dart pub get
       - name: Generate manifest and release assets
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             TAG="${{ github.event.inputs.tag }}"
-            dart run native_prebuilt manifest update --config "$CONFIG" --output "$MANIFEST_OUTPUT" --built-library-dir built-library --release-assets-dir release-assets --tag "$TAG"
+            dart run native_prebuilt manifest update --config "$CONFIG" --output "$MANIFEST_OUTPUT" --built-library-dir built-library --release-assets-dir release-assets --tag "$TAG" --strict
           else
-            dart run native_prebuilt manifest update --config "$CONFIG" --output "$MANIFEST_OUTPUT" --built-library-dir built-library --release-assets-dir release-assets
+            dart run native_prebuilt manifest update --config "$CONFIG" --output "$MANIFEST_OUTPUT" --built-library-dir built-library --release-assets-dir release-assets --strict
           fi
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: release-assets
           path: release-assets/
@@ -175,14 +230,17 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    concurrency:
+      group: native-prebuilt-release
+      cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v7
         with:
           name: release-assets
           path: release-assets/
       - name: Publish GitHub release assets
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.event.inputs.tag }}
           fail_on_unmatched_files: true
@@ -212,7 +270,7 @@ String _githubPrebuiltWorkflow(
   final downloads = orderedPlatforms
       .map(
         (platform) =>
-            '''      - uses: actions/download-artifact@v4
+            '''      - uses: actions/download-artifact@v7
         with:
           name: ${platform}-built-library
           path: downloaded/${platform}/''',
@@ -242,7 +300,7 @@ String _githubBuildJob(String platform) {
   };
   final steps = StringBuffer();
   steps.writeln('    steps:');
-  steps.writeln('      - uses: actions/checkout@v4');
+  steps.writeln('      - uses: actions/checkout@v5');
   steps.writeln('      - uses: dart-lang/setup-dart@v1');
   if (platform == 'linux') {
     steps.writeln('      - name: Install native toolchain');
@@ -273,7 +331,7 @@ String _githubBuildJob(String platform) {
     steps.writeln('          mkdir -p built-library');
     steps.writeln('          cp -R .dart_tool/lib/. built-library/');
   }
-  steps.writeln('      - uses: actions/upload-artifact@v4');
+  steps.writeln('      - uses: actions/upload-artifact@v6');
   steps.writeln('        with:');
   steps.writeln('          name: ${platform}-built-library');
   steps.writeln('          path: built-library/');

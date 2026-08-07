@@ -286,6 +286,9 @@ abstract interface class NativeBuildStep {
   /// A unique identifier for this step.
   String get id;
 
+  /// Execution context: `host` or `target`.
+  String get execution;
+
   /// Compute a fingerprint for this step based on its inputs.
   ///
   /// Used for build caching to determine if a step needs to be re-executed.

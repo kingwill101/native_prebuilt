@@ -3,6 +3,9 @@ import 'dart:io';
 import 'package:artisanal/args.dart';
 import 'package:path/path.dart' as p;
 
+import '../archive/archive_reader.dart';
+import '../binary/binary_inspector.dart';
+import '../binary/library_name.dart';
 import '../config/native_prebuilt_config.dart';
 import '../manifest/prebuilt_manifest.dart';
 import 'cli_config.dart';
@@ -16,6 +19,7 @@ class ManifestCommand extends Command<void> {
     argParser.addFlag('allow-missing', help: 'Allow missing artifacts.');
     addSubcommand(_ManifestUpdateCommand());
     addSubcommand(_ManifestVerifyCommand());
+    addSubcommand(_ManifestVerifyReleaseCommand());
   }
 
   @override
@@ -50,6 +54,11 @@ class _ManifestUpdateCommand extends Command<void> {
       help: 'Optional output directory for release asset archives.',
     );
     argParser.addFlag('allow-missing', help: 'Allow missing artifacts.');
+    argParser.addFlag(
+      'strict',
+      help:
+          'Reject flat built-library layout; require <dir>/<platform>/<canonicalName>.',
+    );
   }
 
   @override
@@ -88,6 +97,7 @@ class _ManifestUpdateCommand extends Command<void> {
               ? Directory(p.join(configFile.parent.path, 'release-assets'))
               : null);
 
+    final strict = (option('strict') as bool?) ?? false;
     final manifest = await generateManifest(
       config: config,
       tag: tag,
@@ -95,6 +105,8 @@ class _ManifestUpdateCommand extends Command<void> {
       builtLibraryDir: builtLibraryDir,
       releaseAssetsDir: releaseAssetsDir,
       toleratePartialBuiltLibrary: inferredLocalBuild,
+      strict: strict,
+      logger: (m) => io.info(m),
     );
 
     final outputFile = File(outputPath);
@@ -125,6 +137,11 @@ class _ManifestVerifyCommand extends Command<void> {
       help: 'Optional output directory for release asset archives.',
     );
     argParser.addFlag('allow-missing', help: 'Allow missing artifacts.');
+    argParser.addFlag(
+      'strict',
+      help:
+          'Reject flat built-library layout; require <dir>/<platform>/<canonicalName>.',
+    );
   }
 
   @override
@@ -163,6 +180,7 @@ class _ManifestVerifyCommand extends Command<void> {
         builtLibraryDir.existsSync();
     final allowMissing =
         (option('allow-missing') as bool?) ?? inferredLocalBuild;
+    final strict = (option('strict') as bool?) ?? false;
     final manifest = await generateManifest(
       config: config,
       tag: tag,
@@ -170,6 +188,8 @@ class _ManifestVerifyCommand extends Command<void> {
       builtLibraryDir: builtLibraryDir,
       releaseAssetsDir: releaseAssetsDir,
       toleratePartialBuiltLibrary: inferredLocalBuild,
+      strict: strict,
+      logger: (m) => io.info(m),
     );
 
     final actual = File(outputPath).readAsStringSync();
@@ -257,4 +277,118 @@ String _resolveOutputPath(
     'hook',
     '${config.package}_prebuilts.g.dart',
   );
+}
+
+class _ManifestVerifyReleaseCommand extends Command<void> {
+  @override
+  String get name => 'verify-release';
+
+  @override
+  String get description => 'Verify release assets against the manifest (hash + binary triple).';
+
+  _ManifestVerifyReleaseCommand() {
+    argParser.addOption('config', abbr: 'c', help: 'Path to YAML config file.');
+    argParser.addOption('manifest', help: 'Path to lock manifest (native_prebuilt.lock.yaml or g.dart).');
+    argParser.addOption('release-assets-dir', help: 'Directory containing release archives.');
+    argParser.addOption('built-library-dir', help: 'Directory containing built libraries.');
+    argParser.addFlag('strict', help: 'Reject flat built-library layout.');
+  }
+
+  @override
+  Future<void> run() async {
+    final configFile =
+        resolveConfigFile(option('config') as String?) ??
+        (throw UsageException(
+          'Could not find native_prebuilt.yaml. Pass --config explicitly.',
+          usage,
+        ));
+    final config = await loadNativePrebuiltConfig(configFile);
+    final manifestPath = option('manifest') as String?;
+    File? manifestFile;
+    if (manifestPath != null) {
+      manifestFile = File(manifestPath);
+    } else {
+      manifestFile = resolveLockFile(null, configFile.parent);
+      if (manifestFile != null && !manifestFile.existsSync()) manifestFile = null;
+      // fallback to generated g.dart
+      if (manifestFile == null) {
+        final gDart = File(_resolveOutputPath(null, configFile, config));
+        if (gDart.existsSync()) manifestFile = gDart;
+      }
+    }
+    if (manifestFile == null || !manifestFile.existsSync()) {
+      stderr.writeln('Manifest not found (lock.yaml or g.dart). Pass --manifest explicitly.');
+      exitCode = 1;
+      return;
+    }
+    final content = manifestFile.readAsStringSync();
+    var failed = false;
+
+    final builtLibraryDirPath = option('built-library-dir') as String?;
+    final releaseAssetsDirPath = option('release-assets-dir') as String?;
+    final strict = (option('strict') as bool?) ?? false;
+
+    if (builtLibraryDirPath != null) {
+      final builtDir = Directory(builtLibraryDirPath);
+      for (final entry in config.artifacts.entries) {
+        final platform = entry.key;
+        final artifact = entry.value;
+        final target = targetFromPlatformLabel(platform);
+        final payload = artifact.payload.toArtifactPayload(config.libraryStem);
+        final canonicalName = canonicalLibraryName(
+          target: target,
+          libraryStem: config.libraryStem,
+          payload: payload,
+        );
+        final builtFile = File(p.join(builtDir.path, platform, canonicalName));
+        final flatFile = File(p.join(builtDir.path, canonicalName));
+        File? candidate;
+        if (builtFile.existsSync()) candidate = builtFile;
+        else if (!strict && flatFile.existsSync()) candidate = flatFile;
+
+        if (candidate != null) {
+          final hash = await ArchiveReader.sha256Hash(candidate);
+          if (!content.contains(hash)) {
+            stderr.writeln('Hash mismatch for $platform payload $hash not in $manifestFile');
+            failed = true;
+          }
+          try {
+            const NativeBinaryInspector().inspect(candidate, target: target, canonicalName: canonicalName);
+          } catch (e) {
+            stderr.writeln('Binary inspection failed for $platform: $e');
+            failed = true;
+          }
+        }
+      }
+    }
+
+    if (releaseAssetsDirPath != null) {
+      final assetsDir = Directory(releaseAssetsDirPath);
+      for (final entry in config.artifacts.entries) {
+        final archive = File(p.join(assetsDir.path, entry.value.archive));
+        if (!archive.existsSync()) {
+          stderr.writeln('Missing archive: ${archive.path}');
+          failed = true;
+          continue;
+        }
+        final hash = await ArchiveReader.sha256Hash(archive);
+        if (!content.contains(hash)) {
+          stderr.writeln('Archive hash mismatch for ${entry.key}: $hash not in $manifestFile');
+          failed = true;
+        }
+      }
+    } else {
+      // At least check tag present
+      if (!content.contains(config.release.tag)) {
+        stderr.writeln('Manifest does not contain tag ${config.release.tag}');
+        failed = true;
+      }
+    }
+
+    if (failed) {
+      exitCode = 1;
+    } else {
+      io.info('verify-release OK: $manifestFile');
+    }
+  }
 }

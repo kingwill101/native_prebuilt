@@ -8,6 +8,7 @@ import '../native_build_context.dart';
 import '../native_build_recipe.dart';
 import '../process_runner.dart';
 import '../recipe_value_expansion.dart';
+import '../toolchains/toolchain_registry.dart';
 import '../../source/resolved_source.dart';
 
 /// CMake configure step.
@@ -16,17 +17,23 @@ import '../../source/resolved_source.dart';
 final class CmakeConfigureStep implements NativeBuildStep {
   const CmakeConfigureStep({
     this.id = 'cmake_configure',
+    this.execution = 'target',
     required this.sourceDirectory,
     this.buildDirectory,
     this.defines = const {},
     this.generator,
     this.toolchainFile,
+    this.expectTargets = const [],
     this.runner,
   });
 
   /// Step identifier.
   @override
   final String id;
+
+  @override
+  final String execution;
+
 
   /// Path to the source directory (relative to source root or absolute).
   final String sourceDirectory;
@@ -43,13 +50,24 @@ final class CmakeConfigureStep implements NativeBuildStep {
   /// Path to a CMake toolchain file.
   final String? toolchainFile;
 
+  /// Expected CMake targets (e.g., tdjson). If non-empty, validated after configure.
+  final List<String> expectTargets;
+
   /// Optional process runner.
   final ProcessRunnerInterface? runner;
 
   /// Creates a [CmakeConfigureStep] from a YAML-derived map.
   factory CmakeConfigureStep.fromMap(Map<String, dynamic> map) {
+    final expect = map['expect'];
+    List<String> expectTargets = const [];
+    if (expect is Map && expect['targets'] is List) {
+      expectTargets = (expect['targets'] as List).map((e) => e.toString()).toList();
+    } else if (map['expect_targets'] is List) {
+      expectTargets = (map['expect_targets'] as List).map((e) => e.toString()).toList();
+    }
     return CmakeConfigureStep(
       id: map['id'] as String? ?? 'cmake_configure',
+      execution: map['execution'] as String? ?? 'target',
       sourceDirectory: map['source_directory'] as String,
       buildDirectory: map['build_directory'] as String?,
       defines: map['defines'] is Map
@@ -61,6 +79,7 @@ final class CmakeConfigureStep implements NativeBuildStep {
           : const {},
       generator: map['generator'] as String?,
       toolchainFile: map['toolchain_file'] as String?,
+      expectTargets: expectTargets,
     );
   }
 
@@ -69,11 +88,13 @@ final class CmakeConfigureStep implements NativeBuildStep {
     return <String, dynamic>{
       'type': 'cmake_configure',
       'id': id,
+      if (execution != 'target') 'execution': execution,
       'source_directory': sourceDirectory,
       if (buildDirectory != null) 'build_directory': buildDirectory,
       if (defines.isNotEmpty) 'defines': defines,
       if (generator != null) 'generator': generator,
       if (toolchainFile != null) 'toolchain_file': toolchainFile,
+      if (expectTargets.isNotEmpty) 'expect': {'targets': expectTargets},
     };
   }
 
@@ -114,6 +135,8 @@ final class CmakeConfigureStep implements NativeBuildStep {
               context.source,
             ),
     );
+    buffer.write(execution);
+    buffer.write(expectTargets.join(','));
 
     // Include source file hashes for invalidation
     buffer.write(_sourceFilesHash(context.source.directory));
@@ -181,10 +204,45 @@ final class CmakeConfigureStep implements NativeBuildStep {
     if (generator != null) {
       args.addAll(['-G', expandRecipeValue(generator!, context, source)]);
     }
-    if (toolchainFile != null) {
-      args.addAll([
-        '-DCMAKE_TOOLCHAIN_FILE=${expandRecipeValue(toolchainFile!, context, source)}',
-      ]);
+    String? effectiveToolchain = toolchainFile;
+    // Host execution must not use target toolchain
+    final isHost = execution == 'host';
+    if (effectiveToolchain == null && !isHost) {
+      final resolver = const NativeToolchainResolver();
+      effectiveToolchain = resolver.cmakeToolchainFile(context.target);
+      if (effectiveToolchain != null) {
+        logger?.info('[$id] Auto toolchain: $effectiveToolchain');
+      }
+    }
+    if (effectiveToolchain != null) {
+      final expandedToolchain = expandRecipeValue(
+        effectiveToolchain,
+        context,
+        source,
+      );
+      args.addAll(['-DCMAKE_TOOLCHAIN_FILE=$expandedToolchain']);
+    }
+    // Auto-inject Android defaults when target is Android and not overridden.
+    // Skip for host execution — host code generators run on the host compiler.
+    if (!isHost && context.target.os.name == 'android') {
+      final arch = context.target.architecture;
+      final resolver = const NativeToolchainResolver();
+      final abi = NativeToolchainResolver.androidAbiFor(arch);
+      if (!defines.containsKey('ANDROID_ABI')) {
+        args.add('-DANDROID_ABI=$abi');
+      }
+      if (!defines.containsKey('ANDROID_PLATFORM')) {
+        args.add('-DANDROID_PLATFORM=android-24');
+      }
+      if (!defines.containsKey('ANDROID_STL')) {
+        args.add('-DANDROID_STL=c++_static');
+      }
+      // OPENSSL_ROOT_DIR auto if not set and resolver knows NDK layout?
+      if (!defines.containsKey('OPENSSL_ROOT_DIR') &&
+          resolver.hasAndroidNdk) {
+        // Leave to recipe's {{ dependencies.openssl.prefix }} if present;
+        // no default injection to avoid false paths.
+      }
     }
     for (final entry in defines.entries) {
       args.add(
@@ -194,6 +252,34 @@ final class CmakeConfigureStep implements NativeBuildStep {
 
     logger?.info('[$id] Running: cmake ${args.join(' ')}');
     await r.runStreaming('cmake', args, workingDirectory: Directory(buildDir));
+
+    // Validate expected targets immediately after configure
+    if (expectTargets.isNotEmpty) {
+      // Check that CMakeCache mentions those targets or that the build files were generated
+      // We do a lightweight check: look for build.ninja or Makefile that would contain the target
+      final buildNinja = File(p.join(buildDir, 'build.ninja'));
+      final makefile = File(p.join(buildDir, 'Makefile'));
+      String? buildFileContent;
+      if (buildNinja.existsSync()) {
+        buildFileContent = buildNinja.readAsStringSync();
+      } else if (makefile.existsSync()) {
+        buildFileContent = makefile.readAsStringSync();
+      }
+      if (buildFileContent != null) {
+        for (final t in expectTargets) {
+          if (!buildFileContent.contains(t)) {
+            throw StateError(
+              'CMake configuration completed but required target "$t" was not generated.\n'
+              'Relevant dependency errors may be in the log above.\n'
+              'Possible missing configuration: OPENSSL_ROOT_DIR or toolchain.',
+            );
+          }
+        }
+        logger?.info('[$id] Verified expected targets: ${expectTargets.join(', ')}');
+      } else {
+        logger?.warning('[$id] Could not verify expected targets ${expectTargets.join(', ')}: no build.ninja/Makefile found at $buildDir');
+      }
+    }
 
     return const NativeStepResult();
   }
@@ -205,6 +291,7 @@ final class CmakeConfigureStep implements NativeBuildStep {
 final class CmakeBuildStep implements NativeBuildStep {
   const CmakeBuildStep({
     this.id = 'cmake_build',
+    this.execution = 'target',
     required this.buildDirectory,
     this.targets = const [],
     this.parallel = true,
@@ -215,6 +302,10 @@ final class CmakeBuildStep implements NativeBuildStep {
   /// Step identifier.
   @override
   final String id;
+
+  @override
+  final String execution;
+
 
   /// Path to the build directory (where CMakeCache.txt is).
   final String buildDirectory;

@@ -255,13 +255,13 @@ artifacts:
     expect(templates['prebuilt.yml'], contains('build-linux'));
     expect(templates['prebuilt.yml'], contains('build-windows'));
     expect(templates['prebuilt.yml'], contains('build-macos'));
-    expect(templates['prebuilt.yml'], contains('actions/download-artifact@v4'));
+    expect(templates['prebuilt.yml'], contains('actions/download-artifact@v7'));
     expect(templates['prebuilt.yml'], contains('Merge built libraries'));
     expect(templates['prebuilt.yml'], contains('downloaded/windows/'));
     expect(templates['prebuilt.yml'], contains('release-assets'));
     expect(
       templates['prebuilt.yml'],
-      contains('softprops/action-gh-release@v2'),
+      contains('softprops/action-gh-release@v3'),
     );
     expect(
       templates['prebuilt.yml'],

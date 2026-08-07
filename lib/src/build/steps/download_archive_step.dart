@@ -16,6 +16,7 @@ import '../../source/resolved_source.dart';
 final class DownloadArchiveStep implements NativeBuildStep {
   const DownloadArchiveStep({
     required this.id,
+    this.execution = 'target',
     required this.url,
     this.sha256,
     this.outputDirectory,
@@ -25,6 +26,10 @@ final class DownloadArchiveStep implements NativeBuildStep {
   /// Step identifier.
   @override
   final String id;
+
+  @override
+  final String execution;
+
 
   /// URL of the archive to download.
   final String url;

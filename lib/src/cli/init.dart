@@ -88,7 +88,27 @@ class InitCommand extends Command<void> {
         _githubUrlFromRepository(releaseRepository);
     final sourceRevision = option('source-revision') as String;
     final sourceSubdirectory = option('source-subdirectory') as String?;
-    final platforms = _platforms(option('platform') as List<String>?);
+    var platforms = _platforms(option('platform') as List<String>?);
+    // Smarter init: if no platforms supplied, scan for hints
+    if (platforms.isEmpty) {
+      final detected = _detectPlatforms(outputFile.parent);
+      if (detected.isNotEmpty) {
+        platforms = detected;
+        io.info('Detected platforms: ${platforms.join(', ')} (from project scan)');
+      }
+    }
+    if (platforms.isEmpty) {
+      final inferred = _inferFromBuildFiles(outputFile.parent);
+      if (inferred.isNotEmpty) {
+        platforms = inferred;
+        io.info('Inferred platforms from build files: ${platforms.join(', ')}');
+      }
+    }
+
+    final detectedBuild = _detectBuildSystem(outputFile.parent);
+    if (detectedBuild != null) {
+      io.info('Detected build system: $detectedBuild');
+    }
 
     outputFile.parent.createSync(recursive: true);
     outputFile.writeAsStringSync(
@@ -102,11 +122,56 @@ class InitCommand extends Command<void> {
         sourceRepository: sourceRepository,
         sourceRevision: sourceRevision,
         sourceSubdirectory: sourceSubdirectory,
-        platforms: platforms,
+        platforms: platforms.isEmpty ? ['linux-x64', 'macos-arm64', 'windows-x64'] : platforms,
+        detectedBuildSystem: detectedBuild,
       ),
     );
     io.info('Wrote ${outputFile.path}');
+    if (detectedBuild != null) {
+      io.info('Next: add build recipes for $detectedBuild or run `dart run native_prebuilt workflow init`');
+    }
   }
+}
+
+List<String> _detectPlatforms(Directory dir) {
+  final platforms = <String>[];
+  // Check for existing hook/build.dart with @Native declarations
+  final hookBuild = File(p.join(dir.path, 'hook', 'build.dart'));
+  if (hookBuild.existsSync()) {
+    final content = hookBuild.readAsStringSync();
+    if (content.contains('android') || content.contains('Android')) platforms.add('android-arm64');
+    if (content.contains('ios') || content.contains('iOS')) platforms.add('ios-arm64');
+  }
+  // Check for Dart @Native declarations
+  final libDir = Directory(p.join(dir.path, 'lib'));
+  if (libDir.existsSync()) {
+    for (final file in libDir.listSync(recursive: true).whereType<File>()) {
+      if (file.path.endsWith('.dart')) {
+        final content = file.readAsStringSync();
+        if (content.contains('@Native')) {
+          // Suggest common set
+          return ['linux-x64', 'macos-arm64', 'windows-x64', 'android-arm64', 'ios-arm64'];
+        }
+      }
+    }
+  }
+  return platforms;
+}
+
+String? _detectBuildSystem(Directory dir) {
+  if (File(p.join(dir.path, 'CMakeLists.txt')).existsSync()) return 'cmake';
+  if (File(p.join(dir.path, 'Cargo.toml')).existsSync()) return 'cargo';
+  if (File(p.join(dir.path, 'meson.build')).existsSync()) return 'meson';
+  if (File(p.join(dir.path, 'configure.ac')).existsSync()) return 'autotools';
+  if (File(p.join(dir.path, 'build.zig')).existsSync()) return 'zig';
+  return null;
+}
+
+List<String> _inferFromBuildFiles(Directory dir) {
+  final buildSystem = _detectBuildSystem(dir);
+  if (buildSystem == 'cmake') return ['linux-x64', 'macos-arm64', 'windows-x64'];
+  if (buildSystem == 'cargo') return ['linux-x64', 'macos-arm64', 'windows-x64'];
+  return [];
 }
 
 /// Renders the initial YAML scaffold independently of the CLI command.
@@ -121,6 +186,7 @@ String renderInitialManifest({
   required String sourceRevision,
   required String? sourceSubdirectory,
   required List<String> platforms,
+  String? detectedBuildSystem,
 }) {
   final payload = linkMode == 'static_library'
       ? 'static_library'
@@ -160,6 +226,16 @@ String renderInitialManifest({
       ..writeln('    archive: ${_yamlScalar('$libraryStem-$platform.tar.gz')}')
       ..writeln('    payload:')
       ..writeln('      type: $payload');
+  }
+  if (detectedBuildSystem != null) {
+    buffer
+      ..writeln()
+      ..writeln('# Build system detected: $detectedBuildSystem')
+      ..writeln('# Add one of:')
+      ..writeln('#   build:')
+      ..writeln('#     system: $detectedBuildSystem')
+      ..writeln('#     target: $libraryStem')
+      ..writeln('# or declarative build.recipes with steps');
   }
   return buffer.toString();
 }

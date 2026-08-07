@@ -4,7 +4,9 @@ import 'package:code_assets/code_assets.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:yaml/yaml.dart';
 
+import '../build/native_artifact_model.dart';
 import '../build/native_project.dart';
+import '../build/steps/steps.dart';
 import '../manifest/prebuilt_artifact.dart';
 import '../manifest/release_source.dart';
 import 'build_step_config.dart';
@@ -147,6 +149,9 @@ final class BuildConfig {
     this.recipes = const [],
     this.dependencies = const {},
     this.options = const {},
+    this.system,
+    this.systemTarget,
+    this.sourceDirectory,
   });
 
   factory BuildConfig.fromJson(Map<String, dynamic> json) =>
@@ -163,9 +168,42 @@ final class BuildConfig {
   /// Optional build options.
   final Map<String, Object?> options;
 
+  /// High-level build system preset (e.g., cmake, cargo, meson).
+  final String? system;
+
+  /// Target for preset system (e.g., tdjson).
+  final String? systemTarget;
+
+  /// Source directory for preset system.
+  final String? sourceDirectory;
+
   /// Converts this config into a [NativeBuildDefinition] that can resolve
   /// recipes for specific targets.
   NativeBuildDefinition toBuildDefinition() {
+    final depMap = {
+      for (final e in dependencies.entries) e.key: e.value.toJson(),
+    };
+    if (system != null && recipes.isEmpty) {
+      // Preset expansion: generate a simple recipe that matches any target.
+      final presetRecipe = _presetRecipeForSystem(
+        system!,
+        target: systemTarget,
+        sourceDir: sourceDirectory,
+      );
+      if (presetRecipe != null) {
+        return NativeBuildDefinition(
+          recipes: [
+            NativeTargetRecipe(
+              pattern: const NativeTargetPattern(),
+              recipe: presetRecipe,
+            ),
+          ],
+          options: options,
+          variables: const {},
+          dependencies: depMap,
+        );
+      }
+    }
     return NativeBuildDefinition(
       recipes: [
         for (final recipe in recipes)
@@ -178,7 +216,41 @@ final class BuildConfig {
           ),
       ],
       options: options,
+      dependencies: depMap,
     );
+  }
+
+  StepBuildRecipe? _presetRecipeForSystem(
+    String system,
+    {String? target,
+    String? sourceDir,
+  }) {
+    final src = sourceDir ?? '{{ source.path }}';
+    final tgt = target ?? 'all';
+    return switch (system) {
+      'cmake' => StepBuildRecipe(steps: [
+        CmakeConfigureStep(
+          id: 'configure',
+          sourceDirectory: src,
+          buildDirectory: '{{ work }}/build',
+          defines: const {'CMAKE_BUILD_TYPE': 'Release'},
+        ),
+        CmakeBuildStep(
+          id: 'build',
+          buildDirectory: '{{ work }}/build',
+          targets: [tgt],
+        ),
+        ExportArtifactStep(
+          id: 'export',
+          declaration: NativeArtifactDeclaration(
+            id: tgt,
+            kind: NativeArtifactKind.dynamicLibrary,
+            primaryPath: '{{ work }}/build/lib$tgt.so',
+          ),
+        ),
+      ]),
+      _ => null,
+    };
   }
 }
 

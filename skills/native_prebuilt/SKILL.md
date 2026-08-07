@@ -71,8 +71,10 @@ You can define the complete project in `native_prebuilt.yaml` instead of writing
 
 ### Manifest Management
 - `dart run native_prebuilt init` - Scaffold an initial `native_prebuilt.yaml` from the package's `pubspec.yaml`
-- `dart run native_prebuilt manifest update` - Generate/refresh manifest or lock file from `native_prebuilt.yaml`
+- `dart run native_prebuilt manifest update [--strict]` - Generate/refresh manifest or lock file; `--strict` rejects flat `built-library/<name>`
 - `dart run native_prebuilt manifest verify` - Verify manifest hashes match built artifacts
+- `dart run native_prebuilt manifest verify-release [--manifest] [--built-library-dir] [--release-assets-dir] [--strict]` - Hash + triple check vs lock/g.dart
+- `dart run native_prebuilt doctor [--manifest] [--built-library-dir] [--release-assets-dir] [--target] [--strict]` - Drift/hash/triple check, exit 2 on drift
 - `dart run native_prebuilt schema export` - Write `schema/native_prebuilt.schema.json` for editor validation
 
 ### Build Pipeline
@@ -80,10 +82,10 @@ You can define the complete project in `native_prebuilt.yaml` instead of writing
 - `dart run native_prebuilt build --target <platform> --output <dir>` - Build native library
 - `dart run native_prebuilt cache-key --target <platform>` - Show cache key for a build
 - `dart run native_prebuilt explain-cache --target <platform>` - Explain cache state
-- `dart run native_prebuilt verify --target <platform>` - Verify built artifact
+- `dart run native_prebuilt verify --target <platform>` - Verify built artifact (legacy); also `verify --ref <tag> [--release-assets-dir] [--ephemeral] [--target]` for isolated download + triple check
 
 ### Workflow Generation
-- `dart run native_prebuilt workflow init` - Generate GitHub workflow files
+- `dart run native_prebuilt workflow init` - Generate GitHub workflow files (now `merge`+`doctor`+`verify-consumer`→`update-manifest`→`release`, Node24)
 - `dart run native_prebuilt workflow init --gitlab` - Generate GitLab CI files
 - `dart run native_prebuilt workflow init --gitlab --platform linux,windows` - Filter GitLab outputs by platform
 
@@ -93,6 +95,7 @@ Common YAML keys:
 - `type` (required)
 - `id` (required)
 - `needs` (optional)
+- `execution` (`host`|`target`, default `target`)
 
 | type | Purpose |
 |------|---------|

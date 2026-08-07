@@ -98,6 +98,8 @@ Future<PrebuiltManifest> generateManifest({
   Directory? builtLibraryDir,
   Directory? releaseAssetsDir,
   bool toleratePartialBuiltLibrary = false,
+  bool strict = false,
+  void Function(String message)? logger,
 }) async {
   final downloader = HttpDownloader();
   final archiveReader = ArchiveReader();
@@ -128,13 +130,13 @@ Future<PrebuiltManifest> generateManifest({
         p.join((releaseAssetsDir ?? tempDir).path, artifactConfig.archive),
       );
       if (builtLibraryDir != null) {
-        final builtFileSearch = _findBuiltLibraryFile(
+        final searchResult = _findBuiltLibraryFileWithMeta(
           builtLibraryDir: builtLibraryDir,
           platform: platform,
           canonicalName: canonicalName,
         );
 
-        if (builtFileSearch == null) {
+        if (searchResult == null) {
           if (allowMissing || toleratePartialBuiltLibrary) continue;
 
           throw StateError(
@@ -144,9 +146,21 @@ Future<PrebuiltManifest> generateManifest({
             '  ${p.join(builtLibraryDir.path, platform)}/**/$canonicalName',
           );
         }
+        if (searchResult.isFlatFallback) {
+          if (strict) {
+            throw StateError(
+              'Strict mode: rejected flat layout for $platform at ${searchResult.file.path}. '
+              'Expected ${p.join(builtLibraryDir.path, platform, canonicalName)}',
+            );
+          }
+          (logger ?? print)(
+            'Warning: using flat layout for $platform at ${searchResult.file.path}; '
+            'prefer ${p.join(builtLibraryDir.path, platform, canonicalName)}',
+          );
+        }
 
         await packageBuiltLibrary(
-          builtFile: builtFileSearch,
+          builtFile: searchResult.file,
           archiveFile: archiveFile,
         );
       } else {
@@ -290,21 +304,41 @@ Future<void> packageBuiltLibrary({
   await archiveFile.writeAsBytes(gzipBytes, flush: true);
 }
 
+// ignore: unused_element - retained for API compat
 File? _findBuiltLibraryFile({
+  required Directory builtLibraryDir,
+  required String platform,
+  required String canonicalName,
+}) {
+  final result = _findBuiltLibraryFileWithMeta(
+    builtLibraryDir: builtLibraryDir,
+    platform: platform,
+    canonicalName: canonicalName,
+  );
+  return result?.file;
+}
+
+class _BuiltLibrarySearchResult {
+  _BuiltLibrarySearchResult(this.file, this.isFlatFallback);
+  final File file;
+  final bool isFlatFallback;
+}
+
+_BuiltLibrarySearchResult? _findBuiltLibraryFileWithMeta({
   required Directory builtLibraryDir,
   required String platform,
   required String canonicalName,
 }) {
   final platformDir = Directory(p.join(builtLibraryDir.path, platform));
 
-  final directCandidates = [
-    File(p.join(platformDir.path, canonicalName)),
-    File(p.join(builtLibraryDir.path, canonicalName)),
-  ];
-  for (final candidate in directCandidates) {
-    if (candidate.existsSync()) {
-      return candidate;
-    }
+  final platformCandidate = File(p.join(platformDir.path, canonicalName));
+  if (platformCandidate.existsSync()) {
+    return _BuiltLibrarySearchResult(platformCandidate, false);
+  }
+
+  final flatCandidate = File(p.join(builtLibraryDir.path, canonicalName));
+  if (flatCandidate.existsSync()) {
+    return _BuiltLibrarySearchResult(flatCandidate, true);
   }
 
   if (!platformDir.existsSync()) {
@@ -319,7 +353,8 @@ File? _findBuiltLibraryFile({
           .toList()
         ..sort((a, b) => a.path.compareTo(b.path));
 
-  return recursiveMatches.isEmpty ? null : recursiveMatches.first;
+  if (recursiveMatches.isEmpty) return null;
+  return _BuiltLibrarySearchResult(recursiveMatches.first, false);
 }
 
 String renderPayload(ArtifactPayload payload) => switch (payload) {
