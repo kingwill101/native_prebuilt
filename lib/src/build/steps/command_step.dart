@@ -16,6 +16,7 @@ import '../../source/resolved_source.dart';
 final class CommandStep implements NativeBuildStep {
   const CommandStep({
     required this.id,
+    this.execution = 'target',
     required this.commands,
     this.workingDirectory,
     this.environment,
@@ -25,6 +26,9 @@ final class CommandStep implements NativeBuildStep {
   /// Step identifier.
   @override
   final String id;
+
+  @override
+  final String execution;
 
   /// Commands to execute in order. Each entry is [executable, ...args].
   final List<List<String>> commands;
@@ -42,6 +46,7 @@ final class CommandStep implements NativeBuildStep {
   factory CommandStep.fromMap(Map<String, dynamic> map) {
     return CommandStep(
       id: map['id'] as String,
+      execution: map['execution'] as String? ?? 'target',
       commands: (map['commands'] as List<dynamic>)
           .map(
             (cmd) => (cmd as List<dynamic>).map((e) => e.toString()).toList(),
@@ -63,6 +68,7 @@ final class CommandStep implements NativeBuildStep {
     return <String, dynamic>{
       'type': 'command',
       'id': id,
+      if (execution != 'target') 'execution': execution,
       'commands': commands,
       if (workingDirectory != null) 'working_directory': workingDirectory,
       if (environment != null) 'environment': environment,

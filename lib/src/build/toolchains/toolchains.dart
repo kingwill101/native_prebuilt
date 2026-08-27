@@ -2,6 +2,8 @@ import 'dart:io';
 
 import '../process_runner.dart';
 
+export 'toolchain_registry.dart';
+
 /// Platform toolchain interface for native builds.
 abstract interface class PlatformToolchain {
   /// Execute a command with platform-specific configuration.

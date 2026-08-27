@@ -164,10 +164,10 @@ void _validateArchitecture(
     case _BinaryFormat.machO:
       _validateMachOArchitecture(header, target, path);
     case _BinaryFormat.pe:
+      _validatePeArchitecture(target, path);
     case _BinaryFormat.staticArchive:
     case _BinaryFormat.wasm:
-      // PE, static archive, and WASM architecture validation
-      // is not yet implemented.
+      // static archive/WASM architecture validation not yet implemented.
       break;
   }
 }
@@ -324,6 +324,75 @@ void _validateMachOArchitecture(
       '  actual:   ${_machOCpuTypeName(cpuType)}\n'
       '  file:     $path',
     );
+  }
+}
+
+const int _peMachineI386 = 0x014c;
+const int _peMachineAmd64 = 0x8664;
+const int _peMachineArm64 = 0xAA64;
+const int _peMachineArm = 0x01c0;
+
+int? _expectedPeMachine(Architecture architecture) {
+  return switch (architecture) {
+    Architecture.ia32 => _peMachineI386,
+    Architecture.x64 => _peMachineAmd64,
+    Architecture.arm64 => _peMachineArm64,
+    Architecture.arm => _peMachineArm,
+    _ => null,
+  };
+}
+
+String _peMachineName(int machine) {
+  return switch (machine) {
+    _peMachineI386 => 'i386 / IMAGE_FILE_MACHINE_I386 (0x014c)',
+    _peMachineAmd64 => 'x86_64 / IMAGE_FILE_MACHINE_AMD64 (0x8664)',
+    _peMachineArm64 => 'ARM64 / IMAGE_FILE_MACHINE_ARM64 (0xAA64)',
+    _peMachineArm => 'ARM / IMAGE_FILE_MACHINE_ARM (0x01c0)',
+    _ => 'unknown (0x${machine.toRadixString(16)})',
+  };
+}
+
+void _validatePeArchitecture(NativeTarget target, String path) {
+  // The initial inspector read is intentionally small. Read the complete DOS
+  // header, then seek to the PE signature and COFF header at e_lfanew so a
+  // long DOS stub cannot bypass architecture validation.
+  final file = File(path);
+  final raf = file.openSync();
+  try {
+    if (raf.lengthSync() < 0x40) {
+      throw BinaryArchitectureException('PE DOS header too short: $path');
+    }
+    final dosHeader = raf.readSync(0x40);
+    if (!_startsWith(dosHeader, const [0x4D, 0x5A])) {
+      throw BinaryArchitectureException('Invalid PE DOS signature: $path');
+    }
+    final eLfanew =
+        dosHeader[0x3c] |
+        (dosHeader[0x3d] << 8) |
+        (dosHeader[0x3e] << 16) |
+        (dosHeader[0x3f] << 24);
+    if (eLfanew < 0x40 || eLfanew > raf.lengthSync() - 6) {
+      throw BinaryArchitectureException('Invalid PE header offset: $path');
+    }
+    raf.setPositionSync(eLfanew);
+    final peHeader = raf.readSync(6);
+    if (peHeader.length < 6 ||
+        !_startsWith(peHeader, const [0x50, 0x45, 0x00, 0x00])) {
+      throw BinaryArchitectureException('Invalid PE signature: $path');
+    }
+    final machine = peHeader[4] | (peHeader[5] << 8);
+    final expected = _expectedPeMachine(target.architecture);
+    if (expected == null) return;
+    if (machine != expected) {
+      throw BinaryArchitectureException(
+        'Binary architecture mismatch for ${target.label}:\n'
+        '  expected: ${_peMachineName(expected)}\n'
+        '  actual:   ${_peMachineName(machine)}\n'
+        '  file:     $path',
+      );
+    }
+  } finally {
+    raf.closeSync();
   }
 }
 

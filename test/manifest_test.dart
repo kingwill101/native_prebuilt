@@ -62,4 +62,41 @@ void main() {
       contains('mylib'),
     );
   });
+
+  test('decodes exact fields from generated Dart manifests', () {
+    final snapshot = parseManifestSnapshot('''
+const demoPrebuilts = PrebuiltManifest(
+  schemaVersion: 1,
+  release: GitHubReleaseSource(owner: 'owner', repository: 'demo', tag: 'v1.0.0'),
+  artifacts: {
+    'linux-x64': PrebuiltArtifact(
+      archiveName: 'demo-linux-x64.tar.gz',
+      archiveSha256: 'archive-hash',
+      payloadSha256: 'payload-hash',
+      payload: DynamicLibraryPayload(libraryStem: 'demo', acceptVersionedNames: true),
+    ),
+  },
+);
+''', path: 'manifest.g.dart');
+
+    expect(snapshot.releaseTag, 'v1.0.0');
+    expect(snapshot.artifacts['linux-x64']?.archiveSha256, 'archive-hash');
+    expect(snapshot.artifacts['linux-x64']?.payloadSha256, 'payload-hash');
+  });
+
+  test('decodes exact fields from lock manifests', () {
+    final snapshot = parseManifestSnapshot('''
+schema: 1
+release:
+  tag: v1.0.0
+artifacts:
+  linux-x64:
+    archive_sha256: archive-hash
+    payload_sha256: payload-hash
+''', path: 'native_prebuilt.lock.yaml');
+
+    expect(snapshot.releaseTag, 'v1.0.0');
+    expect(snapshot.artifacts['linux-x64']?.archiveSha256, 'archive-hash');
+    expect(snapshot.artifacts['linux-x64']?.payloadSha256, 'payload-hash');
+  });
 }

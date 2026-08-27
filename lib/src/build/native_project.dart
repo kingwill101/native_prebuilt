@@ -179,6 +179,7 @@ final class NativeBuildDefinition {
     required this.recipes,
     this.options = const <String, Object?>{},
     this.variables = const <String, Object?>{},
+    this.dependencies = const {},
   });
 
   /// Build recipes with target patterns.
@@ -189,6 +190,9 @@ final class NativeBuildDefinition {
 
   /// Shared values exposed to Liquid recipes as `variables.*`.
   final Map<String, Object?> variables;
+
+  /// Dependency declarations (e.g., openssl) — built independently and cached.
+  final Map<String, Object?> dependencies;
 
   /// Find the first recipe that matches the given [target].
   NativeBuildRecipe? recipeFor(NativeTarget target) {
@@ -204,6 +208,7 @@ final class NativeBuildDefinition {
     'recipes': recipes.map((recipe) => recipe.toJson()).toList(),
     if (options.isNotEmpty) 'options': options,
     if (variables.isNotEmpty) 'variables': variables,
+    if (dependencies.isNotEmpty) 'dependencies': dependencies,
   };
 
   factory NativeBuildDefinition.fromJson(Map<String, dynamic> json) {
@@ -219,6 +224,9 @@ final class NativeBuildDefinition {
       ),
       variables: Map<String, Object?>.from(
         (json['variables'] as Map?)?.cast<String, Object?>() ?? const {},
+      ),
+      dependencies: Map<String, Object?>.from(
+        (json['dependencies'] as Map?)?.cast<String, Object?>() ?? const {},
       ),
     );
   }

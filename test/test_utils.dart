@@ -52,11 +52,26 @@ List<int> makeElfBytes({String? arch, String marker = 'elf'}) {
 }
 
 /// Creates bytes that look like a Windows PE binary.
-List<int> makePeBytes([String marker = 'pe']) => [
-  0x4D,
-  0x5A,
-  ...marker.codeUnits,
-];
+List<int> makePeBytes({String arch = 'x64', String marker = 'pe'}) {
+  final machine = switch (arch) {
+    'x64' || 'x86_64' => [0x64, 0x86],
+    'arm64' || 'aarch64' => [0x64, 0xAA],
+    'arm' => [0xC0, 0x01],
+    'ia32' || 'x86' => [0x4C, 0x01],
+    _ => [0x64, 0x86],
+  };
+  const eLfanew = 0x80;
+  final bytes = List<int>.filled(eLfanew + 6, 0, growable: true);
+  bytes[0] = 0x4D;
+  bytes[1] = 0x5A;
+  bytes[0x3c] = eLfanew;
+  bytes[eLfanew] = 0x50;
+  bytes[eLfanew + 1] = 0x45;
+  bytes[eLfanew + 4] = machine[0];
+  bytes[eLfanew + 5] = machine[1];
+  bytes.addAll(marker.codeUnits);
+  return bytes;
+}
 
 /// Creates bytes that look like a Mach-O binary.
 ///

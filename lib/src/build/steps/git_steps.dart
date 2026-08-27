@@ -16,6 +16,7 @@ import '../../source/resolved_source.dart';
 final class GitCheckoutStep implements NativeBuildStep {
   const GitCheckoutStep({
     required this.id,
+    this.execution = 'target',
     required this.repository,
     required this.revision,
     this.targetDirectory,
@@ -26,6 +27,9 @@ final class GitCheckoutStep implements NativeBuildStep {
   /// Step identifier.
   @override
   final String id;
+
+  @override
+  final String execution;
 
   /// Repository URL (e.g., https://github.com/org/repo.git).
   final String repository;
@@ -46,6 +50,7 @@ final class GitCheckoutStep implements NativeBuildStep {
   factory GitCheckoutStep.fromMap(Map<String, dynamic> map) {
     return GitCheckoutStep(
       id: map['id'] as String,
+      execution: map['execution'] as String? ?? 'target',
       repository: map['repository'] as String,
       revision: map['revision'] as String,
       targetDirectory: map['target_directory'] as String?,
@@ -58,6 +63,7 @@ final class GitCheckoutStep implements NativeBuildStep {
     return <String, dynamic>{
       'type': 'git_checkout',
       'id': id,
+      if (execution != 'target') 'execution': execution,
       'repository': repository,
       'revision': revision,
       if (targetDirectory != null) 'target_directory': targetDirectory,
@@ -182,6 +188,7 @@ final class GitCheckoutStep implements NativeBuildStep {
 final class GitApplyPatchStep implements NativeBuildStep {
   const GitApplyPatchStep({
     this.id = 'git_apply_patch',
+    this.execution = 'target',
     required this.patchPath,
     this.targetDirectory,
     this.runner,
@@ -189,6 +196,9 @@ final class GitApplyPatchStep implements NativeBuildStep {
 
   @override
   final String id;
+
+  @override
+  final String execution;
 
   /// Path to the patch file (relative to source or absolute).
   final String patchPath;
@@ -203,6 +213,7 @@ final class GitApplyPatchStep implements NativeBuildStep {
   factory GitApplyPatchStep.fromMap(Map<String, dynamic> map) {
     return GitApplyPatchStep(
       id: map['id'] as String? ?? 'git_apply_patch',
+      execution: map['execution'] as String? ?? 'target',
       patchPath: map['patch_path'] as String,
       targetDirectory: map['target_directory'] as String?,
     );
@@ -213,6 +224,7 @@ final class GitApplyPatchStep implements NativeBuildStep {
     return <String, dynamic>{
       'type': 'git_apply_patch',
       'id': id,
+      if (execution != 'target') 'execution': execution,
       'patch_path': patchPath,
       if (targetDirectory != null) 'target_directory': targetDirectory,
     };

@@ -131,6 +131,87 @@ artifacts:
     }
   });
 
+  test('loads the CMake preset using the documented target key', () async {
+    final dir = await Directory.systemTemp.createTemp('native_prebuilt_cli_');
+    try {
+      final configFile = File('${dir.path}/native_prebuilt.yaml');
+      configFile.writeAsStringSync('''
+schema: 1
+package: demo
+asset_name: src/demo.dart
+library_stem: demo
+release:
+  repository: owner/demo
+  tag: demo-v1.0.0
+build:
+  system: cmake
+  target: demo
+artifacts:
+  linux-x64:
+''');
+
+      final config = await loadNativePrebuiltConfig(configFile);
+      expect(config.build?.systemTarget, 'demo');
+      expect(
+        config.build
+            ?.toBuildDefinition(
+              targets: [
+                const NativeTarget(
+                  os: OS.linux,
+                  architecture: Architecture.x64,
+                ),
+              ],
+            )
+            .recipes,
+        hasLength(1),
+      );
+    } finally {
+      await dir.delete(recursive: true);
+    }
+  });
+
+  test('rejects unsupported build step execution values', () {
+    expect(
+      () => BuildStepConfig.fromJson({
+        'type': 'command',
+        'id': 'bad',
+        'commands': [
+          <String>['echo', 'bad'],
+        ],
+        'execution': 'hots',
+      }),
+      throwsA(isA<FormatException>()),
+    );
+  });
+
+  test('rejects unsupported build presets', () async {
+    final dir = await Directory.systemTemp.createTemp('native_prebuilt_cli_');
+    try {
+      final configFile = File('${dir.path}/native_prebuilt.yaml');
+      configFile.writeAsStringSync('''
+schema: 1
+package: demo
+asset_name: src/demo.dart
+library_stem: demo
+release:
+  repository: owner/demo
+  tag: demo-v1.0.0
+build:
+  system: cargo
+  target: demo
+artifacts:
+  linux-x64:
+''');
+
+      expect(
+        () => loadNativePrebuiltConfig(configFile),
+        throwsA(isA<FormatException>()),
+      );
+    } finally {
+      await dir.delete(recursive: true);
+    }
+  });
+
   test('loads GitLab CLI config', () async {
     final dir = await Directory.systemTemp.createTemp('native_prebuilt_cli_');
     try {
@@ -255,13 +336,20 @@ artifacts:
     expect(templates['prebuilt.yml'], contains('build-linux'));
     expect(templates['prebuilt.yml'], contains('build-windows'));
     expect(templates['prebuilt.yml'], contains('build-macos'));
-    expect(templates['prebuilt.yml'], contains('actions/download-artifact@v4'));
+    expect(templates['prebuilt.yml'], contains('actions/download-artifact@v7'));
+    expect(templates['prebuilt.yml'], contains('  merge:'));
+    expect(templates['prebuilt.yml'], contains('  doctor:'));
+    expect(templates['prebuilt.yml'], contains('  verify-consumer:'));
+    expect(templates['prebuilt.yml'], contains('  update-manifest:'));
+    expect(templates['prebuilt.yml'], contains('  release:'));
+    expect(templates['prebuilt.yml'], contains('actions/checkout@v5'));
+    expect(templates['prebuilt.yml'], contains('actions/upload-artifact@v6'));
     expect(templates['prebuilt.yml'], contains('Merge built libraries'));
     expect(templates['prebuilt.yml'], contains('downloaded/windows/'));
     expect(templates['prebuilt.yml'], contains('release-assets'));
     expect(
       templates['prebuilt.yml'],
-      contains('softprops/action-gh-release@v2'),
+      contains('softprops/action-gh-release@v3'),
     );
     expect(
       templates['prebuilt.yml'],

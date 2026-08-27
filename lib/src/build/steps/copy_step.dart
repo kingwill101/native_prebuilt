@@ -13,6 +13,7 @@ import '../../source/resolved_source.dart';
 final class CopyStep implements NativeBuildStep {
   const CopyStep({
     required this.id,
+    this.execution = 'target',
     required this.sourcePath,
     required this.destinationPath,
     this.recursive = true,
@@ -20,6 +21,9 @@ final class CopyStep implements NativeBuildStep {
 
   @override
   final String id;
+
+  @override
+  final String execution;
 
   /// Source file or directory path.
   final String sourcePath;
@@ -34,6 +38,7 @@ final class CopyStep implements NativeBuildStep {
   factory CopyStep.fromMap(Map<String, dynamic> map) {
     return CopyStep(
       id: map['id'] as String,
+      execution: map['execution'] as String? ?? 'target',
       sourcePath: map['source_path'] as String,
       destinationPath: map['destination_path'] as String,
       recursive: map['recursive'] as bool? ?? true,
@@ -45,6 +50,7 @@ final class CopyStep implements NativeBuildStep {
     return <String, dynamic>{
       'type': 'copy',
       'id': id,
+      if (execution != 'target') 'execution': execution,
       'source_path': sourcePath,
       'destination_path': destinationPath,
       if (recursive != true) 'recursive': recursive,

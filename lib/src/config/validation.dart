@@ -6,6 +6,19 @@ void validateNativePrebuiltConfig(NativePrebuiltConfig config) {
   final build = config.build;
   if (build == null) return;
 
+  if (build.system != null) {
+    if (build.system!.toLowerCase() != 'cmake') {
+      throw FormatException(
+        'Unsupported build.system "${build.system}". Supported values: cmake.',
+      );
+    }
+    if (build.systemTarget == null || build.systemTarget!.isEmpty) {
+      throw FormatException(
+        'build.target is required when using the cmake build preset.',
+      );
+    }
+  }
+
   for (final recipe in build.recipes) {
     validateRecipe(recipe);
   }

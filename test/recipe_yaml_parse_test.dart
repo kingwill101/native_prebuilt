@@ -371,6 +371,100 @@ artifacts:
       }
     });
 
+    test('expands a CMake preset per artifact platform', () {
+      final dir = Directory.systemTemp.createTempSync('npb_preset_');
+      try {
+        File('${dir.path}/native_prebuilt.yaml').writeAsStringSync('''
+schema: 1
+package: demo
+asset_name: src/demo.dart
+library_stem: demo
+release:
+  provider: github
+  repository: owner/demo
+  tag: demo-v1.0.0
+build:
+  system: cmake
+  target: demo
+artifacts:
+  linux-x64:
+    archive: demo-linux-x64.tar.gz
+  macos-arm64:
+    archive: demo-macos-arm64.tar.gz
+  windows-x64:
+    archive: demo-windows-x64.tar.gz
+''');
+
+        final project = detect(dir);
+        expect(project, isNotNull);
+        expect(project!.build.recipes, hasLength(3));
+
+        final linux =
+            project.build.recipeFor(
+                  const NativeTarget(
+                    os: OS.linux,
+                    architecture: Architecture.x64,
+                  ),
+                )!
+                as StepBuildRecipe;
+        final macos =
+            project.build.recipeFor(
+                  const NativeTarget(
+                    os: OS.macOS,
+                    architecture: Architecture.arm64,
+                  ),
+                )!
+                as StepBuildRecipe;
+        final windows =
+            project.build.recipeFor(
+                  const NativeTarget(
+                    os: OS.windows,
+                    architecture: Architecture.x64,
+                  ),
+                )!
+                as StepBuildRecipe;
+
+        expect(
+          (linux.steps.last as ExportArtifactStep).declaration.primaryPath,
+          '{{ work }}/build/libdemo.so',
+        );
+        expect(
+          (macos.steps.last as ExportArtifactStep).declaration.primaryPath,
+          '{{ work }}/build/libdemo.dylib',
+        );
+        expect(
+          (windows.steps.last as ExportArtifactStep).declaration.primaryPath,
+          '{{ work }}/build/demo.dll',
+        );
+      } finally {
+        dir.deleteSync(recursive: true);
+      }
+    });
+
+    test('rejects a CMake preset without a concrete target', () {
+      final dir = Directory.systemTemp.createTempSync('npb_preset_');
+      try {
+        File('${dir.path}/native_prebuilt.yaml').writeAsStringSync('''
+schema: 1
+package: demo
+asset_name: src/demo.dart
+library_stem: demo
+release:
+  provider: github
+  repository: owner/demo
+  tag: demo-v1.0.0
+build:
+  system: cmake
+artifacts:
+  linux-x64:
+''');
+
+        expect(() => detect(dir), throwsA(isA<FormatException>()));
+      } finally {
+        dir.deleteSync(recursive: true);
+      }
+    });
+
     test('parses build recipes with dependencies', () {
       final dir = Directory.systemTemp.createTempSync('npb_test_');
       try {

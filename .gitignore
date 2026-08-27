@@ -1,6 +1,7 @@
 .dart_tool/
 .build/
 coverage/
+.tmp/
 *.log
 .DS_Store
 

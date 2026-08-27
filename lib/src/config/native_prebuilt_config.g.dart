@@ -173,6 +173,12 @@ const _$NativePrebuiltConfigJsonSchema = {
           'description': 'Step IDs that must complete before this step runs.',
           'default': [],
         },
+        'execution': {
+          'type': 'string',
+          'description':
+              'Execution context: `target` (cross-compiled) or `host` (built for host).',
+          'default': 'target',
+        },
       },
       'required': ['id'],
     },
@@ -221,6 +227,19 @@ const _$NativePrebuiltConfigJsonSchema = {
           'additionalProperties': {'type': 'object'},
           'description': 'Optional build options.',
           'default': {},
+        },
+        'system': {
+          'type': 'string',
+          'description':
+              'High-level build system preset (e.g., cmake, cargo, meson).',
+        },
+        'target': {
+          'type': 'string',
+          'description': 'Target for preset system (e.g., tdjson).',
+        },
+        'source_directory': {
+          'type': 'string',
+          'description': 'Source directory for preset system.',
         },
       },
     },
@@ -339,7 +358,17 @@ BuildConfig _$BuildConfigFromJson(Map<String, dynamic> json) => $checkedCreate(
   'BuildConfig',
   json,
   ($checkedConvert) {
-    $checkKeys(json, allowedKeys: const ['recipes', 'dependencies', 'options']);
+    $checkKeys(
+      json,
+      allowedKeys: const [
+        'recipes',
+        'dependencies',
+        'options',
+        'system',
+        'target',
+        'source_directory',
+      ],
+    );
     final val = BuildConfig(
       recipes: $checkedConvert(
         'recipes',
@@ -366,8 +395,15 @@ BuildConfig _$BuildConfigFromJson(Map<String, dynamic> json) => $checkedCreate(
         'options',
         (v) => v as Map<String, dynamic>? ?? const {},
       ),
+      system: $checkedConvert('system', (v) => v as String?),
+      systemTarget: $checkedConvert('target', (v) => v as String?),
+      sourceDirectory: $checkedConvert('source_directory', (v) => v as String?),
     );
     return val;
+  },
+  fieldKeyMap: const {
+    'systemTarget': 'target',
+    'sourceDirectory': 'source_directory',
   },
 );
 
@@ -377,6 +413,9 @@ Map<String, dynamic> _$BuildConfigToJson(
   'recipes': instance.recipes.map((e) => e.toJson()).toList(),
   'dependencies': instance.dependencies.map((k, e) => MapEntry(k, e.toJson())),
   'options': instance.options,
+  'system': instance.system,
+  'target': instance.systemTarget,
+  'source_directory': instance.sourceDirectory,
 };
 
 const _$BuildConfigJsonSchema = {
@@ -400,6 +439,19 @@ const _$BuildConfigJsonSchema = {
       'additionalProperties': {'type': 'object'},
       'description': 'Optional build options.',
       'default': {},
+    },
+    'system': {
+      'type': 'string',
+      'description':
+          'High-level build system preset (e.g., cmake, cargo, meson).',
+    },
+    'target': {
+      'type': 'string',
+      'description': 'Target for preset system (e.g., tdjson).',
+    },
+    'source_directory': {
+      'type': 'string',
+      'description': 'Source directory for preset system.',
     },
   },
   r'$defs': {
@@ -435,6 +487,12 @@ const _$BuildConfigJsonSchema = {
           'items': {'type': 'string'},
           'description': 'Step IDs that must complete before this step runs.',
           'default': [],
+        },
+        'execution': {
+          'type': 'string',
+          'description':
+              'Execution context: `target` (cross-compiled) or `host` (built for host).',
+          'default': 'target',
         },
       },
       'required': ['id'],
@@ -580,6 +638,12 @@ const _$TargetRecipeConfigJsonSchema = {
           'items': {'type': 'string'},
           'description': 'Step IDs that must complete before this step runs.',
           'default': [],
+        },
+        'execution': {
+          'type': 'string',
+          'description':
+              'Execution context: `target` (cross-compiled) or `host` (built for host).',
+          'default': 'target',
         },
       },
       'required': ['id'],

@@ -5,6 +5,7 @@ import 'package:code_assets/code_assets.dart';
 import 'package:crypto/crypto.dart';
 import 'package:hooks/hooks.dart';
 import 'package:path/path.dart' as p;
+import 'package:yaml/yaml.dart';
 
 import '../../build.dart';
 import '../archive/archive_entry.dart';
@@ -98,6 +99,8 @@ Future<PrebuiltManifest> generateManifest({
   Directory? builtLibraryDir,
   Directory? releaseAssetsDir,
   bool toleratePartialBuiltLibrary = false,
+  bool strict = false,
+  void Function(String message)? logger,
 }) async {
   final downloader = HttpDownloader();
   final archiveReader = ArchiveReader();
@@ -128,13 +131,13 @@ Future<PrebuiltManifest> generateManifest({
         p.join((releaseAssetsDir ?? tempDir).path, artifactConfig.archive),
       );
       if (builtLibraryDir != null) {
-        final builtFileSearch = _findBuiltLibraryFile(
+        final searchResult = findBuiltLibraryFileWithMeta(
           builtLibraryDir: builtLibraryDir,
           platform: platform,
           canonicalName: canonicalName,
         );
 
-        if (builtFileSearch == null) {
+        if (searchResult == null) {
           if (allowMissing || toleratePartialBuiltLibrary) continue;
 
           throw StateError(
@@ -144,9 +147,21 @@ Future<PrebuiltManifest> generateManifest({
             '  ${p.join(builtLibraryDir.path, platform)}/**/$canonicalName',
           );
         }
+        if (searchResult.isFlatFallback) {
+          if (strict) {
+            throw StateError(
+              'Strict mode: rejected flat layout for $platform at ${searchResult.file.path}. '
+              'Expected ${p.join(builtLibraryDir.path, platform, canonicalName)}',
+            );
+          }
+          (logger ?? print)(
+            'Warning: using flat layout for $platform at ${searchResult.file.path}; '
+            'prefer ${p.join(builtLibraryDir.path, platform, canonicalName)}',
+          );
+        }
 
         await packageBuiltLibrary(
-          builtFile: builtFileSearch,
+          builtFile: searchResult.file,
           archiveFile: archiveFile,
         );
       } else {
@@ -290,21 +305,48 @@ Future<void> packageBuiltLibrary({
   await archiveFile.writeAsBytes(gzipBytes, flush: true);
 }
 
+// ignore: unused_element - retained for API compat
 File? _findBuiltLibraryFile({
+  required Directory builtLibraryDir,
+  required String platform,
+  required String canonicalName,
+}) {
+  final result = findBuiltLibraryFileWithMeta(
+    builtLibraryDir: builtLibraryDir,
+    platform: platform,
+    canonicalName: canonicalName,
+  );
+  return result?.file;
+}
+
+/// A built library discovered in a platform-specific or legacy flat layout.
+final class BuiltLibrarySearchResult {
+  BuiltLibrarySearchResult(this.file, this.isFlatFallback);
+
+  /// The discovered native library.
+  final File file;
+
+  /// Whether the file came from the legacy flat layout.
+  final bool isFlatFallback;
+}
+
+/// Finds [canonicalName] below the platform directory, including nested build
+/// output directories, and optionally the legacy flat layout.
+BuiltLibrarySearchResult? findBuiltLibraryFileWithMeta({
   required Directory builtLibraryDir,
   required String platform,
   required String canonicalName,
 }) {
   final platformDir = Directory(p.join(builtLibraryDir.path, platform));
 
-  final directCandidates = [
-    File(p.join(platformDir.path, canonicalName)),
-    File(p.join(builtLibraryDir.path, canonicalName)),
-  ];
-  for (final candidate in directCandidates) {
-    if (candidate.existsSync()) {
-      return candidate;
-    }
+  final platformCandidate = File(p.join(platformDir.path, canonicalName));
+  if (platformCandidate.existsSync()) {
+    return BuiltLibrarySearchResult(platformCandidate, false);
+  }
+
+  final flatCandidate = File(p.join(builtLibraryDir.path, canonicalName));
+  if (flatCandidate.existsSync()) {
+    return BuiltLibrarySearchResult(flatCandidate, true);
   }
 
   if (!platformDir.existsSync()) {
@@ -319,7 +361,107 @@ File? _findBuiltLibraryFile({
           .toList()
         ..sort((a, b) => a.path.compareTo(b.path));
 
-  return recursiveMatches.isEmpty ? null : recursiveMatches.first;
+  if (recursiveMatches.isEmpty) return null;
+  return BuiltLibrarySearchResult(recursiveMatches.first, false);
+}
+
+/// Hashes recorded for one platform in a generated or lock manifest.
+final class ManifestArtifactHashes {
+  const ManifestArtifactHashes({
+    this.archiveName,
+    required this.archiveSha256,
+    required this.payloadSha256,
+  });
+
+  /// The archive filename, when present in a generated Dart manifest.
+  final String? archiveName;
+
+  /// The SHA-256 hash of the release archive.
+  final String archiveSha256;
+
+  /// The SHA-256 hash of the extracted native payload.
+  final String payloadSha256;
+}
+
+/// The integrity fields decoded from a generated Dart or lock manifest.
+final class ManifestSnapshot {
+  const ManifestSnapshot({required this.releaseTag, required this.artifacts});
+
+  /// The exact release tag recorded by the manifest.
+  final String releaseTag;
+
+  /// Integrity records keyed by canonical platform label.
+  final Map<String, ManifestArtifactHashes> artifacts;
+}
+
+/// Decodes a generated manifest file without searching arbitrary text.
+ManifestSnapshot readManifestSnapshot(File file) {
+  return parseManifestSnapshot(file.readAsStringSync(), path: file.path);
+}
+
+/// Decodes manifest [content] using [path] to select the lock or Dart format.
+ManifestSnapshot parseManifestSnapshot(String content, {required String path}) {
+  if (path.endsWith('.yaml') || path.endsWith('.yml')) {
+    return _decodeLockManifest(content, path);
+  }
+  return _decodeDartManifest(content, path);
+}
+
+ManifestSnapshot _decodeLockManifest(String content, String path) {
+  final document = loadYaml(content);
+  if (document is! YamlMap) {
+    throw FormatException('Manifest $path must contain a YAML mapping.');
+  }
+  final release = document['release'];
+  final tag = release is YamlMap ? release['tag'] : null;
+  if (tag is! String || tag.isEmpty) {
+    throw FormatException('Manifest $path does not contain a release tag.');
+  }
+  final artifacts = <String, ManifestArtifactHashes>{};
+  final entries = document['artifacts'];
+  if (entries is YamlMap) {
+    for (final entry in entries.entries) {
+      final value = entry.value;
+      if (value is! YamlMap) continue;
+      final archiveHash = value['archive_sha256'];
+      final payloadHash = value['payload_sha256'];
+      if (archiveHash is! String || payloadHash is! String) {
+        throw FormatException(
+          'Manifest $path has incomplete hashes for ${entry.key}.',
+        );
+      }
+      artifacts[entry.key.toString()] = ManifestArtifactHashes(
+        archiveSha256: archiveHash,
+        payloadSha256: payloadHash,
+      );
+    }
+  }
+  return ManifestSnapshot(releaseTag: tag, artifacts: artifacts);
+}
+
+ManifestSnapshot _decodeDartManifest(String content, String path) {
+  final tagMatch = RegExp(
+    r"release:\s+[^\n]*tag: '([^']*)'\),",
+  ).firstMatch(content);
+  if (tagMatch == null) {
+    throw FormatException('Manifest $path does not contain a release tag.');
+  }
+  final artifacts = <String, ManifestArtifactHashes>{};
+  final artifactPattern = RegExp(
+    r"^\s*'([^']+)': PrebuiltArtifact\(\s*"
+    r"archiveName: '([^']*)',\s*"
+    r"archiveSha256: '([^']*)',\s*"
+    r"payloadSha256: '([^']*)',",
+    multiLine: true,
+  );
+  for (final match in artifactPattern.allMatches(content)) {
+    artifacts[match.group(1)!] = ManifestArtifactHashes(
+      archiveName: match.group(2),
+      archiveSha256: match.group(3)!,
+      payloadSha256: match.group(4)!,
+    );
+  }
+  return ManifestSnapshot(releaseTag: tagMatch.group(1)!, artifacts: artifacts);
 }
 
 String renderPayload(ArtifactPayload payload) => switch (payload) {

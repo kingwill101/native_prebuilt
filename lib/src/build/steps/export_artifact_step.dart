@@ -15,11 +15,18 @@ import '../../source/resolved_source.dart';
 /// copies them to the staging area, and returns a [NativeStepResult]
 /// containing a fully described [BuiltNativeArtifact].
 final class ExportArtifactStep implements NativeBuildStep {
-  const ExportArtifactStep({required this.id, required this.declaration});
+  const ExportArtifactStep({
+    required this.id,
+    this.execution = 'target',
+    required this.declaration,
+  });
 
   /// Step identifier.
   @override
   final String id;
+
+  @override
+  final String execution;
 
   /// Declarative description of the artifact to export.
   final NativeArtifactDeclaration declaration;
@@ -54,6 +61,7 @@ final class ExportArtifactStep implements NativeBuildStep {
     final artifactId = map['artifact'] as String? ?? stepId;
     return ExportArtifactStep(
       id: stepId,
+      execution: map['execution'] as String? ?? 'target',
       declaration: NativeArtifactDeclaration(
         id: artifactId,
         kind: kind,
@@ -68,6 +76,7 @@ final class ExportArtifactStep implements NativeBuildStep {
     return <String, dynamic>{
       'type': 'export_artifact',
       'id': id,
+      if (execution != 'target') 'execution': execution,
       'artifact': declaration.id,
       'kind': declaration.kind.name,
       'primary_path': declaration.primaryPath,
