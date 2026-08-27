@@ -70,6 +70,7 @@ You can define the complete project in `native_prebuilt.yaml` instead of writing
 ## CLI Commands
 
 ### Manifest Management
+
 - `dart run native_prebuilt init` - Scaffold an initial `native_prebuilt.yaml` from the package's `pubspec.yaml`
 - `dart run native_prebuilt manifest update [--strict]` - Generate/refresh manifest or lock file; `--strict` rejects flat `built-library/<name>`
 - `dart run native_prebuilt manifest verify` - Verify manifest hashes match built artifacts
@@ -78,6 +79,7 @@ You can define the complete project in `native_prebuilt.yaml` instead of writing
 - `dart run native_prebuilt schema export` - Write `schema/native_prebuilt.schema.json` for editor validation
 
 ### Build Pipeline
+
 - `dart run native_prebuilt plan --target <platform>` - Show build plan for a target
 - `dart run native_prebuilt build --target <platform> --output <dir>` - Build native library
 - `dart run native_prebuilt cache-key --target <platform>` - Show cache key for a build
@@ -85,11 +87,13 @@ You can define the complete project in `native_prebuilt.yaml` instead of writing
 - `dart run native_prebuilt verify --target <platform>` - Verify built artifact (legacy); also `verify --ref <tag> [--release-assets-dir] [--ephemeral] [--target]` for isolated download + triple check
 
 ### Workflow Generation
+
 - `dart run native_prebuilt workflow init` - Generate GitHub workflow files (now `merge`+`doctor`+`verify-consumer`→`update-manifest`→`release`, Node24)
 - `dart run native_prebuilt workflow init --gitlab` - Generate GitLab CI files
 - `dart run native_prebuilt workflow init --gitlab --platform linux,windows` - Filter GitLab outputs by platform
 
 ## Build Steps
+
 
 Common YAML keys:
 - `type` (required)

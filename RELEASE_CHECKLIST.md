@@ -5,7 +5,7 @@
 - [ ] Bump `pubspec.yaml` version (alpha starts at `0.0.1`)
 - [ ] Run `dart analyze`
 - [ ] Run `dart test` (expect `All tests passed!`)
-- [ ] Run `dart run native_prebuilt manifest verify-release --config example/.../native_prebuilt.yaml` if example has release-assets
+- [ ] Run `dart run native_prebuilt manifest verify-release --config example/managed_build/native_prebuilt.yaml --release-assets-dir example/managed_build/release-assets` if release assets are present
 - [ ] Run `dart run native_prebuilt doctor --config native_prebuilt.yaml --strict` (exit 0)
 - [ ] Run `dart run bin/native_prebuilt.dart --help`
 - [ ] Run `dart pub publish --dry-run`

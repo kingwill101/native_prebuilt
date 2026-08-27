@@ -7,6 +7,13 @@
   and `native_toolchain_c`.
 - Keep the manifest-driven build, verification, and generated workflow
   enhancements compatible with the current Dart native-assets protocol.
+- Add explicit host-versus-target execution contexts for declarative build
+  steps, including round-trip support in recipe serialization.
+- Make CMake presets expand per configured artifact target with the correct
+  platform-specific library filename.
+- Harden manifest, archive, and binary verification so missing or mismatched
+  records fail release checks, including PE architecture validation beyond the
+  initial header read.
 
 ## 0.4.0
 

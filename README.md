@@ -251,7 +251,7 @@ build:
   target: foo        # becomes cmake_configure + cmake_build(foo) + export_artifact
 ```
 
-`system: cargo|meson|autotools|zig|custom` are planned under the same hook. Complex projects should continue with `build.recipes[].steps` and `execution: host|target` for multi-stage builds (e.g., `prepare_cross_compiling` as `host`). Dependencies build independently and are cached:
+The CMake preset is currently the only supported preset. Other build systems should use `build.recipes[].steps` and `execution: host|target` for multi-stage builds (e.g., `prepare_cross_compiling` as `host`). Dependencies build independently and are cached:
 
 ```yaml
 dependencies:
@@ -264,7 +264,7 @@ dependencies:
 
 Use `expect: {targets: [tdjson]}` on `cmake_configure` to fail fast when CMake does not generate the required target (surfaces `Could NOT find OpenSSL` instead of later `unknown target tdjson`).
 
-`init` now scans `CMakeLists.txt`/`Cargo.toml`/`meson.build`/`*.c`/`@Native` to suggest `platforms` and `build.system`.
+`init` now scans `CMakeLists.txt`/`Cargo.toml`/`meson.build`/`*.c`/`@Native` to suggest platforms and a build strategy. The CMake preset is the only supported `build.system` value; other detected build systems should be described with declarative `build.recipes`.
 
 ## Caching
 

@@ -146,14 +146,13 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: dart-lang/setup-dart@v1
+      - run: dart pub get
 [[ download_artifact_steps ]]
       - name: Merge built libraries
         run: |
           rm -rf built-library release-assets
           mkdir -p built-library release-assets
 [[ copy_built_library_lines ]]
-      - name: Doctor check (strict)
-        run: dart run native_prebuilt doctor --config "$CONFIG" --built-library-dir built-library --strict
       - uses: actions/upload-artifact@v6
         with:
           name: merged-built-library
@@ -162,7 +161,7 @@ jobs:
 
   doctor:
     needs:
-      - merge
+      - update-manifest
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -171,33 +170,36 @@ jobs:
         with:
           name: merged-built-library
           path: built-library/
+      - uses: actions/download-artifact@v7
+        with:
+          name: generated-manifest
+          path: generated-manifest
       - run: dart pub get
       - name: Verify manifest drift
-        run: dart run native_prebuilt doctor --config "$CONFIG" --built-library-dir built-library --strict
+        run: dart run native_prebuilt doctor --config "$CONFIG" --manifest generated-manifest --built-library-dir built-library --strict
 
   verify-consumer:
     needs:
-      - merge
+      - update-manifest
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - uses: dart-lang/setup-dart@v1
       - uses: actions/download-artifact@v7
         with:
-          name: merged-built-library
-          path: built-library/
+          name: release-assets
+          path: release-assets/
+      - uses: actions/download-artifact@v7
+        with:
+          name: generated-manifest
+          path: generated-manifest
       - run: dart pub get
       - name: Verify archives (local)
-        run: |
-          mkdir -p release-assets
-          dart run native_prebuilt manifest update --config "$CONFIG" --output "$MANIFEST_OUTPUT" --built-library-dir built-library --release-assets-dir release-assets --tag verify-dry-run || true
-          dart run native_prebuilt manifest verify-release --config "$CONFIG" --manifest "$MANIFEST_OUTPUT" --release-assets-dir release-assets
+        run: dart run native_prebuilt manifest verify-release --config "$CONFIG" --manifest generated-manifest --release-assets-dir release-assets
 
   update-manifest:
-    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     needs:
-      - doctor
-      - verify-consumer
+      - merge
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -217,6 +219,13 @@ jobs:
           else
             dart run native_prebuilt manifest update --config "$CONFIG" --output "$MANIFEST_OUTPUT" --built-library-dir built-library --release-assets-dir release-assets --strict
           fi
+      - name: Stage generated manifest
+        run: cp "$MANIFEST_OUTPUT" generated-manifest
+      - uses: actions/upload-artifact@v6
+        with:
+          name: generated-manifest
+          path: generated-manifest
+          if-no-files-found: error
       - uses: actions/upload-artifact@v6
         with:
           name: release-assets
@@ -227,6 +236,8 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     needs:
       - update-manifest
+      - doctor
+      - verify-consumer
     runs-on: ubuntu-latest
     permissions:
       contents: write
