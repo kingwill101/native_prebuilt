@@ -11,6 +11,7 @@ import '../build/native_project.dart';
 import '../config/native_prebuilt_config.dart';
 import '../download/http_downloader.dart';
 import '../manifest/prebuilt_artifact.dart';
+import '../manifest/release_source.dart';
 import 'cli_config.dart';
 import 'shared.dart';
 
@@ -152,7 +153,11 @@ class VerifyCommand extends Command<void> {
     if (configFile != null) {
       try {
         config = await loadNativePrebuiltConfig(configFile);
-      } catch (_) {}
+      } catch (error) {
+        stderr.writeln('Unable to load ${configFile.path}: $error');
+        exitCode = 1;
+        return;
+      }
     }
     config ??= _configFromProject(project);
 
@@ -180,6 +185,26 @@ class VerifyCommand extends Command<void> {
     final tempDir = await Directory.systemTemp.createTemp('vr_iso_');
     try {
       var failed = false;
+      ManifestSnapshot? manifest;
+      if (manifestFile != null) {
+        if (!manifestFile.existsSync()) {
+          stderr.writeln('Manifest not found: ${manifestFile.path}');
+          failed = true;
+        } else {
+          try {
+            manifest = readManifestSnapshot(manifestFile);
+          } on FormatException catch (error) {
+            stderr.writeln('Unable to parse ${manifestFile.path}: $error');
+            failed = true;
+          }
+        }
+      }
+      if (manifest != null && manifest.releaseTag != tag) {
+        stderr.writeln(
+          'Manifest tag mismatch: expected $tag, found ${manifest.releaseTag}',
+        );
+        failed = true;
+      }
       for (final entry in config.artifacts.entries) {
         final platform = entry.key;
         if (targetLabel != null && platform != targetLabel) continue;
@@ -207,11 +232,14 @@ class VerifyCommand extends Command<void> {
             continue;
           }
           final archiveHash = await ArchiveReader.sha256Hash(localArchive);
-          if (manifestFile != null) {
-            final content = manifestFile.readAsStringSync();
-            if (!content.contains(archiveHash)) {
-              print('  ⚠ Hash $archiveHash not in manifest');
-            }
+          final expected = manifest?.artifacts[platform];
+          if (manifest != null &&
+              (expected == null || expected.archiveSha256 != archiveHash)) {
+            print(
+              '  ✗ Archive hash mismatch for $platform: '
+              '$archiveHash does not match the manifest record',
+            );
+            failed = true;
           }
           final extractedDir = Directory(p.join(tempDir.path, 'ex_$platform'));
           extractedDir.createSync(recursive: true);
@@ -229,6 +257,14 @@ class VerifyCommand extends Command<void> {
             continue;
           }
           final payloadHash = await ArchiveReader.sha256Hash(extracted);
+          if (manifest != null &&
+              (expected == null || expected.payloadSha256 != payloadHash)) {
+            print(
+              '  ✗ Payload hash mismatch for $platform: '
+              '$payloadHash does not match the manifest record',
+            );
+            failed = true;
+          }
           print(
             '  ✓ Archive hash $archiveHash, payload $canonicalName hash $payloadHash size ${extracted.lengthSync()}',
           );
@@ -263,6 +299,15 @@ class VerifyCommand extends Command<void> {
         }
         final archiveHash = await ArchiveReader.sha256Hash(archiveFile);
         print('  ✓ Downloaded ${archiveFile.path} hash $archiveHash');
+        final expected = manifest?.artifacts[platform];
+        if (manifest != null &&
+            (expected == null || expected.archiveSha256 != archiveHash)) {
+          print(
+            '  ✗ Archive hash mismatch for $platform: '
+            '$archiveHash does not match the manifest record',
+          );
+          failed = true;
+        }
         final extractedDir = Directory(p.join(tempDir.path, 'ex_$platform'));
         extractedDir.createSync(recursive: true);
         final extracted = reader.extractMatchingEntry(
@@ -280,6 +325,14 @@ class VerifyCommand extends Command<void> {
         }
         final payloadHash = await ArchiveReader.sha256Hash(extracted);
         print('  ✓ Payload $canonicalName hash $payloadHash');
+        if (manifest != null &&
+            (expected == null || expected.payloadSha256 != payloadHash)) {
+          print(
+            '  ✗ Payload hash mismatch for $platform: '
+            '$payloadHash does not match the manifest record',
+          );
+          failed = true;
+        }
         try {
           const NativeBinaryInspector().inspect(
             extracted,
@@ -293,7 +346,7 @@ class VerifyCommand extends Command<void> {
         }
         if (ephemeral) {
           print(
-            '  ephemeral mode: verified (skipping full dart pub get smoketest)',
+            '  ephemeral mode: download, extraction, and binary checks completed',
           );
         }
       }
@@ -317,8 +370,15 @@ class VerifyCommand extends Command<void> {
       assetName: proj.asset.assetName,
       libraryStem: proj.asset.libraryStem,
       release: ReleaseConfig(
-        provider: 'github',
-        repository: '${proj.prebuilts.release.toString()}',
+        provider: switch (proj.prebuilts.release) {
+          GitHubReleaseSource() => 'github',
+          GitLabReleaseSource() => 'gitlab',
+        },
+        repository: switch (proj.prebuilts.release) {
+          GitHubReleaseSource(:final owner, :final repository) =>
+            '$owner/$repository',
+          GitLabReleaseSource(:final projectPath) => projectPath,
+        },
         tag: proj.prebuilts.release.tag,
       ),
       artifacts: {

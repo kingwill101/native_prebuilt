@@ -124,8 +124,8 @@ class DoctorCommand extends Command<void> {
         hasError = true;
       } else {
         final readiness = _checkTargetReadiness(target);
-        io.info(readiness);
-        if (readiness.contains('missing')) {
+        io.info(readiness.report);
+        if (!readiness.ready) {
           hasError = true;
         }
       }
@@ -193,45 +193,69 @@ Future<List<String>> _checkManifestDrift(
   required bool strict,
 }) async {
   final issues = <String>[];
-  final content = manifestFile.readAsStringSync();
-  // Check tag drift
-  if (!content.contains(config.release.tag)) {
+  late final ManifestSnapshot manifest;
+  try {
+    manifest = readManifestSnapshot(manifestFile);
+  } on FormatException catch (error) {
+    return ['Unable to parse ${manifestFile.path}: $error'];
+  }
+  // Check tag drift using the decoded release record.
+  if (manifest.releaseTag != config.release.tag) {
     issues.add(
-      'Manifest tag drift: ${manifestFile.path} does not contain ${config.release.tag}',
+      'Manifest tag drift: ${manifestFile.path} records ${manifest.releaseTag}, '
+      'expected ${config.release.tag}',
     );
   }
   // Check built-library hashes if dir provided
-  if (builtLibraryDir != null && builtLibraryDir.existsSync()) {
+  if (builtLibraryDir != null && !builtLibraryDir.existsSync()) {
+    issues.add('Built-library directory not found: ${builtLibraryDir.path}');
+  } else if (builtLibraryDir != null) {
     for (final entry in config.artifacts.entries) {
       final platform = entry.key;
       final artifact = entry.value;
-      final target = targetFromPlatformLabel(platform);
+      final target = parseTarget(platform);
+      if (target == null) {
+        issues.add('Unknown artifact platform: $platform');
+        continue;
+      }
       final payload = artifact.payload.toArtifactPayload(config.libraryStem);
       final canonicalName = canonicalLibraryName(
         target: target,
         libraryStem: config.libraryStem,
         payload: payload,
       );
-      final builtFile = File(
-        p.join(builtLibraryDir.path, platform, canonicalName),
+      final searchResult = findBuiltLibraryFileWithMeta(
+        builtLibraryDir: builtLibraryDir,
+        platform: platform,
+        canonicalName: canonicalName,
       );
-      final flatFile = File(p.join(builtLibraryDir.path, canonicalName));
       File? candidate;
-      if (builtFile.existsSync()) {
-        candidate = builtFile;
-      } else if (!strict && flatFile.existsSync()) {
-        candidate = flatFile;
-        issues.add(
-          'Flat layout for $platform at ${flatFile.path} (prefer ${builtFile.path})',
+      if (searchResult == null) {
+        final expectedPath = p.join(
+          builtLibraryDir.path,
+          platform,
+          canonicalName,
         );
+        issues.add(
+          'Missing built library for $platform. Expected $expectedPath '
+          '(or a nested platform build output).',
+        );
+      } else if (searchResult.isFlatFallback && strict) {
+        issues.add(
+          'Strict mode: rejected flat layout for $platform at '
+          '${searchResult.file.path} (expected ${p.join(builtLibraryDir.path, platform, canonicalName)})',
+        );
+      } else {
+        candidate = searchResult.file;
       }
       if (candidate != null) {
         try {
           final hash = await ArchiveReader.sha256Hash(candidate);
-          if (!content.contains(hash) &&
-              !content.contains(hash.substring(0, 16))) {
+          final expected = manifest.artifacts[platform];
+          if (expected == null || expected.payloadSha256 != hash) {
             issues.add(
-              'Built-library hash mismatch for $platform: $hash not in manifest',
+              'Built-library hash mismatch for $platform: $hash does not match '
+              'the manifest record',
             );
           }
           // Binary triple check
@@ -252,27 +276,34 @@ Future<List<String>> _checkManifestDrift(
       }
     }
   }
-  if (releaseAssetsDir != null && releaseAssetsDir.existsSync()) {
+  if (releaseAssetsDir != null && !releaseAssetsDir.existsSync()) {
+    issues.add('Release-assets directory not found: ${releaseAssetsDir.path}');
+  } else if (releaseAssetsDir != null) {
     for (final entry in config.artifacts.entries) {
       final archiveFile = File(
         p.join(releaseAssetsDir.path, entry.value.archive),
       );
       if (archiveFile.existsSync()) {
         final hash = await ArchiveReader.sha256Hash(archiveFile);
-        if (!content.contains(hash)) {
+        final expected = manifest.artifacts[entry.key];
+        if (expected == null || expected.archiveSha256 != hash) {
           issues.add(
-            'Release asset hash mismatch for ${entry.key}: $hash not in manifest',
+            'Release asset hash mismatch for ${entry.key}: $hash does not '
+            'match the manifest record',
           );
         }
+      } else {
+        issues.add('Missing release asset: ${archiveFile.path}');
       }
     }
   }
   return issues;
 }
 
-String _checkTargetReadiness(NativeTarget target) {
+({String report, bool ready}) _checkTargetReadiness(NativeTarget target) {
   final resolver = const NativeToolchainResolver();
   final b = StringBuffer()..writeln('Target: ${target.label}');
+  var ready = true;
   if (target.os == OS.android) {
     final hasNdk = resolver.hasAndroidNdk;
     b.writeln(
@@ -282,7 +313,10 @@ String _checkTargetReadiness(NativeTarget target) {
     b.writeln('  Toolchain: ${toolchain ?? "missing"}');
     final strip = resolver.stripCommand(target);
     b.writeln('  Strip: ${strip.join(" ")}');
-    if (!hasNdk) b.writeln('  -> missing NDK');
+    if (!hasNdk) {
+      b.writeln('  -> missing NDK');
+      ready = false;
+    }
   } else if (target.os == OS.iOS || target.os == OS.macOS) {
     b.writeln('  Apple SDK: xcrun available check skipped');
     b.writeln('  Strip: ${resolver.stripCommand(target).join(" ")}');
@@ -292,5 +326,5 @@ String _checkTargetReadiness(NativeTarget target) {
   } else {
     b.writeln('  Strip: ${resolver.stripCommand(target).join(" ")}');
   }
-  return b.toString().trimRight();
+  return (report: b.toString().trimRight(), ready: ready);
 }

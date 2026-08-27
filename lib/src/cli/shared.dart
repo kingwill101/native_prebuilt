@@ -5,6 +5,7 @@ import 'package:code_assets/code_assets.dart';
 import 'package:crypto/crypto.dart';
 import 'package:hooks/hooks.dart';
 import 'package:path/path.dart' as p;
+import 'package:yaml/yaml.dart';
 
 import '../../build.dart';
 import '../archive/archive_entry.dart';
@@ -130,7 +131,7 @@ Future<PrebuiltManifest> generateManifest({
         p.join((releaseAssetsDir ?? tempDir).path, artifactConfig.archive),
       );
       if (builtLibraryDir != null) {
-        final searchResult = _findBuiltLibraryFileWithMeta(
+        final searchResult = findBuiltLibraryFileWithMeta(
           builtLibraryDir: builtLibraryDir,
           platform: platform,
           canonicalName: canonicalName,
@@ -310,7 +311,7 @@ File? _findBuiltLibraryFile({
   required String platform,
   required String canonicalName,
 }) {
-  final result = _findBuiltLibraryFileWithMeta(
+  final result = findBuiltLibraryFileWithMeta(
     builtLibraryDir: builtLibraryDir,
     platform: platform,
     canonicalName: canonicalName,
@@ -318,13 +319,20 @@ File? _findBuiltLibraryFile({
   return result?.file;
 }
 
-class _BuiltLibrarySearchResult {
-  _BuiltLibrarySearchResult(this.file, this.isFlatFallback);
+/// A built library discovered in a platform-specific or legacy flat layout.
+final class BuiltLibrarySearchResult {
+  BuiltLibrarySearchResult(this.file, this.isFlatFallback);
+
+  /// The discovered native library.
   final File file;
+
+  /// Whether the file came from the legacy flat layout.
   final bool isFlatFallback;
 }
 
-_BuiltLibrarySearchResult? _findBuiltLibraryFileWithMeta({
+/// Finds [canonicalName] below the platform directory, including nested build
+/// output directories, and optionally the legacy flat layout.
+BuiltLibrarySearchResult? findBuiltLibraryFileWithMeta({
   required Directory builtLibraryDir,
   required String platform,
   required String canonicalName,
@@ -333,12 +341,12 @@ _BuiltLibrarySearchResult? _findBuiltLibraryFileWithMeta({
 
   final platformCandidate = File(p.join(platformDir.path, canonicalName));
   if (platformCandidate.existsSync()) {
-    return _BuiltLibrarySearchResult(platformCandidate, false);
+    return BuiltLibrarySearchResult(platformCandidate, false);
   }
 
   final flatCandidate = File(p.join(builtLibraryDir.path, canonicalName));
   if (flatCandidate.existsSync()) {
-    return _BuiltLibrarySearchResult(flatCandidate, true);
+    return BuiltLibrarySearchResult(flatCandidate, true);
   }
 
   if (!platformDir.existsSync()) {
@@ -354,7 +362,106 @@ _BuiltLibrarySearchResult? _findBuiltLibraryFileWithMeta({
         ..sort((a, b) => a.path.compareTo(b.path));
 
   if (recursiveMatches.isEmpty) return null;
-  return _BuiltLibrarySearchResult(recursiveMatches.first, false);
+  return BuiltLibrarySearchResult(recursiveMatches.first, false);
+}
+
+/// Hashes recorded for one platform in a generated or lock manifest.
+final class ManifestArtifactHashes {
+  const ManifestArtifactHashes({
+    this.archiveName,
+    required this.archiveSha256,
+    required this.payloadSha256,
+  });
+
+  /// The archive filename, when present in a generated Dart manifest.
+  final String? archiveName;
+
+  /// The SHA-256 hash of the release archive.
+  final String archiveSha256;
+
+  /// The SHA-256 hash of the extracted native payload.
+  final String payloadSha256;
+}
+
+/// The integrity fields decoded from a generated Dart or lock manifest.
+final class ManifestSnapshot {
+  const ManifestSnapshot({required this.releaseTag, required this.artifacts});
+
+  /// The exact release tag recorded by the manifest.
+  final String releaseTag;
+
+  /// Integrity records keyed by canonical platform label.
+  final Map<String, ManifestArtifactHashes> artifacts;
+}
+
+/// Decodes a generated manifest file without searching arbitrary text.
+ManifestSnapshot readManifestSnapshot(File file) {
+  return parseManifestSnapshot(file.readAsStringSync(), path: file.path);
+}
+
+/// Decodes manifest [content] using [path] to select the lock or Dart format.
+ManifestSnapshot parseManifestSnapshot(String content, {required String path}) {
+  if (path.endsWith('.yaml') || path.endsWith('.yml')) {
+    return _decodeLockManifest(content, path);
+  }
+  return _decodeDartManifest(content, path);
+}
+
+ManifestSnapshot _decodeLockManifest(String content, String path) {
+  final document = loadYaml(content);
+  if (document is! YamlMap) {
+    throw FormatException('Manifest $path must contain a YAML mapping.');
+  }
+  final release = document['release'];
+  final tag = release is YamlMap ? release['tag'] : null;
+  if (tag is! String || tag.isEmpty) {
+    throw FormatException('Manifest $path does not contain a release tag.');
+  }
+  final artifacts = <String, ManifestArtifactHashes>{};
+  final entries = document['artifacts'];
+  if (entries is YamlMap) {
+    for (final entry in entries.entries) {
+      final value = entry.value;
+      if (value is! YamlMap) continue;
+      final archiveHash = value['archive_sha256'];
+      final payloadHash = value['payload_sha256'];
+      if (archiveHash is! String || payloadHash is! String) {
+        throw FormatException(
+          'Manifest $path has incomplete hashes for ${entry.key}.',
+        );
+      }
+      artifacts[entry.key.toString()] = ManifestArtifactHashes(
+        archiveSha256: archiveHash,
+        payloadSha256: payloadHash,
+      );
+    }
+  }
+  return ManifestSnapshot(releaseTag: tag, artifacts: artifacts);
+}
+
+ManifestSnapshot _decodeDartManifest(String content, String path) {
+  final tagMatch = RegExp(
+    r"release:\s+[^\n]*tag: '([^']*)'\),",
+  ).firstMatch(content);
+  if (tagMatch == null) {
+    throw FormatException('Manifest $path does not contain a release tag.');
+  }
+  final artifacts = <String, ManifestArtifactHashes>{};
+  final artifactPattern = RegExp(
+    r"^\s*'([^']+)': PrebuiltArtifact\(\s*"
+    r"archiveName: '([^']*)',\s*"
+    r"archiveSha256: '([^']*)',\s*"
+    r"payloadSha256: '([^']*)',",
+    multiLine: true,
+  );
+  for (final match in artifactPattern.allMatches(content)) {
+    artifacts[match.group(1)!] = ManifestArtifactHashes(
+      archiveName: match.group(2),
+      archiveSha256: match.group(3)!,
+      payloadSha256: match.group(4)!,
+    );
+  }
+  return ManifestSnapshot(releaseTag: tagMatch.group(1)!, artifacts: artifacts);
 }
 
 String renderPayload(ArtifactPayload payload) => switch (payload) {

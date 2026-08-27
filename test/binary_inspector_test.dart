@@ -147,6 +147,33 @@ void main() {
     }
   });
 
+  test('rejects wrong PE architecture beyond the initial header read', () {
+    final dir = Directory.systemTemp.createTempSync('native_prebuilt_pe_arch_');
+    try {
+      final f = File('${dir.path}/demo.dll')
+        ..writeAsBytesSync(makePeBytes(arch: 'ia32'));
+      expect(
+        () => const NativeBinaryInspector().inspect(
+          f,
+          target: const NativeTarget(
+            os: OS.windows,
+            architecture: Architecture.x64,
+          ),
+          canonicalName: 'demo.dll',
+        ),
+        throwsA(
+          isA<BinaryArchitectureException>().having(
+            (e) => e.message,
+            'message',
+            contains('IMAGE_FILE_MACHINE_AMD64'),
+          ),
+        ),
+      );
+    } finally {
+      dir.deleteSync(recursive: true);
+    }
+  });
+
   test('detects Mach-O dylibs', () {
     final dir = Directory.systemTemp.createTempSync('native_prebuilt_macho_');
     try {

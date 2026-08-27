@@ -164,7 +164,7 @@ void _validateArchitecture(
     case _BinaryFormat.machO:
       _validateMachOArchitecture(header, target, path);
     case _BinaryFormat.pe:
-      _validatePeArchitecture(header, target, path);
+      _validatePeArchitecture(target, path);
     case _BinaryFormat.staticArchive:
     case _BinaryFormat.wasm:
       // static archive/WASM architecture validation not yet implemented.
@@ -352,63 +352,47 @@ String _peMachineName(int machine) {
   };
 }
 
-void _validatePeArchitecture(
-  List<int> header,
-  NativeTarget target,
-  String path,
-) {
-  // PE header: DOS header e_lfanew at offset 0x3c (4 bytes LE), then PE signature + COFF header
-  // COFF Machine at offset e_lfanew+4 (2 bytes LE)
-  if (header.length < 0x40) {
-    // Need to read more bytes for PE
-    try {
-      final file = File(path);
-      final raf = file.openSync();
-      try {
-        final full = raf.readSync(512);
-        if (full.length >= 0x40) {
-          final eLfanew =
-              full[0x3c] |
-              (full[0x3d] << 8) |
-              (full[0x3e] << 16) |
-              (full[0x3f] << 24);
-          if (eLfanew + 6 <= full.length) {
-            final machine = full[eLfanew + 4] | (full[eLfanew + 5] << 8);
-            final expected = _expectedPeMachine(target.architecture);
-            if (expected != null && machine != expected) {
-              throw BinaryArchitectureException(
-                'Binary architecture mismatch for ${target.label}:\n'
-                '  expected: ${_peMachineName(expected)}\n'
-                '  actual:   ${_peMachineName(machine)}\n'
-                '  file:     $path',
-              );
-            }
-          }
-        }
-      } finally {
-        raf.closeSync();
-      }
-    } catch (e) {
-      if (e is BinaryArchitectureException) rethrow;
+void _validatePeArchitecture(NativeTarget target, String path) {
+  // The initial inspector read is intentionally small. Read the complete DOS
+  // header, then seek to the PE signature and COFF header at e_lfanew so a
+  // long DOS stub cannot bypass architecture validation.
+  final file = File(path);
+  final raf = file.openSync();
+  try {
+    if (raf.lengthSync() < 0x40) {
+      throw BinaryArchitectureException('PE DOS header too short: $path');
     }
-    return;
-  }
-  final eLfanew =
-      header[0x3c] |
-      (header[0x3d] << 8) |
-      (header[0x3e] << 16) |
-      (header[0x3f] << 24);
-  if (header.length < eLfanew + 6) return;
-  final machine = header[eLfanew + 4] | (header[eLfanew + 5] << 8);
-  final expected = _expectedPeMachine(target.architecture);
-  if (expected == null) return;
-  if (machine != expected) {
-    throw BinaryArchitectureException(
-      'Binary architecture mismatch for ${target.label}:\n'
-      '  expected: ${_peMachineName(expected)}\n'
-      '  actual:   ${_peMachineName(machine)}\n'
-      '  file:     $path',
-    );
+    final dosHeader = raf.readSync(0x40);
+    if (!_startsWith(dosHeader, const [0x4D, 0x5A])) {
+      throw BinaryArchitectureException('Invalid PE DOS signature: $path');
+    }
+    final eLfanew =
+        dosHeader[0x3c] |
+        (dosHeader[0x3d] << 8) |
+        (dosHeader[0x3e] << 16) |
+        (dosHeader[0x3f] << 24);
+    if (eLfanew < 0x40 || eLfanew > raf.lengthSync() - 6) {
+      throw BinaryArchitectureException('Invalid PE header offset: $path');
+    }
+    raf.setPositionSync(eLfanew);
+    final peHeader = raf.readSync(6);
+    if (peHeader.length < 6 ||
+        !_startsWith(peHeader, const [0x50, 0x45, 0x00, 0x00])) {
+      throw BinaryArchitectureException('Invalid PE signature: $path');
+    }
+    final machine = peHeader[4] | (peHeader[5] << 8);
+    final expected = _expectedPeMachine(target.architecture);
+    if (expected == null) return;
+    if (machine != expected) {
+      throw BinaryArchitectureException(
+        'Binary architecture mismatch for ${target.label}:\n'
+        '  expected: ${_peMachineName(expected)}\n'
+        '  actual:   ${_peMachineName(machine)}\n'
+        '  file:     $path',
+      );
+    }
+  } finally {
+    raf.closeSync();
   }
 }
 

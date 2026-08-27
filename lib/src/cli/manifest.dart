@@ -234,34 +234,24 @@ bool _verifyManifestSubset(
   PrebuiltManifest manifest,
   String tag,
 ) {
-  final header = 'const ${config.package}Prebuilts = PrebuiltManifest(';
-  if (!actual.contains(header)) return false;
-  if (!actual.contains("  schemaVersion: ${manifest.schemaVersion},"))
-    return false;
-  if (!actual.contains(
-    "  release: ${renderReleaseSource(config.release.toReleaseSource().withTag(tag))},",
-  )) {
-    return false;
-  }
-
-  for (final entry in manifest.artifacts.entries) {
-    final platform = entry.key;
-    final artifact = entry.value;
-    final artifactBlock = [
-      "    '$platform': PrebuiltArtifact(",
-      "      archiveName: '${artifact.archiveName}',",
-      "      archiveSha256: '${artifact.archiveSha256}',",
-      "      payloadSha256: '${artifact.payloadSha256}',",
-      '      payload: ${renderPayload(artifact.payload)},',
-      '    ),',
-    ].join('\n');
-
-    if (!actual.contains(artifactBlock)) {
-      return false;
+  try {
+    final snapshot = parseManifestSnapshot(actual, path: 'manifest.g.dart');
+    if (snapshot.releaseTag != tag) return false;
+    for (final entry in manifest.artifacts.entries) {
+      final actualArtifact = snapshot.artifacts[entry.key];
+      final expectedArtifact = entry.value;
+      if (actualArtifact == null ||
+          actualArtifact.archiveSha256 != expectedArtifact.archiveSha256 ||
+          actualArtifact.payloadSha256 != expectedArtifact.payloadSha256 ||
+          (actualArtifact.archiveName != null &&
+              actualArtifact.archiveName != expectedArtifact.archiveName)) {
+        return false;
+      }
     }
+    return true;
+  } on FormatException {
+    return false;
   }
-
-  return true;
 }
 
 String _resolveOutputPath(
@@ -334,8 +324,22 @@ class _ManifestVerifyReleaseCommand extends Command<void> {
       exitCode = 1;
       return;
     }
-    final content = manifestFile.readAsStringSync();
+    late final ManifestSnapshot manifest;
+    try {
+      manifest = readManifestSnapshot(manifestFile);
+    } on FormatException catch (error) {
+      stderr.writeln('Unable to parse ${manifestFile.path}: $error');
+      exitCode = 1;
+      return;
+    }
     var failed = false;
+    if (manifest.releaseTag != config.release.tag) {
+      stderr.writeln(
+        'Manifest tag mismatch: expected ${config.release.tag}, '
+        'found ${manifest.releaseTag}',
+      );
+      failed = true;
+    }
 
     final builtLibraryDirPath = option('built-library-dir') as String?;
     final releaseAssetsDirPath = option('release-assets-dir') as String?;
@@ -346,39 +350,60 @@ class _ManifestVerifyReleaseCommand extends Command<void> {
       for (final entry in config.artifacts.entries) {
         final platform = entry.key;
         final artifact = entry.value;
-        final target = targetFromPlatformLabel(platform);
+        final target = parseTarget(platform);
+        if (target == null) {
+          stderr.writeln('Unknown artifact platform: $platform');
+          failed = true;
+          continue;
+        }
         final payload = artifact.payload.toArtifactPayload(config.libraryStem);
         final canonicalName = canonicalLibraryName(
           target: target,
           libraryStem: config.libraryStem,
           payload: payload,
         );
-        final builtFile = File(p.join(builtDir.path, platform, canonicalName));
-        final flatFile = File(p.join(builtDir.path, canonicalName));
-        File? candidate;
-        if (builtFile.existsSync())
-          candidate = builtFile;
-        else if (!strict && flatFile.existsSync())
-          candidate = flatFile;
+        final searchResult = findBuiltLibraryFileWithMeta(
+          builtLibraryDir: builtDir,
+          platform: platform,
+          canonicalName: canonicalName,
+        );
+        if (searchResult == null) {
+          stderr.writeln(
+            'Missing built library for $platform. Expected '
+            '${p.join(builtDir.path, platform, canonicalName)} '
+            '(or a nested platform build output).',
+          );
+          failed = true;
+          continue;
+        }
+        if (searchResult.isFlatFallback && strict) {
+          stderr.writeln(
+            'Strict mode: rejected flat layout for $platform at '
+            '${searchResult.file.path}. Expected '
+            '${p.join(builtDir.path, platform, canonicalName)}',
+          );
+          failed = true;
+          continue;
+        }
 
-        if (candidate != null) {
-          final hash = await ArchiveReader.sha256Hash(candidate);
-          if (!content.contains(hash)) {
-            stderr.writeln(
-              'Hash mismatch for $platform payload $hash not in $manifestFile',
-            );
-            failed = true;
-          }
-          try {
-            const NativeBinaryInspector().inspect(
-              candidate,
-              target: target,
-              canonicalName: canonicalName,
-            );
-          } catch (e) {
-            stderr.writeln('Binary inspection failed for $platform: $e');
-            failed = true;
-          }
+        final hash = await ArchiveReader.sha256Hash(searchResult.file);
+        final expected = manifest.artifacts[platform];
+        if (expected == null || expected.payloadSha256 != hash) {
+          stderr.writeln(
+            'Payload hash mismatch for $platform: $hash does not match '
+            'the manifest record',
+          );
+          failed = true;
+        }
+        try {
+          const NativeBinaryInspector().inspect(
+            searchResult.file,
+            target: target,
+            canonicalName: canonicalName,
+          );
+        } catch (e) {
+          stderr.writeln('Binary inspection failed for $platform: $e');
+          failed = true;
         }
       }
     }
@@ -393,18 +418,14 @@ class _ManifestVerifyReleaseCommand extends Command<void> {
           continue;
         }
         final hash = await ArchiveReader.sha256Hash(archive);
-        if (!content.contains(hash)) {
+        final expected = manifest.artifacts[entry.key];
+        if (expected == null || expected.archiveSha256 != hash) {
           stderr.writeln(
-            'Archive hash mismatch for ${entry.key}: $hash not in $manifestFile',
+            'Archive hash mismatch for ${entry.key}: $hash does not match '
+            'the manifest record',
           );
           failed = true;
         }
-      }
-    } else {
-      // At least check tag present
-      if (!content.contains(config.release.tag)) {
-        stderr.writeln('Manifest does not contain tag ${config.release.tag}');
-        failed = true;
       }
     }
 
