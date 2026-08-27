@@ -105,6 +105,22 @@ final class NativeBuildContext {
 
   /// Optional logger for build output.
   final Logger? logger;
+
+  /// Returns a copy of this context for [target].
+  ///
+  /// Host-executed recipe steps use the host target so platform-specific
+  /// toolchain injection cannot leak the requested cross-compilation target
+  /// into host tools.
+  NativeBuildContext forTarget(NativeTarget target) => NativeBuildContext(
+    target: target,
+    hook: hook,
+    directories: directories,
+    toolchains: toolchains,
+    environment: environment,
+    options: options,
+    variables: variables,
+    logger: logger,
+  );
 }
 
 /// Hook configuration for a native build.

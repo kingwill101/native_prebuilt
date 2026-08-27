@@ -11,11 +11,18 @@ part 'build_step_config.g.dart';
 /// Subclasses are dispatched by the [type] field using
 /// [BuildStepConfig.fromJson].
 sealed class BuildStepConfig {
-  const BuildStepConfig({
+  BuildStepConfig({
     required this.id,
     this.needs = const [],
     this.execution = 'target',
-  });
+  }) {
+    if (execution != 'host' && execution != 'target') {
+      throw FormatException(
+        'Unsupported build step execution "$execution" for step "$id". '
+        'Expected "host" or "target".',
+      );
+    }
+  }
 
   /// Unique identifier for this step within the recipe.
   final String id;
@@ -31,6 +38,16 @@ sealed class BuildStepConfig {
 
   /// Creates the right [BuildStepConfig] subclass from [json].
   factory BuildStepConfig.fromJson(Map<String, dynamic> json) {
+    final execution = json['execution'];
+    if (execution != null &&
+        (execution is! String ||
+            (execution != 'host' && execution != 'target'))) {
+      final id = json['id'];
+      throw FormatException(
+        'Unsupported build step execution "$execution" for step "$id". '
+        'Expected "host" or "target".',
+      );
+    }
     final type = json['type'] as String?;
     // Strip the 'type' key before passing to the concrete class fromJson
     // since the concrete classes don't have a 'type' field.

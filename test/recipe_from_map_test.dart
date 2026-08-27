@@ -163,4 +163,35 @@ void main() {
       expect(map['type'], 'export_artifact');
     });
   });
+
+  group('host execution round-trips', () {
+    test('CommandStep preserves execution', () {
+      final original = CommandStep(
+        id: 'generate',
+        execution: 'host',
+        commands: [
+          ['dart', 'run', 'tool/generate.dart'],
+        ],
+      );
+
+      final restored = CommandStep.fromMap(original.toMap());
+
+      expect(restored.execution, 'host');
+      expect(restored.toMap()['execution'], 'host');
+    });
+
+    test('StripStep preserves execution', () {
+      final original = StripStep(
+        id: 'strip',
+        execution: 'host',
+        inputPath: 'build/libdemo.so',
+        outputPath: 'build/libdemo-stripped.so',
+      );
+
+      final restored = StripStep.fromMap(original.toMap());
+
+      expect(restored.execution, 'host');
+      expect(restored.toMap()['execution'], 'host');
+    });
+  });
 }

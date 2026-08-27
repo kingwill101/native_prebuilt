@@ -141,6 +141,13 @@
                             "minLength": 1
                           },
                           "uniqueItems": true
+                        },
+                        "execution": {
+                          "type": "string",
+                          "enum": [
+                            "host",
+                            "target"
+                          ]
                         }
                       },
                       "required": [
@@ -192,6 +199,13 @@
                             "minLength": 1
                           },
                           "uniqueItems": true
+                        },
+                        "execution": {
+                          "type": "string",
+                          "enum": [
+                            "host",
+                            "target"
+                          ]
                         }
                       },
                       "required": [
@@ -249,6 +263,13 @@
                             "minLength": 1
                           },
                           "uniqueItems": true
+                        },
+                        "execution": {
+                          "type": "string",
+                          "enum": [
+                            "host",
+                            "target"
+                          ]
                         }
                       },
                       "required": [
@@ -299,6 +320,13 @@
                             "minLength": 1
                           },
                           "uniqueItems": true
+                        },
+                        "execution": {
+                          "type": "string",
+                          "enum": [
+                            "host",
+                            "target"
+                          ]
                         }
                       },
                       "required": [
@@ -338,6 +366,13 @@
                             "minLength": 1
                           },
                           "uniqueItems": true
+                        },
+                        "execution": {
+                          "type": "string",
+                          "enum": [
+                            "host",
+                            "target"
+                          ]
                         }
                       },
                       "required": [
@@ -381,6 +416,13 @@
                             "minLength": 1
                           },
                           "uniqueItems": true
+                        },
+                        "execution": {
+                          "type": "string",
+                          "enum": [
+                            "host",
+                            "target"
+                          ]
                         }
                       },
                       "required": [
@@ -418,6 +460,13 @@
                             "minLength": 1
                           },
                           "uniqueItems": true
+                        },
+                        "execution": {
+                          "type": "string",
+                          "enum": [
+                            "host",
+                            "target"
+                          ]
                         }
                       },
                       "required": [
@@ -458,6 +507,13 @@
                             "minLength": 1
                           },
                           "uniqueItems": true
+                        },
+                        "execution": {
+                          "type": "string",
+                          "enum": [
+                            "host",
+                            "target"
+                          ]
                         }
                       },
                       "required": [
@@ -499,6 +555,13 @@
                             "minLength": 1
                           },
                           "uniqueItems": true
+                        },
+                        "execution": {
+                          "type": "string",
+                          "enum": [
+                            "host",
+                            "target"
+                          ]
                         }
                       },
                       "required": [
@@ -547,6 +610,20 @@
         "options": {
           "type": "object",
           "additionalProperties": {}
+        },
+        "system": {
+          "type": "string",
+          "enum": [
+            "cmake"
+          ]
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_directory": {
+          "type": "string",
+          "minLength": 1
         }
       },
       "additionalProperties": false

@@ -46,6 +46,7 @@ final class DownloadArchiveStep implements NativeBuildStep {
   factory DownloadArchiveStep.fromMap(Map<String, dynamic> map) {
     return DownloadArchiveStep(
       id: map['id'] as String,
+      execution: map['execution'] as String? ?? 'target',
       url: map['url'] as String,
       sha256: map['sha256'] as String?,
       outputDirectory: map['output_directory'] as String?,
@@ -57,6 +58,7 @@ final class DownloadArchiveStep implements NativeBuildStep {
     return <String, dynamic>{
       'type': 'download_archive',
       'id': id,
+      if (execution != 'target') 'execution': execution,
       'url': url,
       if (sha256 != null) 'sha256': sha256,
       if (outputDirectory != null) 'output_directory': outputDirectory,

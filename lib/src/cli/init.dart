@@ -246,12 +246,19 @@ String renderInitialManifest({
   if (detectedBuildSystem != null) {
     buffer
       ..writeln()
-      ..writeln('# Build system detected: $detectedBuildSystem')
-      ..writeln('# Add one of:')
-      ..writeln('#   build:')
-      ..writeln('#     system: $detectedBuildSystem')
-      ..writeln('#     target: $libraryStem')
-      ..writeln('# or declarative build.recipes with steps');
+      ..writeln('# Build system detected: $detectedBuildSystem');
+    if (detectedBuildSystem == 'cmake') {
+      buffer
+        ..writeln('# Add one of:')
+        ..writeln('#   build:')
+        ..writeln('#     system: cmake')
+        ..writeln('#     target: $libraryStem')
+        ..writeln('# or declarative build.recipes with steps');
+    } else {
+      buffer.writeln(
+        '# Add declarative build.recipes with steps for this build system.',
+      );
+    }
   }
   return buffer.toString();
 }
@@ -298,7 +305,7 @@ List<String> _platforms(List<String>? values) {
     requested.addAll(value.split(',').map((item) => item.trim()));
   }
   final result = requested.where((item) => item.isNotEmpty).toSet().toList();
-  return result.isEmpty ? ['linux-x64'] : result;
+  return result;
 }
 
 String _yamlScalar(String value) {

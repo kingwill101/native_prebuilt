@@ -601,5 +601,32 @@ void main() {
 
       expect(runner.commands, hasLength(1));
     });
+
+    test('executes host steps with the host target context', () async {
+      final recipe = StepBuildRecipe(
+        steps: [
+          CommandStep(
+            id: 'host-tool',
+            execution: 'host',
+            commands: [
+              ['echo', '{{ target.os }}', '{{ target.architecture }}'],
+            ],
+            runner: runner,
+          ),
+        ],
+      );
+
+      final (context, source) = createTestContext(
+        workDir: tempDir,
+        targetOS: OS.android,
+        targetArchitecture: Architecture.arm64,
+      );
+      await recipe.execute(context, source);
+
+      expect(runner.commands.single.arguments, [
+        OS.current.name,
+        Architecture.current.name,
+      ]);
+    });
   });
 }

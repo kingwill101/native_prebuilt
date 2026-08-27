@@ -9,6 +9,7 @@ import '../build/native_project.dart';
 import '../build/steps/steps.dart';
 import '../manifest/prebuilt_artifact.dart';
 import '../manifest/release_source.dart';
+import '../platform/native_target.dart';
 import 'build_step_config.dart';
 import 'schema/build_schema.dart';
 import 'validation.dart';
@@ -168,10 +169,11 @@ final class BuildConfig {
   /// Optional build options.
   final Map<String, Object?> options;
 
-  /// High-level build system preset (e.g., cmake, cargo, meson).
+  /// High-level build system preset. Currently only `cmake` is supported.
   final String? system;
 
   /// Target for preset system (e.g., tdjson).
+  @JsonKey(name: 'target')
   final String? systemTarget;
 
   /// Source directory for preset system.
@@ -179,30 +181,40 @@ final class BuildConfig {
 
   /// Converts this config into a [NativeBuildDefinition] that can resolve
   /// recipes for specific targets.
-  NativeBuildDefinition toBuildDefinition() {
+  NativeBuildDefinition toBuildDefinition({
+    Iterable<NativeTarget> targets = const [],
+  }) {
     final depMap = {
       for (final e in dependencies.entries) e.key: e.value.toJson(),
     };
     if (system != null && recipes.isEmpty) {
-      // Preset expansion: generate a simple recipe that matches any target.
-      final presetRecipe = _presetRecipeForSystem(
-        system!,
-        target: systemTarget,
-        sourceDir: sourceDirectory,
-      );
-      if (presetRecipe != null) {
-        return NativeBuildDefinition(
-          recipes: [
-            NativeTargetRecipe(
-              pattern: const NativeTargetPattern(),
-              recipe: presetRecipe,
-            ),
-          ],
-          options: options,
-          variables: const {},
-          dependencies: depMap,
+      final presetTargets = targets.toList(growable: false);
+      if (presetTargets.isEmpty) {
+        throw FormatException(
+          'The ${system!} build preset requires at least one valid artifact target.',
         );
       }
+      return NativeBuildDefinition(
+        recipes: [
+          for (final target in presetTargets)
+            NativeTargetRecipe(
+              pattern: NativeTargetPattern(
+                os: target.os,
+                architecture: target.architecture,
+                iOSSdk: target.iOSSdk,
+              ),
+              recipe: _presetRecipeForSystem(
+                system!,
+                targetName: systemTarget!,
+                target: target,
+                sourceDir: sourceDirectory,
+              ),
+            ),
+        ],
+        options: options,
+        variables: const {},
+        dependencies: depMap,
+      );
     }
     return NativeBuildDefinition(
       recipes: [
@@ -220,14 +232,19 @@ final class BuildConfig {
     );
   }
 
-  StepBuildRecipe? _presetRecipeForSystem(
+  StepBuildRecipe _presetRecipeForSystem(
     String system, {
-    String? target,
+    required String targetName,
+    required NativeTarget target,
     String? sourceDir,
   }) {
     final src = sourceDir ?? '{{ source.path }}';
-    final tgt = target ?? 'all';
-    return switch (system) {
+    final libraryName = switch (target.os) {
+      OS.windows => '$targetName.dll',
+      OS.iOS || OS.macOS => 'lib$targetName.dylib',
+      _ => 'lib$targetName.so',
+    };
+    return switch (system.toLowerCase()) {
       'cmake' => StepBuildRecipe(
         steps: [
           CmakeConfigureStep(
@@ -239,19 +256,19 @@ final class BuildConfig {
           CmakeBuildStep(
             id: 'build',
             buildDirectory: '{{ work }}/build',
-            targets: [tgt],
+            targets: [targetName],
           ),
           ExportArtifactStep(
             id: 'export',
             declaration: NativeArtifactDeclaration(
-              id: tgt,
+              id: targetName,
               kind: NativeArtifactKind.dynamicLibrary,
-              primaryPath: '{{ work }}/build/lib$tgt.so',
+              primaryPath: '{{ work }}/build/$libraryName',
             ),
           ),
         ],
       ),
-      _ => null,
+      _ => throw FormatException('Unsupported build.system "$system".'),
     };
   }
 }
@@ -562,6 +579,16 @@ Map<String, dynamic> _canonicalizeNativePrebuiltYaml(
     }
 
     map['release'] = canonicalRelease;
+  }
+
+  final build = map['build'];
+  if (build is Map<String, dynamic>) {
+    final canonicalBuild = Map<String, dynamic>.from(build);
+    if (!canonicalBuild.containsKey('target') &&
+        canonicalBuild.containsKey('system_target')) {
+      canonicalBuild['target'] = canonicalBuild.remove('system_target');
+    }
+    map['build'] = canonicalBuild;
   }
 
   final artifacts = map['artifacts'];

@@ -38,6 +38,7 @@ final class CopyStep implements NativeBuildStep {
   factory CopyStep.fromMap(Map<String, dynamic> map) {
     return CopyStep(
       id: map['id'] as String,
+      execution: map['execution'] as String? ?? 'target',
       sourcePath: map['source_path'] as String,
       destinationPath: map['destination_path'] as String,
       recursive: map['recursive'] as bool? ?? true,
@@ -49,6 +50,7 @@ final class CopyStep implements NativeBuildStep {
     return <String, dynamic>{
       'type': 'copy',
       'id': id,
+      if (execution != 'target') 'execution': execution,
       'source_path': sourcePath,
       'destination_path': destinationPath,
       if (recursive != true) 'recursive': recursive,

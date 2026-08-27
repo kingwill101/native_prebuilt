@@ -61,6 +61,7 @@ final class ExportArtifactStep implements NativeBuildStep {
     final artifactId = map['artifact'] as String? ?? stepId;
     return ExportArtifactStep(
       id: stepId,
+      execution: map['execution'] as String? ?? 'target',
       declaration: NativeArtifactDeclaration(
         id: artifactId,
         kind: kind,
@@ -75,6 +76,7 @@ final class ExportArtifactStep implements NativeBuildStep {
     return <String, dynamic>{
       'type': 'export_artifact',
       'id': id,
+      if (execution != 'target') 'execution': execution,
       'artifact': declaration.id,
       'kind': declaration.kind.name,
       'primary_path': declaration.primaryPath,

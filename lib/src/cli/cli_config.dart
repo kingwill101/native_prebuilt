@@ -102,7 +102,14 @@ NativeProject? detect([Directory? workingDirectory]) {
   }
 
   // Build recipes: use YAML-defined declarative recipes only.
-  final build = _parseBuildDefinition(doc, variables: _parseVariables(doc));
+  final build = _parseBuildDefinition(
+    doc,
+    variables: _parseVariables(doc),
+    targets: [
+      for (final label in artifacts.keys)
+        if (parseTarget(label) case final target?) target,
+    ],
+  );
 
   final project = NativeProject(
     name: packageName,
@@ -371,11 +378,13 @@ Map<String, Object?> _parseVariables(Map<dynamic, dynamic> doc) {
 NativeBuildDefinition _parseBuildDefinition(
   Map<dynamic, dynamic> doc, {
   Map<String, Object?> variables = const {},
+  Iterable<NativeTarget> targets = const [],
 }) {
   final buildSection = doc['build'] as Map?;
   if (buildSection == null) {
     return const NativeBuildDefinition(recipes: []);
   }
+  final hasPreset = buildSection['system'] != null;
 
   try {
     final normalized = normalizeYaml(buildSection);
@@ -383,13 +392,15 @@ NativeBuildDefinition _parseBuildDefinition(
       return const NativeBuildDefinition(recipes: []);
     }
     final buildConfig = BuildConfig.fromJson(normalized);
-    final definition = buildConfig.toBuildDefinition();
+    final definition = buildConfig.toBuildDefinition(targets: targets);
     return NativeBuildDefinition(
       recipes: definition.recipes,
       options: definition.options,
       variables: variables,
+      dependencies: definition.dependencies,
     );
   } on FormatException {
+    if (hasPreset) rethrow;
     return const NativeBuildDefinition(recipes: []);
   } on CheckedFromJsonException {
     return const NativeBuildDefinition(recipes: []);

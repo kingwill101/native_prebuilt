@@ -44,6 +44,7 @@ final class StripStep implements NativeBuildStep {
   factory StripStep.fromMap(Map<String, dynamic> map) {
     return StripStep(
       id: map['id'] as String,
+      execution: map['execution'] as String? ?? 'target',
       inputPath: map['input_path'] as String,
       outputPath: map['output_path'] as String,
       stripAll: map['strip_all'] as bool? ?? false,
@@ -55,6 +56,7 @@ final class StripStep implements NativeBuildStep {
     return <String, dynamic>{
       'type': 'strip',
       'id': id,
+      if (execution != 'target') 'execution': execution,
       'input_path': inputPath,
       'output_path': outputPath,
       if (stripAll) 'strip_all': stripAll,

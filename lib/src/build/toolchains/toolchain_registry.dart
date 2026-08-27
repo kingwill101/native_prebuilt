@@ -91,6 +91,8 @@ final class NativeToolchainResolver {
       Platform.environment['ANDROID_SDK_ROOT'],
       if (Platform.environment['HOME'] != null)
         p.join(Platform.environment['HOME']!, 'Android', 'Sdk'),
+      if (Platform.isMacOS && Platform.environment['HOME'] != null)
+        p.join(Platform.environment['HOME']!, 'Library', 'Android', 'sdk'),
     ];
     for (final sdk in sdkRoots) {
       if (sdk == null) continue;

@@ -233,7 +233,7 @@ const _$NativePrebuiltConfigJsonSchema = {
           'description':
               'High-level build system preset (e.g., cmake, cargo, meson).',
         },
-        'system_target': {
+        'target': {
           'type': 'string',
           'description': 'Target for preset system (e.g., tdjson).',
         },
@@ -365,7 +365,7 @@ BuildConfig _$BuildConfigFromJson(Map<String, dynamic> json) => $checkedCreate(
         'dependencies',
         'options',
         'system',
-        'system_target',
+        'target',
         'source_directory',
       ],
     );
@@ -396,13 +396,13 @@ BuildConfig _$BuildConfigFromJson(Map<String, dynamic> json) => $checkedCreate(
         (v) => v as Map<String, dynamic>? ?? const {},
       ),
       system: $checkedConvert('system', (v) => v as String?),
-      systemTarget: $checkedConvert('system_target', (v) => v as String?),
+      systemTarget: $checkedConvert('target', (v) => v as String?),
       sourceDirectory: $checkedConvert('source_directory', (v) => v as String?),
     );
     return val;
   },
   fieldKeyMap: const {
-    'systemTarget': 'system_target',
+    'systemTarget': 'target',
     'sourceDirectory': 'source_directory',
   },
 );
@@ -414,7 +414,7 @@ Map<String, dynamic> _$BuildConfigToJson(
   'dependencies': instance.dependencies.map((k, e) => MapEntry(k, e.toJson())),
   'options': instance.options,
   'system': instance.system,
-  'system_target': instance.systemTarget,
+  'target': instance.systemTarget,
   'source_directory': instance.sourceDirectory,
 };
 
@@ -445,7 +445,7 @@ const _$BuildConfigJsonSchema = {
       'description':
           'High-level build system preset (e.g., cmake, cargo, meson).',
     },
-    'system_target': {
+    'target': {
       'type': 'string',
       'description': 'Target for preset system (e.g., tdjson).',
     },

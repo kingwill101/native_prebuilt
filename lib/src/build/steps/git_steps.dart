@@ -50,6 +50,7 @@ final class GitCheckoutStep implements NativeBuildStep {
   factory GitCheckoutStep.fromMap(Map<String, dynamic> map) {
     return GitCheckoutStep(
       id: map['id'] as String,
+      execution: map['execution'] as String? ?? 'target',
       repository: map['repository'] as String,
       revision: map['revision'] as String,
       targetDirectory: map['target_directory'] as String?,
@@ -62,6 +63,7 @@ final class GitCheckoutStep implements NativeBuildStep {
     return <String, dynamic>{
       'type': 'git_checkout',
       'id': id,
+      if (execution != 'target') 'execution': execution,
       'repository': repository,
       'revision': revision,
       if (targetDirectory != null) 'target_directory': targetDirectory,
@@ -211,6 +213,7 @@ final class GitApplyPatchStep implements NativeBuildStep {
   factory GitApplyPatchStep.fromMap(Map<String, dynamic> map) {
     return GitApplyPatchStep(
       id: map['id'] as String? ?? 'git_apply_patch',
+      execution: map['execution'] as String? ?? 'target',
       patchPath: map['patch_path'] as String,
       targetDirectory: map['target_directory'] as String?,
     );
@@ -221,6 +224,7 @@ final class GitApplyPatchStep implements NativeBuildStep {
     return <String, dynamic>{
       'type': 'git_apply_patch',
       'id': id,
+      if (execution != 'target') 'execution': execution,
       'patch_path': patchPath,
       if (targetDirectory != null) 'target_directory': targetDirectory,
     };

@@ -22,6 +22,7 @@ final cmakeConfigureStepSchema = Schema.object(
     'toolchain_file': S.string(),
     'definitions': S.object(additionalProperties: S.string()),
     'needs': S.list(items: S.string(minLength: 1), uniqueItems: true),
+    'execution': S.string(enumValues: ['host', 'target']),
   },
   additionalProperties: false,
 );
@@ -37,6 +38,7 @@ final cmakeBuildStepSchema = Schema.object(
     'parallel': S.boolean(),
     'environment': S.object(additionalProperties: S.string()),
     'needs': S.list(items: S.string(minLength: 1), uniqueItems: true),
+    'execution': S.string(enumValues: ['host', 'target']),
   },
   additionalProperties: false,
 );
@@ -54,6 +56,7 @@ final exportArtifactStepSchema = Schema.object(
     'import_library': S.string(),
     'debug_symbols': S.string(),
     'needs': S.list(items: S.string(minLength: 1), uniqueItems: true),
+    'execution': S.string(enumValues: ['host', 'target']),
   },
   additionalProperties: false,
 );
@@ -71,6 +74,7 @@ final commandStepSchema = Schema.object(
     'working_directory': S.string(),
     'environment': S.object(additionalProperties: S.string()),
     'needs': S.list(items: S.string(minLength: 1), uniqueItems: true),
+    'execution': S.string(enumValues: ['host', 'target']),
   },
   additionalProperties: false,
 );
@@ -85,6 +89,7 @@ final downloadArchiveStepSchema = Schema.object(
     'sha256': S.string(),
     'output_directory': S.string(),
     'needs': S.list(items: S.string(minLength: 1), uniqueItems: true),
+    'execution': S.string(enumValues: ['host', 'target']),
   },
   additionalProperties: false,
 );
@@ -100,6 +105,7 @@ final gitCheckoutStepSchema = Schema.object(
     'target_directory': S.string(),
     'submodules': S.boolean(),
     'needs': S.list(items: S.string(minLength: 1), uniqueItems: true),
+    'execution': S.string(enumValues: ['host', 'target']),
   },
   additionalProperties: false,
 );
@@ -113,6 +119,7 @@ final gitApplyPatchStepSchema = Schema.object(
     'patch_path': S.string(minLength: 1),
     'target_directory': S.string(),
     'needs': S.list(items: S.string(minLength: 1), uniqueItems: true),
+    'execution': S.string(enumValues: ['host', 'target']),
   },
   additionalProperties: false,
 );
@@ -127,6 +134,7 @@ final copyStepSchema = S.object(
     'destination_path': S.string(minLength: 1),
     'recursive': S.boolean(),
     'needs': S.list(items: S.string(minLength: 1), uniqueItems: true),
+    'execution': S.string(enumValues: ['host', 'target']),
   },
   additionalProperties: false,
 );
@@ -141,6 +149,7 @@ final stripStepSchema = S.object(
     'output_path': S.string(minLength: 1),
     'strip_all': S.boolean(),
     'needs': S.list(items: S.string(minLength: 1), uniqueItems: true),
+    'execution': S.string(enumValues: ['host', 'target']),
   },
   additionalProperties: false,
 );
@@ -198,6 +207,9 @@ final buildConfigSchema = S.object(
       ),
     ),
     'options': S.object(additionalProperties: S.any()),
+    'system': S.string(enumValues: ['cmake']),
+    'target': S.string(minLength: 1),
+    'source_directory': S.string(minLength: 1),
   },
   additionalProperties: false,
 );

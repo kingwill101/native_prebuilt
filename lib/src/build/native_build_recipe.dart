@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 
 import '../cache/build_cache.dart';
 import '../source/resolved_source.dart';
+import '../platform/target_resolver.dart';
 import 'native_build_context.dart';
 import 'native_build_result.dart';
 import 'steps/steps.dart';
@@ -66,11 +67,14 @@ final class StepBuildRecipe implements NativeBuildRecipe {
     for (final step in orderedSteps) {
       logger.info('Executing step: ${step.id}');
       final stopwatch = Stopwatch()..start();
+      final stepBuildContext = step.execution == 'host'
+          ? context.forTarget(hostTarget())
+          : context;
 
       // Check cache if available
       if (cache != null) {
         final stepContext = NativeStepContext(
-          buildContext: context,
+          buildContext: stepBuildContext,
           source: source,
           stepId: step.id,
         );
@@ -82,7 +86,7 @@ final class StepBuildRecipe implements NativeBuildRecipe {
           // Reconstruct artifacts from cached declarations
           final cachedDecls = await cache!.getCachedArtifacts(fingerprint);
           for (final decl in cachedDecls) {
-            final artifact = _reconstructArtifact(decl, context);
+            final artifact = _reconstructArtifact(decl, stepBuildContext);
             if (artifact != null) artifacts.add(artifact);
           }
           stopwatch.stop();
@@ -90,7 +94,7 @@ final class StepBuildRecipe implements NativeBuildRecipe {
         }
 
         // Execute the step
-        final result = await step.execute(context, source);
+        final result = await step.execute(stepBuildContext, source);
         stopwatch.stop();
         logger.info(
           'Step ${step.id} completed in ${stopwatch.elapsedMilliseconds}ms',
@@ -109,7 +113,7 @@ final class StepBuildRecipe implements NativeBuildRecipe {
         artifacts.addAll(result.artifacts);
       } else {
         // No cache: just execute
-        final result = await step.execute(context, source);
+        final result = await step.execute(stepBuildContext, source);
         stopwatch.stop();
         logger.info(
           'Step ${step.id} completed in ${stopwatch.elapsedMilliseconds}ms',

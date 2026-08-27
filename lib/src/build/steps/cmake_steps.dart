@@ -331,6 +331,7 @@ final class CmakeBuildStep implements NativeBuildStep {
   factory CmakeBuildStep.fromMap(Map<String, dynamic> map) {
     return CmakeBuildStep(
       id: map['id'] as String? ?? 'cmake_build',
+      execution: map['execution'] as String? ?? 'target',
       buildDirectory: map['build_directory'] as String,
       targets: map['targets'] is List
           ? (map['targets'] as List).map((e) => e.toString()).toList()
@@ -351,6 +352,7 @@ final class CmakeBuildStep implements NativeBuildStep {
     return <String, dynamic>{
       'type': 'cmake_build',
       'id': id,
+      if (execution != 'target') 'execution': execution,
       'build_directory': buildDirectory,
       if (targets.isNotEmpty) 'targets': targets,
       if (parallel != true) 'parallel': parallel,
