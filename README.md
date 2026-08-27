@@ -100,7 +100,7 @@ If `native_prebuilt.lock.yaml` is present next to the config file, `detect()` ov
 
 ```yaml
 dependencies:
-  native_prebuilt: ^0.4.0
+  native_prebuilt: ^0.5.0
 ```
 
 ## Source fallback pipeline

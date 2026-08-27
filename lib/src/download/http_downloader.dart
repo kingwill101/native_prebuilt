@@ -103,11 +103,12 @@ final class HttpDownloader {
           final location = response.headers.value('location');
           if (location != null) {
             await response.drain<void>();
-            return _downloadOnce(
+            await _downloadOnce(
               Uri.parse(location),
               targetFile,
               headers: headers,
             );
+            return;
           }
         }
         await response.drain<void>();

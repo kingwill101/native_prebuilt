@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0 - 2026-08-26
+
+- Update the native-assets toolchain to `code_assets` 2.x and `hooks` 2.2.x.
+- Refresh the supported build dependencies, including `archive`, `artisanal`,
+  and `native_toolchain_c`.
+- Keep the manifest-driven build, verification, and generated workflow
+  enhancements compatible with the current Dart native-assets protocol.
+
 ## 0.4.0
 
 - Add ELF architecture validation in `NativeBinaryInspector`.
