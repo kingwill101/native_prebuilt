@@ -284,13 +284,23 @@ class _ManifestVerifyReleaseCommand extends Command<void> {
   String get name => 'verify-release';
 
   @override
-  String get description => 'Verify release assets against the manifest (hash + binary triple).';
+  String get description =>
+      'Verify release assets against the manifest (hash + binary triple).';
 
   _ManifestVerifyReleaseCommand() {
     argParser.addOption('config', abbr: 'c', help: 'Path to YAML config file.');
-    argParser.addOption('manifest', help: 'Path to lock manifest (native_prebuilt.lock.yaml or g.dart).');
-    argParser.addOption('release-assets-dir', help: 'Directory containing release archives.');
-    argParser.addOption('built-library-dir', help: 'Directory containing built libraries.');
+    argParser.addOption(
+      'manifest',
+      help: 'Path to lock manifest (native_prebuilt.lock.yaml or g.dart).',
+    );
+    argParser.addOption(
+      'release-assets-dir',
+      help: 'Directory containing release archives.',
+    );
+    argParser.addOption(
+      'built-library-dir',
+      help: 'Directory containing built libraries.',
+    );
     argParser.addFlag('strict', help: 'Reject flat built-library layout.');
   }
 
@@ -309,7 +319,8 @@ class _ManifestVerifyReleaseCommand extends Command<void> {
       manifestFile = File(manifestPath);
     } else {
       manifestFile = resolveLockFile(null, configFile.parent);
-      if (manifestFile != null && !manifestFile.existsSync()) manifestFile = null;
+      if (manifestFile != null && !manifestFile.existsSync())
+        manifestFile = null;
       // fallback to generated g.dart
       if (manifestFile == null) {
         final gDart = File(_resolveOutputPath(null, configFile, config));
@@ -317,7 +328,9 @@ class _ManifestVerifyReleaseCommand extends Command<void> {
       }
     }
     if (manifestFile == null || !manifestFile.existsSync()) {
-      stderr.writeln('Manifest not found (lock.yaml or g.dart). Pass --manifest explicitly.');
+      stderr.writeln(
+        'Manifest not found (lock.yaml or g.dart). Pass --manifest explicitly.',
+      );
       exitCode = 1;
       return;
     }
@@ -343,17 +356,25 @@ class _ManifestVerifyReleaseCommand extends Command<void> {
         final builtFile = File(p.join(builtDir.path, platform, canonicalName));
         final flatFile = File(p.join(builtDir.path, canonicalName));
         File? candidate;
-        if (builtFile.existsSync()) candidate = builtFile;
-        else if (!strict && flatFile.existsSync()) candidate = flatFile;
+        if (builtFile.existsSync())
+          candidate = builtFile;
+        else if (!strict && flatFile.existsSync())
+          candidate = flatFile;
 
         if (candidate != null) {
           final hash = await ArchiveReader.sha256Hash(candidate);
           if (!content.contains(hash)) {
-            stderr.writeln('Hash mismatch for $platform payload $hash not in $manifestFile');
+            stderr.writeln(
+              'Hash mismatch for $platform payload $hash not in $manifestFile',
+            );
             failed = true;
           }
           try {
-            const NativeBinaryInspector().inspect(candidate, target: target, canonicalName: canonicalName);
+            const NativeBinaryInspector().inspect(
+              candidate,
+              target: target,
+              canonicalName: canonicalName,
+            );
           } catch (e) {
             stderr.writeln('Binary inspection failed for $platform: $e');
             failed = true;
@@ -373,7 +394,9 @@ class _ManifestVerifyReleaseCommand extends Command<void> {
         }
         final hash = await ArchiveReader.sha256Hash(archive);
         if (!content.contains(hash)) {
-          stderr.writeln('Archive hash mismatch for ${entry.key}: $hash not in $manifestFile');
+          stderr.writeln(
+            'Archive hash mismatch for ${entry.key}: $hash not in $manifestFile',
+          );
           failed = true;
         }
       }

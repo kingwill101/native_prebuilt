@@ -15,8 +15,11 @@ import '../../source/resolved_source.dart';
 /// copies them to the staging area, and returns a [NativeStepResult]
 /// containing a fully described [BuiltNativeArtifact].
 final class ExportArtifactStep implements NativeBuildStep {
-  const ExportArtifactStep({required this.id,
-    this.execution = 'target', required this.declaration});
+  const ExportArtifactStep({
+    required this.id,
+    this.execution = 'target',
+    required this.declaration,
+  });
 
   /// Step identifier.
   @override
@@ -24,7 +27,6 @@ final class ExportArtifactStep implements NativeBuildStep {
 
   @override
   final String execution;
-
 
   /// Declarative description of the artifact to export.
   final NativeArtifactDeclaration declaration;

@@ -34,7 +34,6 @@ final class CmakeConfigureStep implements NativeBuildStep {
   @override
   final String execution;
 
-
   /// Path to the source directory (relative to source root or absolute).
   final String sourceDirectory;
 
@@ -61,9 +60,13 @@ final class CmakeConfigureStep implements NativeBuildStep {
     final expect = map['expect'];
     List<String> expectTargets = const [];
     if (expect is Map && expect['targets'] is List) {
-      expectTargets = (expect['targets'] as List).map((e) => e.toString()).toList();
+      expectTargets = (expect['targets'] as List)
+          .map((e) => e.toString())
+          .toList();
     } else if (map['expect_targets'] is List) {
-      expectTargets = (map['expect_targets'] as List).map((e) => e.toString()).toList();
+      expectTargets = (map['expect_targets'] as List)
+          .map((e) => e.toString())
+          .toList();
     }
     return CmakeConfigureStep(
       id: map['id'] as String? ?? 'cmake_configure',
@@ -238,8 +241,7 @@ final class CmakeConfigureStep implements NativeBuildStep {
         args.add('-DANDROID_STL=c++_static');
       }
       // OPENSSL_ROOT_DIR auto if not set and resolver knows NDK layout?
-      if (!defines.containsKey('OPENSSL_ROOT_DIR') &&
-          resolver.hasAndroidNdk) {
+      if (!defines.containsKey('OPENSSL_ROOT_DIR') && resolver.hasAndroidNdk) {
         // Leave to recipe's {{ dependencies.openssl.prefix }} if present;
         // no default injection to avoid false paths.
       }
@@ -275,9 +277,13 @@ final class CmakeConfigureStep implements NativeBuildStep {
             );
           }
         }
-        logger?.info('[$id] Verified expected targets: ${expectTargets.join(', ')}');
+        logger?.info(
+          '[$id] Verified expected targets: ${expectTargets.join(', ')}',
+        );
       } else {
-        logger?.warning('[$id] Could not verify expected targets ${expectTargets.join(', ')}: no build.ninja/Makefile found at $buildDir');
+        logger?.warning(
+          '[$id] Could not verify expected targets ${expectTargets.join(', ')}: no build.ninja/Makefile found at $buildDir',
+        );
       }
     }
 
@@ -305,7 +311,6 @@ final class CmakeBuildStep implements NativeBuildStep {
 
   @override
   final String execution;
-
 
   /// Path to the build directory (where CMakeCache.txt is).
   final String buildDirectory;

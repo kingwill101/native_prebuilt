@@ -31,7 +31,6 @@ final class GitCheckoutStep implements NativeBuildStep {
   @override
   final String execution;
 
-
   /// Repository URL (e.g., https://github.com/org/repo.git).
   final String repository;
 
@@ -198,7 +197,6 @@ final class GitApplyPatchStep implements NativeBuildStep {
 
   @override
   final String execution;
-
 
   /// Path to the patch file (relative to source or absolute).
   final String patchPath;

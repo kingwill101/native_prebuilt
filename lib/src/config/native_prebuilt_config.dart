@@ -221,34 +221,36 @@ final class BuildConfig {
   }
 
   StepBuildRecipe? _presetRecipeForSystem(
-    String system,
-    {String? target,
+    String system, {
+    String? target,
     String? sourceDir,
   }) {
     final src = sourceDir ?? '{{ source.path }}';
     final tgt = target ?? 'all';
     return switch (system) {
-      'cmake' => StepBuildRecipe(steps: [
-        CmakeConfigureStep(
-          id: 'configure',
-          sourceDirectory: src,
-          buildDirectory: '{{ work }}/build',
-          defines: const {'CMAKE_BUILD_TYPE': 'Release'},
-        ),
-        CmakeBuildStep(
-          id: 'build',
-          buildDirectory: '{{ work }}/build',
-          targets: [tgt],
-        ),
-        ExportArtifactStep(
-          id: 'export',
-          declaration: NativeArtifactDeclaration(
-            id: tgt,
-            kind: NativeArtifactKind.dynamicLibrary,
-            primaryPath: '{{ work }}/build/lib$tgt.so',
+      'cmake' => StepBuildRecipe(
+        steps: [
+          CmakeConfigureStep(
+            id: 'configure',
+            sourceDirectory: src,
+            buildDirectory: '{{ work }}/build',
+            defines: const {'CMAKE_BUILD_TYPE': 'Release'},
           ),
-        ),
-      ]),
+          CmakeBuildStep(
+            id: 'build',
+            buildDirectory: '{{ work }}/build',
+            targets: [tgt],
+          ),
+          ExportArtifactStep(
+            id: 'export',
+            declaration: NativeArtifactDeclaration(
+              id: tgt,
+              kind: NativeArtifactKind.dynamicLibrary,
+              primaryPath: '{{ work }}/build/lib$tgt.so',
+            ),
+          ),
+        ],
+      ),
       _ => null,
     };
   }

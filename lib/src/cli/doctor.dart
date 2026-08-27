@@ -18,10 +18,22 @@ import 'shared.dart';
 class DoctorCommand extends Command<void> {
   DoctorCommand() {
     argParser.addOption('config', abbr: 'c', help: 'Path to YAML config file.');
-    argParser.addOption('manifest', help: 'Path to generated manifest (g.dart or lock.yaml).');
-    argParser.addOption('built-library-dir', help: 'Path to built-library directory.');
-    argParser.addOption('release-assets-dir', help: 'Path to release-assets directory.');
-    argParser.addOption('target', help: 'Check toolchain readiness for target (e.g., android-arm64).');
+    argParser.addOption(
+      'manifest',
+      help: 'Path to generated manifest (g.dart or lock.yaml).',
+    );
+    argParser.addOption(
+      'built-library-dir',
+      help: 'Path to built-library directory.',
+    );
+    argParser.addOption(
+      'release-assets-dir',
+      help: 'Path to release-assets directory.',
+    );
+    argParser.addOption(
+      'target',
+      help: 'Check toolchain readiness for target (e.g., android-arm64).',
+    );
     argParser.addFlag('strict', help: 'Fail on flat built-library layout.');
   }
 
@@ -184,7 +196,9 @@ Future<List<String>> _checkManifestDrift(
   final content = manifestFile.readAsStringSync();
   // Check tag drift
   if (!content.contains(config.release.tag)) {
-    issues.add('Manifest tag drift: ${manifestFile.path} does not contain ${config.release.tag}');
+    issues.add(
+      'Manifest tag drift: ${manifestFile.path} does not contain ${config.release.tag}',
+    );
   }
   // Check built-library hashes if dir provided
   if (builtLibraryDir != null && builtLibraryDir.existsSync()) {
@@ -198,20 +212,27 @@ Future<List<String>> _checkManifestDrift(
         libraryStem: config.libraryStem,
         payload: payload,
       );
-      final builtFile = File(p.join(builtLibraryDir.path, platform, canonicalName));
+      final builtFile = File(
+        p.join(builtLibraryDir.path, platform, canonicalName),
+      );
       final flatFile = File(p.join(builtLibraryDir.path, canonicalName));
       File? candidate;
       if (builtFile.existsSync()) {
         candidate = builtFile;
       } else if (!strict && flatFile.existsSync()) {
         candidate = flatFile;
-        issues.add('Flat layout for $platform at ${flatFile.path} (prefer ${builtFile.path})');
+        issues.add(
+          'Flat layout for $platform at ${flatFile.path} (prefer ${builtFile.path})',
+        );
       }
       if (candidate != null) {
         try {
           final hash = await ArchiveReader.sha256Hash(candidate);
-          if (!content.contains(hash) && !content.contains(hash.substring(0, 16))) {
-            issues.add('Built-library hash mismatch for $platform: $hash not in manifest');
+          if (!content.contains(hash) &&
+              !content.contains(hash.substring(0, 16))) {
+            issues.add(
+              'Built-library hash mismatch for $platform: $hash not in manifest',
+            );
           }
           // Binary triple check
           try {
@@ -233,11 +254,15 @@ Future<List<String>> _checkManifestDrift(
   }
   if (releaseAssetsDir != null && releaseAssetsDir.existsSync()) {
     for (final entry in config.artifacts.entries) {
-      final archiveFile = File(p.join(releaseAssetsDir.path, entry.value.archive));
+      final archiveFile = File(
+        p.join(releaseAssetsDir.path, entry.value.archive),
+      );
       if (archiveFile.existsSync()) {
         final hash = await ArchiveReader.sha256Hash(archiveFile);
         if (!content.contains(hash)) {
-          issues.add('Release asset hash mismatch for ${entry.key}: $hash not in manifest');
+          issues.add(
+            'Release asset hash mismatch for ${entry.key}: $hash not in manifest',
+          );
         }
       }
     }
@@ -250,7 +275,9 @@ String _checkTargetReadiness(NativeTarget target) {
   final b = StringBuffer()..writeln('Target: ${target.label}');
   if (target.os == OS.android) {
     final hasNdk = resolver.hasAndroidNdk;
-    b.writeln('  Android NDK: ${hasNdk ? "found" : "missing (set ANDROID_NDK_HOME)"}');
+    b.writeln(
+      '  Android NDK: ${hasNdk ? "found" : "missing (set ANDROID_NDK_HOME)"}',
+    );
     final toolchain = resolver.cmakeToolchainFile(target);
     b.writeln('  Toolchain: ${toolchain ?? "missing"}');
     final strip = resolver.stripCommand(target);

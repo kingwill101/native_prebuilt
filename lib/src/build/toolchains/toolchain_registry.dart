@@ -67,12 +67,12 @@ final class NativeToolchainResolver {
 
   /// Default Android ABI for a native architecture.
   static String androidAbiFor(Architecture arch) => switch (arch) {
-        Architecture.arm => 'armeabi-v7a',
-        Architecture.arm64 => 'arm64-v8a',
-        Architecture.x64 => 'x86_64',
-        Architecture.ia32 => 'x86',
-        _ => arch.name,
-      };
+    Architecture.arm => 'armeabi-v7a',
+    Architecture.arm64 => 'arm64-v8a',
+    Architecture.x64 => 'x86_64',
+    Architecture.ia32 => 'x86',
+    _ => arch.name,
+  };
 
   /// Default OPENSSL root suffix for ABI.
   static String opensslRootForAbi(String abi) => abi;
@@ -96,10 +96,7 @@ final class NativeToolchainResolver {
       if (sdk == null) continue;
       final ndkDir = Directory(p.join(sdk, 'ndk'));
       if (!ndkDir.existsSync()) continue;
-      final versions = ndkDir
-          .listSync()
-          .whereType<Directory>()
-          .toList()
+      final versions = ndkDir.listSync().whereType<Directory>().toList()
         ..sort((a, b) => b.path.compareTo(a.path));
       if (versions.isNotEmpty) return versions.first;
     }

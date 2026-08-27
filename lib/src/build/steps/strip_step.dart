@@ -28,7 +28,6 @@ final class StripStep implements NativeBuildStep {
   @override
   final String execution;
 
-
   /// Source file to strip (relative to work dir or absolute).
   final String inputPath;
 

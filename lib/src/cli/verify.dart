@@ -33,11 +33,29 @@ class VerifyCommand extends Command<void> {
       help: 'Directory containing built artifacts to verify.',
       defaultsTo: 'built-library',
     );
-    argParser.addOption('config', abbr: 'c', help: 'Path to native_prebuilt.yaml.');
-    argParser.addOption('manifest', help: 'Path to lock manifest (native_prebuilt.lock.yaml or g.dart).');
-    argParser.addOption('ref', help: 'Release tag to verify (e.g., tdlib-v1.8.65).');
-    argParser.addFlag('ephemeral', help: 'Create ephemeral consumer and smoketest after download.', negatable: false);
-    argParser.addOption('release-assets-dir', help: 'Directory containing release archives to verify locally without download.');
+    argParser.addOption(
+      'config',
+      abbr: 'c',
+      help: 'Path to native_prebuilt.yaml.',
+    );
+    argParser.addOption(
+      'manifest',
+      help: 'Path to lock manifest (native_prebuilt.lock.yaml or g.dart).',
+    );
+    argParser.addOption(
+      'ref',
+      help: 'Release tag to verify (e.g., tdlib-v1.8.65).',
+    );
+    argParser.addFlag(
+      'ephemeral',
+      help: 'Create ephemeral consumer and smoketest after download.',
+      negatable: false,
+    );
+    argParser.addOption(
+      'release-assets-dir',
+      help:
+          'Directory containing release archives to verify locally without download.',
+    );
   }
 
   final NativeProject project;
@@ -56,7 +74,10 @@ class VerifyCommand extends Command<void> {
     final ephemeral = (option('ephemeral') as bool?) ?? false;
     final targetLabel = option('target') as String?;
 
-    if (ref != null || manifestPath != null || releaseAssetsDirPath != null || ephemeral) {
+    if (ref != null ||
+        manifestPath != null ||
+        releaseAssetsDirPath != null ||
+        ephemeral) {
       await _runIsolated(
         ref: ref,
         manifestPath: manifestPath,
@@ -146,10 +167,13 @@ class VerifyCommand extends Command<void> {
       manifestFile = File(manifestPath);
     } else if (configFile != null) {
       manifestFile = resolveLockFile(null, configFile.parent);
-      if (manifestFile != null && !manifestFile.existsSync()) manifestFile = null;
+      if (manifestFile != null && !manifestFile.existsSync())
+        manifestFile = null;
     }
 
-    final releaseAssetsDir = releaseAssetsDirPath != null ? Directory(releaseAssetsDirPath) : null;
+    final releaseAssetsDir = releaseAssetsDirPath != null
+        ? Directory(releaseAssetsDirPath)
+        : null;
 
     final downloader = HttpDownloader();
     final reader = ArchiveReader();
@@ -174,7 +198,9 @@ class VerifyCommand extends Command<void> {
         print('Verifying $platform: ${artifact.archive} (tag $tag)');
 
         if (releaseAssetsDir != null) {
-          final localArchive = File(p.join(releaseAssetsDir.path, artifact.archive));
+          final localArchive = File(
+            p.join(releaseAssetsDir.path, artifact.archive),
+          );
           if (!localArchive.existsSync()) {
             print('  ✗ Missing local archive: ${localArchive.path}');
             failed = true;
@@ -203,9 +229,15 @@ class VerifyCommand extends Command<void> {
             continue;
           }
           final payloadHash = await ArchiveReader.sha256Hash(extracted);
-          print('  ✓ Archive hash $archiveHash, payload $canonicalName hash $payloadHash size ${extracted.lengthSync()}');
+          print(
+            '  ✓ Archive hash $archiveHash, payload $canonicalName hash $payloadHash size ${extracted.lengthSync()}',
+          );
           try {
-            const NativeBinaryInspector().inspect(extracted, target: target, canonicalName: canonicalName);
+            const NativeBinaryInspector().inspect(
+              extracted,
+              target: target,
+              canonicalName: canonicalName,
+            );
             print('  ✓ Binary inspection passed');
           } on BinaryFormatException catch (e) {
             print('  ✗ Binary format: $e');
@@ -249,14 +281,20 @@ class VerifyCommand extends Command<void> {
         final payloadHash = await ArchiveReader.sha256Hash(extracted);
         print('  ✓ Payload $canonicalName hash $payloadHash');
         try {
-          const NativeBinaryInspector().inspect(extracted, target: target, canonicalName: canonicalName);
+          const NativeBinaryInspector().inspect(
+            extracted,
+            target: target,
+            canonicalName: canonicalName,
+          );
           print('  ✓ Binary inspection passed');
         } catch (e) {
           print('  ✗ Binary inspection failed: $e');
           failed = true;
         }
         if (ephemeral) {
-          print('  ephemeral mode: verified (skipping full dart pub get smoketest)');
+          print(
+            '  ephemeral mode: verified (skipping full dart pub get smoketest)',
+          );
         }
       }
       if (failed) {
@@ -288,7 +326,9 @@ class VerifyCommand extends Command<void> {
           e.key: ArtifactConfig(
             archive: e.value.archiveName,
             payload: PayloadConfig(
-              type: e.value.payload is StaticLibraryPayload ? 'static_library' : 'dynamic_library',
+              type: e.value.payload is StaticLibraryPayload
+                  ? 'static_library'
+                  : 'dynamic_library',
             ),
           ),
       },

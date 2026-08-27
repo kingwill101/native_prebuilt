@@ -367,7 +367,11 @@ void _validatePeArchitecture(
       try {
         final full = raf.readSync(512);
         if (full.length >= 0x40) {
-          final eLfanew = full[0x3c] | (full[0x3d] << 8) | (full[0x3e] << 16) | (full[0x3f] << 24);
+          final eLfanew =
+              full[0x3c] |
+              (full[0x3d] << 8) |
+              (full[0x3e] << 16) |
+              (full[0x3f] << 24);
           if (eLfanew + 6 <= full.length) {
             final machine = full[eLfanew + 4] | (full[eLfanew + 5] << 8);
             final expected = _expectedPeMachine(target.architecture);
@@ -389,7 +393,11 @@ void _validatePeArchitecture(
     }
     return;
   }
-  final eLfanew = header[0x3c] | (header[0x3d] << 8) | (header[0x3e] << 16) | (header[0x3f] << 24);
+  final eLfanew =
+      header[0x3c] |
+      (header[0x3d] << 8) |
+      (header[0x3e] << 16) |
+      (header[0x3f] << 24);
   if (header.length < eLfanew + 6) return;
   final machine = header[eLfanew + 4] | (header[eLfanew + 5] << 8);
   final expected = _expectedPeMachine(target.architecture);

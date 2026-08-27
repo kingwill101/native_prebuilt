@@ -25,7 +25,6 @@ final class CopyStep implements NativeBuildStep {
   @override
   final String execution;
 
-
   /// Source file or directory path.
   final String sourcePath;
 

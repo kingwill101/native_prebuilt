@@ -94,7 +94,9 @@ class InitCommand extends Command<void> {
       final detected = _detectPlatforms(outputFile.parent);
       if (detected.isNotEmpty) {
         platforms = detected;
-        io.info('Detected platforms: ${platforms.join(', ')} (from project scan)');
+        io.info(
+          'Detected platforms: ${platforms.join(', ')} (from project scan)',
+        );
       }
     }
     if (platforms.isEmpty) {
@@ -122,13 +124,17 @@ class InitCommand extends Command<void> {
         sourceRepository: sourceRepository,
         sourceRevision: sourceRevision,
         sourceSubdirectory: sourceSubdirectory,
-        platforms: platforms.isEmpty ? ['linux-x64', 'macos-arm64', 'windows-x64'] : platforms,
+        platforms: platforms.isEmpty
+            ? ['linux-x64', 'macos-arm64', 'windows-x64']
+            : platforms,
         detectedBuildSystem: detectedBuild,
       ),
     );
     io.info('Wrote ${outputFile.path}');
     if (detectedBuild != null) {
-      io.info('Next: add build recipes for $detectedBuild or run `dart run native_prebuilt workflow init`');
+      io.info(
+        'Next: add build recipes for $detectedBuild or run `dart run native_prebuilt workflow init`',
+      );
     }
   }
 }
@@ -139,8 +145,10 @@ List<String> _detectPlatforms(Directory dir) {
   final hookBuild = File(p.join(dir.path, 'hook', 'build.dart'));
   if (hookBuild.existsSync()) {
     final content = hookBuild.readAsStringSync();
-    if (content.contains('android') || content.contains('Android')) platforms.add('android-arm64');
-    if (content.contains('ios') || content.contains('iOS')) platforms.add('ios-arm64');
+    if (content.contains('android') || content.contains('Android'))
+      platforms.add('android-arm64');
+    if (content.contains('ios') || content.contains('iOS'))
+      platforms.add('ios-arm64');
   }
   // Check for Dart @Native declarations
   final libDir = Directory(p.join(dir.path, 'lib'));
@@ -150,7 +158,13 @@ List<String> _detectPlatforms(Directory dir) {
         final content = file.readAsStringSync();
         if (content.contains('@Native')) {
           // Suggest common set
-          return ['linux-x64', 'macos-arm64', 'windows-x64', 'android-arm64', 'ios-arm64'];
+          return [
+            'linux-x64',
+            'macos-arm64',
+            'windows-x64',
+            'android-arm64',
+            'ios-arm64',
+          ];
         }
       }
     }
@@ -169,8 +183,10 @@ String? _detectBuildSystem(Directory dir) {
 
 List<String> _inferFromBuildFiles(Directory dir) {
   final buildSystem = _detectBuildSystem(dir);
-  if (buildSystem == 'cmake') return ['linux-x64', 'macos-arm64', 'windows-x64'];
-  if (buildSystem == 'cargo') return ['linux-x64', 'macos-arm64', 'windows-x64'];
+  if (buildSystem == 'cmake')
+    return ['linux-x64', 'macos-arm64', 'windows-x64'];
+  if (buildSystem == 'cargo')
+    return ['linux-x64', 'macos-arm64', 'windows-x64'];
   return [];
 }
 

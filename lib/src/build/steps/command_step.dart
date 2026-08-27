@@ -30,7 +30,6 @@ final class CommandStep implements NativeBuildStep {
   @override
   final String execution;
 
-
   /// Commands to execute in order. Each entry is [executable, ...args].
   final List<List<String>> commands;
 

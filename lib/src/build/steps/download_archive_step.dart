@@ -30,7 +30,6 @@ final class DownloadArchiveStep implements NativeBuildStep {
   @override
   final String execution;
 
-
   /// URL of the archive to download.
   final String url;
 
