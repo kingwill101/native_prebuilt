@@ -349,7 +349,11 @@ void main() {
         runner: runner,
       );
 
-      final (context, source) = createTestContext(workDir: tempDir);
+      // Keep this command-shape test independent of the host's Apple SDK.
+      final (context, source) = createTestContext(
+        workDir: tempDir,
+        targetOS: OS.linux,
+      );
       await step.execute(context, source);
 
       expect(runner.commands, hasLength(1));
